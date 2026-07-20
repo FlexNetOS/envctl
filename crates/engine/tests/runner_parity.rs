@@ -2,7 +2,7 @@
 //!
 //! These pin the hook supervisor behavior that meta/envctl command substrate changes must preserve:
 //! exit-code capture, stderr/stdout tail + char-safe truncate, per-phase timeout
-//! synthesizing exit 124, `setsid` process-group reaping, phase-conditional
+//! synthesizing exit 124, process-group reaping, phase-conditional
 //! streaming + tee, quiet capture on read-only phases, hook wrapping (argv vs
 //! `bash -lc`/`-c`), per-hook env injection, lossy-UTF-8 safety, and spawn-failure
 //! handling. Before this file there was NO test exercising the real runner
@@ -140,9 +140,9 @@ fn timeout_synthesizes_exit_124() {
 }
 
 #[test]
-fn setsid_reaps_the_whole_process_group() {
+fn process_group_reaps_the_whole_child_tree() {
     let _g = lock();
-    let marker = unique_tmp("setsid").join("beat");
+    let marker = unique_tmp("process-group").join("beat");
     let mp = marker.display().to_string();
     // Background a grandchild that keeps touching the marker; the parent sleeps long.
     // After the per-phase timeout kills the GROUP, the grandchild must die too, so the
@@ -161,8 +161,66 @@ fn setsid_reaps_the_whole_process_group() {
     let m2 = std::fs::metadata(&marker).and_then(|m| m.modified()).ok();
     assert_eq!(
         m1, m2,
-        "grandchild survived group-kill: marker mtime still advancing (setsid reaping broken)"
+        "grandchild survived group-kill: marker mtime still advancing (process-group reaping broken)"
     );
+}
+
+#[cfg(unix)]
+#[test]
+fn process_runner_preserves_the_callers_session_while_isolating_the_process_group() {
+    let _g = lock();
+    let root = unique_tmp("preserve-session");
+    let observed = root.join("session-id");
+    let hook = Hook::Script {
+        script: format!(
+            "/usr/bin/ps -o pid= -o sid= -o pgid= -p $$ > '{}'",
+            observed.display()
+        ),
+        path: None,
+        env: BTreeMap::new(),
+        needs_sudo: false,
+        login_shell: false,
+    };
+    let (sink, _rx) = EventSink::channel();
+    let result = ProcessRunner.run("preserve-session", Phase::Verify, &hook, false, &sink);
+    assert_eq!(result.status, OpStatus::Ok, "{}", result.message);
+
+    let expected = std::process::Command::new("/usr/bin/ps")
+        .args([
+            "-o",
+            "sid=",
+            "-o",
+            "pgid=",
+            "-p",
+            &std::process::id().to_string(),
+        ])
+        .output()
+        .expect("inspect caller session");
+    assert!(expected.status.success());
+    let observed = std::fs::read_to_string(&observed).unwrap();
+    let observed = observed.split_whitespace().collect::<Vec<_>>();
+    let expected = String::from_utf8(expected.stdout).unwrap();
+    let expected = expected.split_whitespace().collect::<Vec<_>>();
+    assert_eq!(
+        observed.len(),
+        3,
+        "unexpected child ps output: {observed:?}"
+    );
+    assert_eq!(
+        expected.len(),
+        2,
+        "unexpected caller ps output: {expected:?}"
+    );
+    assert_eq!(observed[1], expected[0], "the runner must retain the invoking terminal session so privileged hooks can use its sudo ticket");
+    assert_eq!(
+        observed[2], observed[0],
+        "the child must lead its own timeout-reapable process group"
+    );
+    assert_ne!(
+        observed[2], expected[1],
+        "the child must not share the caller's process group"
+    );
+    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]

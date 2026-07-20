@@ -57,12 +57,14 @@ impl HookRunner for ProcessRunner {
         cmd.stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
-        // Audit fix (#20): own a process group (setsid) so a per-phase timeout can
-        // reap the whole child tree. Without this we only kill the immediate
-        // bash/sudo and the real grandchild workload survives. Mirrors addrepo.rs.
+        // Own a process group so a per-phase timeout can reap the whole child
+        // tree. `setpgid` deliberately retains the invoking terminal session:
+        // detached `setsid` children cannot use a sudo ticket tied to that TTY,
+        // even after Envctl pre-warms it. A distinct process group preserves the
+        // same timeout reaping guarantee without severing that authorization path.
         unsafe {
             cmd.pre_exec(|| {
-                let _ = rustix::process::setsid();
+                rustix::process::setpgid(None, None).map_err(std::io::Error::from)?;
                 Ok(())
             });
         }
@@ -168,7 +170,7 @@ fn mk(
 
 fn timeout_for(phase: Phase) -> Duration {
     // Test/debug seam: `ENVCTL_HOOK_TIMEOUT_MS` overrides the per-phase timeout so the
-    // timeout/setsid-reaper path is exercisable in tests without a 60s wait. Unset in
+    // timeout/process-group reaper path is exercisable in tests without a 60s wait. Unset in
     // normal operation (the production per-phase defaults below apply).
     if let Ok(ms) = std::env::var("ENVCTL_HOOK_TIMEOUT_MS") {
         if let Ok(n) = ms.parse::<u64>() {
@@ -267,11 +269,11 @@ fn wait_timeout(child: &mut Child, dur: Duration, pid: u32) -> (Option<i32>, boo
     }
 }
 
-/// Kill the child's whole process group (it is the group leader via setsid).
+/// Kill the child's whole process group (it is the group leader via setpgid).
 fn kill_group(pid: u32) {
     if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
         // If the child never became a group leader (for example, if pre_exec
-        // failed before setsid() took effect), fall back to killing the child
+        // failed before setpgid() took effect), fall back to killing the child
         // PID directly so a wedged probe cannot linger.
         if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
             let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
@@ -312,7 +314,7 @@ fn truncate(s: &str, max: usize) -> &str {
 /// envctl owns the wrapping *policy* (which program + args + env each hook shape
 /// resolves to); the actual `std::process::Command` *construction* is delegated to
 /// the shared meta substrate `loop_lib::build_command` (so meta and envctl assemble
-/// subprocess commands the same way). Supervision — setsid, piped stdio, the pump
+/// subprocess commands the same way). Supervision — process groups, piped stdio, the pump
 /// threads, the per-phase timeout — stays in `ProcessRunner::run`, because loop_lib
 /// is a batch fan-out runner with no equivalent for those.
 fn build_command(hook: &Hook) -> Result<Command, String> {
