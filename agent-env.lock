@@ -40,6 +40,14 @@ skills:
     source: ./agent-skills
     source_revision: local
     scope: project
+  skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review:
+    destination: .claude/skills/meta-gitkb-review
+    hash: f59fc59b0ade740a4e9346a05e55ad820443b1dbc2094aa3a19900b88b4f0ddf
+    skill: meta-gitkb-review
+    description: Review a FlexNetOS Meta peer through the shared Meta/GitKB policy while preserving its independent repository and native assistant adapters.
+    source: https://github.com/FlexNetOS/meta
+    source_revision: ref:fb7273a7c8d05dce0bac649ded940a86ad41e107
+    scope: project
 assets:
   mcp::v3|14:./agent-skills|8:exa.json:
     kind: mcp
@@ -155,6 +163,24 @@ installed_outputs:
   52:skill::v3|14:./agent-skills|21:env-toolchain-install|36:.claude/skills/env-toolchain-install|10:skill-tree|4:tree:
     asset_id: skill::v3|14:./agent-skills|21:env-toolchain-install
     destination: .claude/skills/env-toolchain-install
+    format: skill-tree
+    unit: tree
+    hash: cd4dbc424a4e44b5cf90898acff478602c027ab8b67fa45215c18eaf5116b60d
+  67:skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review|31:.codex/skills/meta-gitkb-review|10:skill-tree|4:tree:
+    asset_id: skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review
+    destination: .codex/skills/meta-gitkb-review
+    format: skill-tree
+    unit: tree
+    hash: f59fc59b0ade740a4e9346a05e55ad820443b1dbc2094aa3a19900b88b4f0ddf
+  67:skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review|32:.agents/skills/meta-gitkb-review|10:skill-tree|4:tree:
+    asset_id: skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review
+    destination: .agents/skills/meta-gitkb-review
+    format: skill-tree
+    unit: tree
+    hash: f59fc59b0ade740a4e9346a05e55ad820443b1dbc2094aa3a19900b88b4f0ddf
+  67:skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review|32:.claude/skills/meta-gitkb-review|10:skill-tree|4:tree:
+    asset_id: skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review
+    destination: .claude/skills/meta-gitkb-review
     format: skill-tree
     unit: tree
     hash: 8320a7870746a248e896bc0f9d9caf0d188787acc7aef60e740d2c82dbdfc08b

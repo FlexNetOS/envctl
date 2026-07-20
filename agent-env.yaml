@@ -33,6 +33,13 @@ agent:
   - codex
 
 skills:
+  # Meta's narrow shared review policy; envctl-specific skills remain below.
+  - source: https://github.com/FlexNetOS/meta
+    ref: fb7273a7c8d05dce0bac649ded940a86ad41e107
+    sub-dir: agent-env/skills
+    skills:
+      - meta-gitkb-review
+
   # Curated, envctl-grounded dev skills (correct Rust conventions).
   - source: ./agent-skills
     skills: "*"

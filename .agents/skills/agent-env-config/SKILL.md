@@ -35,9 +35,9 @@ truth; the ECC conventions are wrong — ignore them.**
 - **Tests:** unit tests in `#[cfg(test)] mod tests` beside the code; integration tests in
   `crates/<crate>/tests/*.rs`; e2e where a daemon is involved (`secretd/tests/e2e.rs`). Run
   `cargo test -p <crate>` or `cargo test --workspace`.
-- **Toolchain:** workspace support floor **MSRV 1.89** (`Cargo.toml` `rust-version` is the
-  authoritative value). Developer toolchain is **nightly** (`rust-toolchain.toml`
-  `channel = "nightly"` —
+- **Toolchain:** workspace support floor **MSRV 1.89** (`Cargo.toml` `rust-version` — the
+  authoritative value; envctl `CLAUDE.md` still says 1.88, which is stale and queued for
+  reconcile). Developer toolchain is **nightly** (`rust-toolchain.toml` `channel = "nightly"` —
   the dev channel, not the support floor). Both come from the fenix toolchain in the nix
   profile; never rustup-in-place.
 - **Lints & safety:** `cargo fmt` and `cargo clippy -- -D warnings` clean. The engine is sync,
