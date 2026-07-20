@@ -27,7 +27,7 @@ done
 
 source=agent-skills/agent-env-codex/references/source-prompt.md
 [ -f "$source" ] || fail "missing lifecycle owner prompt: $source"
-! grep -Eq 'rtk hook claude|codex-harness-hook|hooks\.json|\.claude/hooks|\.codex/hooks' "$source" \
+! grep -Eq 'codex-harness-hook|\.claude/hooks|\.codex/hooks' "$source" \
   || fail "retired lifecycle instructions remain in owner prompt"
 
 if rg -n --glob '!envctl-db-nu-plugin-migration-automation-package/**' \
@@ -37,7 +37,7 @@ if rg -n --glob '!envctl-db-nu-plugin-migration-automation-package/**' \
   --glob '!scripts/tests/test-agent-env-hooks.sh' \
   --glob '!scripts/tests/test-flexnetos-codex-runtime-gate.sh' \
   --glob '!home/agent-env/codex-harness/src/bin/codex-harness-final-verify.rs' \
-  'rtk hook claude|codex-harness-hook|hooks\.write_text|/home/flexnetos/FlexNetOS/\.codex/hooks' \
+  'codex-harness-hook|hooks\.write_text|/home/flexnetos/FlexNetOS/\.codex/hooks' \
   agent-skills home manifest assets scripts ci; then
   fail "retired lifecycle regeneration path remains"
 fi

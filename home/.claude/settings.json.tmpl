@@ -55,5 +55,16 @@
     "disableBypassPermissionsMode": "disable",
     "defaultMode": "auto"
   },
+  "hooks": {
+    "SessionStart": [{"hooks": [{"type": "command", "command": "icm hook start"}]}],
+    "PreToolUse": [
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "rtk hook claude"}]},
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "icm hook pre"}]}
+    ],
+    "PostToolUse": [{"hooks": [{"type": "command", "command": "icm hook post"}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "icm hook prompt"}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "icm hook end"}]}],
+    "PreCompact": [{"hooks": [{"type": "command", "command": "icm hook compact"}]}]
+  },
   "effortLevel": "high"
 }

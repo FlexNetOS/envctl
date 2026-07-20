@@ -552,7 +552,7 @@ ACTIVE MODE
   - `sandbox_mode = "danger-full-access"`
   - `default_permissions = ":danger-full-access"`
   - launch flag: `--dangerously-bypass-approvals-and-sandbox`
-  - retired lifecycle hooks are absent; do not create a dispatcher, hook JSON, fallback scanner, or local hook script in this repair.
+  - approved lifecycle dispatch is limited to `rtk hook claude` and PATH-resolved `icm hook` commands; do not create copied scripts, hook JSON, fallback scanners, or local hook archives.
 - Secret-deny, archive-first, and no destructive user-data deletion remain
   mandatory behavioral rules. They do not justify downgrading the session to
   restricted mode.
@@ -610,8 +610,9 @@ missing or wrong:
 
 - `/home/flexnetos/.codex/config.toml` uses full-access execution and does not
   default to a limited permission profile.
-- No Codex or Claude lifecycle hook configuration, script, archive, or installer
-  is present. A future hook design requires a separate approved owner contract.
+- The approved Claude lifecycle contract contains only `rtk hook claude` and
+  PATH-resolved `icm hook` commands. Retired copied scripts, hook JSON, archives,
+  installers, and fallback scanners remain absent.
 - `/home/flexnetos/meta/.ignore` and/or `.rgignore` excludes:
   `var/lib/ruvector/pgdata/`
 - This prompt contains this controller above the old v2 phase gates.
