@@ -6,7 +6,7 @@ set -euo pipefail
 root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
-agents_skill="$root/agent-skills/capability-packs/handoff-sync/SKILL.md"
+agents_skill="$root/agent-skills/handoff-sync/SKILL.md"
 claude_skill="$root/.claude/skills/handoff-sync/SKILL.md"
 
 cmp -s "$agents_skill" "$claude_skill" || fail "handoff-sync skill mirrors drifted (.agents != .claude)"
@@ -73,7 +73,7 @@ def description(path: Path) -> str:
     raise SystemExit(f"FAIL: {path} missing description")
 
 
-skill_paths = sorted(root.glob("agent-skills/capability-packs/*/SKILL.md")) + sorted(
+skill_paths = sorted(root.glob("agent-skills/*/SKILL.md")) + sorted(
     root.glob(".claude/skills/*/SKILL.md")
 )
 for path in skill_paths:
@@ -83,7 +83,7 @@ for path in skill_paths:
             f"FAIL: {path} description exceeds Codex loader limit: {len(desc)} > 1024"
         )
 
-agents_rust = root / "agent-skills/capability-packs/rust-port/SKILL.md"
+agents_rust = root / "agent-skills/rust-port/SKILL.md"
 claude_rust = root / ".claude/skills/rust-port/SKILL.md"
 if description(agents_rust) != description(claude_rust):
     raise SystemExit("FAIL: rust-port frontmatter descriptions drifted (.agents != .claude)")
@@ -121,7 +121,7 @@ PY
 
 # Stale doctrine that caused the failed skill must not reappear in active skill/agent config.
 if grep -RInE 'redirect the shared ledger|no per-repo ledger|forbidden per-repo|There is \*\*no `hf drift`|run hf from `\$META_ROOT`|\$META_ROOT/\.handoff/ledger\.db' \
-  "$root/agent-skills/capability-packs/handoff-sync" \
+  "$root/agent-skills/handoff-sync" \
   "$root/.claude/skills/handoff-sync" \
   "$root/.agents/agents" \
   "$root/.claude/agents" \
@@ -134,11 +134,11 @@ fi
 # or to treating a [gone] upstream as merge proof.  The safe status path is the
 # path-shape helper in scripts/reap-worktrees.sh.
 if grep -RInE '\[gone\].*\(merged\)|upstream is `\[gone\]` \(merged\)|meta git worktree status envctl' \
-  "$root/agent-skills/capability-packs/forge-loop" \
+  "$root/agent-skills/forge-loop" \
   "$root/.claude/skills/forge-loop" \
-  "$root/agent-skills/capability-packs/session-relay-resume" \
+  "$root/agent-skills/session-relay-resume" \
   "$root/.claude/skills/session-relay-resume" \
-  "$root/agent-skills/capability-packs/session-relay-wrap-up" \
+  "$root/agent-skills/session-relay-wrap-up" \
   "$root/.claude/skills/session-relay-wrap-up" \
   "$root/.codex/agents/continuity-steward.toml" \
   "$root/.claude/agents/continuity-steward.md" >/tmp/envctl-worktree-contract-grep.txt 2>/dev/null; then

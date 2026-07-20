@@ -12,7 +12,7 @@ fail() { printf 'agent-env active mirror test: FAIL: %s\n' "$*" >&2; exit 1; }
 # Catalog roots are canonical source only, never discovery projections.  Every
 # declared catalog skill must retain a SKILL.md even when inactive.
 while IFS= read -r name; do
-  [ -f "agent-skills/capability-packs/$name/SKILL.md" ] \
+  [ -f "agent-skills/$name/SKILL.md" ] \
     || [ -f ".kb/skills/$name/SKILL.md" ] \
     || [ "$name" = skill-catalog ] && continue
   fail "catalog skill $name has no canonical source"
@@ -34,7 +34,7 @@ declare -A expected_source=()
 for source in "${sources[@]}"; do
   case "$source" in
     ./agent-skills/skill-catalog) name=skill-catalog ;;
-    ./agent-skills/capability-packs/*) name="${source##*/}" ;;
+    ./agent-skills/*) name="${source##*/}" ;;
     ./.kb/skills/*) name="${source##*/}" ;;
     *) fail "unmanaged or forbidden active source: $source" ;;
   esac

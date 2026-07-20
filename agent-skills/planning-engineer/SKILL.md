@@ -108,7 +108,7 @@ model slugs directly, so Codex must **not** try to run `model = "claude-opus-4-8
    --cmd <lane prompt>` when a Claude CLI surface is available, or create a fenced `weave job`/`weave
    ask` routed to an already registered Opus-capable peer.
 3. Prefer the packaged helper `scripts/plan-weave-dispatch.sh` (root copy) or
-   `agent-skills/capability-packs/planning-engineer/scripts/plan-weave-dispatch.sh` (ejected copy) so dispatch is
+   `agent-skills/planning-engineer/scripts/plan-weave-dispatch.sh` (ejected copy) so dispatch is
    repeatable and test-gated. It writes `.handoff/loop/plan/weave-dispatch/<run-id>.jsonl` with one
    row per lane.
 4. Record the weave peer/session id plus message/job id in `.handoff/loop/plan/loop_state.md` and the

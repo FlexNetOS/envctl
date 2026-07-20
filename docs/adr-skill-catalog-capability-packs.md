@@ -3,7 +3,7 @@
 ## Decision
 
 Envctl keeps the compact catalog definition in `agent-skills/skill-catalog/`
-and every complete skill tree in `agent-skills/capability-packs/`, including the
+and every complete skill tree in `agent-skills/`, including the
 former hand-authored harness skills. `agent-env.active.yaml` is a generated projection: only `core` and
 explicitly selected packs are copied into `.codex/skills` and `.agents/skills`
 by the existing `envctl agent lock` → `sync --apply` owner lifecycle.
@@ -35,7 +35,7 @@ when the selected `git` pack explicitly requests them.
 | --- | --- | --- |
 | Codex-provided system roots | Immutable system skills | Not copied or made Envctl-owned. |
 | Home-level roots | User-managed runtime skills | Out of this repository's source-of-truth and never scanned as a fallback. |
-| `agent-skills/capability-packs/` | Envctl canonical owner | Complete mutable skill trees, retained whether active or inactive. |
+| `agent-skills/` | Envctl canonical owner | Complete mutable skill trees, retained whether active or inactive. |
 | `.kb/skills/` | Immutable project-local GitKB owner | Explicit allowlisted catalog entries; no symlink fallback. |
 | `.codex/skills/`, `.agents/skills/` | Generated discovery projections | Exactly `core` plus explicitly active packs; regenerated only by `envctl agent`. |
 

@@ -24,7 +24,7 @@ Keep its canonical entrypoint byte-identical when either prompt is touched:
 The prompt is the specification. This skill is the compact execution controller. Its durable skill source and complete harness implementation owner are:
 
 ```text
-/home/flexnetos/meta/src/envctl/agent-skills/capability-packs/agent-env-codex/
+/home/flexnetos/meta/src/envctl/agent-skills/agent-env-codex/
 /home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/
 ```
 
@@ -39,7 +39,7 @@ Read `references/coverage-map.md` to navigate every controller and Phase 0-11 co
 3. **Load the whole specification.** Read `references/source-prompt.md` completely, then verify it against both repo prompt entrypoints. Read every file under `docs/runbook`, the relevant Yazelix docs, and the current `home/agent-env/codex-harness` tree. Build a compact source ledger.
 4. **Map the requested change across the whole harness.** Check Rust code, binaries, agents, teams, policies, rules, model catalog, prompt review, tests, agent-env inputs, repo projections, and profile/runtime frontdoors. Do not patch only the first visible file.
 5. **Edit owning source surfaces.** Durable harness implementation belongs in the envctl repo. Do not hand-edit generated Yazelix runtime under `/home/flexnetos/.local/share/yazelix` or treat active home projection as the durable owner.
-6. **Route the skill and managed assets through agent-env.** Keep `agent-skills/capability-packs/agent-env-codex/` byte-identical to the active skill, edit `agent-env.yaml` and other owning inputs when needed, run `envctl agent lock` to refresh the lock, then run `envctl agent sync --json --color never` for preview. Use `--apply` only when the user requested materialization, then verify `agent-env.lock`.
+6. **Route the skill and managed assets through agent-env.** Keep `agent-skills/agent-env-codex/` byte-identical to the active skill, edit `agent-env.yaml` and other owning inputs when needed, run `envctl agent lock` to refresh the lock, then run `envctl agent sync --json --color never` for preview. Use `--apply` only when the user requested materialization, then verify `agent-env.lock`.
 7. **Preserve session toggles without making work optional.** `/permissions` is the live Codex sandbox/approval/network authority. Harness capability states and model lanes are session-scoped, never hard-coded as permanent lockouts. A toggle may be off; its task, capability, integration, and verification remain mandatory.
 8. **Use the latest profile frontdoors.** Yazelix/Nix owns binaries and runtime delivery. Resolve current versions from profile commands at execution time, use the newest available owner-provided toolchain as the primary lane, and keep older floors only as added compatibility tests. Use `rtk meta git <adapted-command>` for fleet Git and `rtk meta exec --include <repo> -- git <unlisted-command>` only when Meta has no adapted command. Use `bun` instead of `npm` and `bunx` instead of `npx` in every executable skill recipe. Never invoke raw `git`, never cherry-pick, and never bypass Meta worktree ownership.
 9. **Execute GitHub work to completion.** Follow `references/github-execution-policy.md`. Preserve all capabilities, reconcile every surfaced stale/orphaned commit or worktree, use Linux-only workflows, commit and push every intended change, open/update a PR, enable auto-merge, wait for merge, and remove merged task branches/worktrees. Protect only `main`, `master`, and `develop` from lifecycle cleanup.

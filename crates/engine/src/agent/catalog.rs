@@ -31,6 +31,7 @@ impl Engine {
     ) -> anyhow::Result<AgentCatalogReport> {
         let root = std::env::current_dir()?;
         let mut catalog = Catalog::load(&root)?;
+        validate_selector_count(&spec)?;
         let mut action = "list".to_string();
         let mut changed = false;
 
@@ -130,7 +131,11 @@ impl Engine {
             anyhow::bail!("agent catalog --sync requires --apply");
         }
         let mut lifecycle_verified = false;
-        if changed && spec.apply {
+        // `--apply --sync` is also the owner-approved repair path for an
+        // already-selected catalog whose generated active projection was
+        // removed or drifted. It writes only the projection derived from the
+        // validated canonical catalog, never an unmanaged copy.
+        if spec.apply && (changed || spec.sync) {
             catalog.save(&root)?;
             catalog.write_active_projection(&root)?;
         }
@@ -183,5 +188,42 @@ impl Engine {
             lifecycle_verified,
             projection: envctl_agent_env::CATALOG_ACTIVE_RELATIVE.into(),
         })
+    }
+}
+
+fn validate_selector_count(spec: &AgentCatalogSpec) -> anyhow::Result<()> {
+    let count = [
+        spec.search.is_some(),
+        spec.show.is_some(),
+        spec.activate_pack.is_some(),
+        spec.activate_skill.is_some(),
+        spec.activate_intent.is_some(),
+        spec.deactivate_pack.is_some(),
+    ]
+    .into_iter()
+    .filter(|selected| *selected)
+    .count();
+    if count > 1 {
+        anyhow::bail!("agent catalog accepts at most one selector");
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_selector_count;
+    use crate::agent::AgentCatalogSpec;
+
+    #[test]
+    fn shared_engine_rejects_conflicting_catalog_selectors() {
+        let spec = AgentCatalogSpec {
+            search: Some("rust".into()),
+            activate_pack: Some("rust".into()),
+            ..AgentCatalogSpec::default()
+        };
+        assert!(validate_selector_count(&spec)
+            .unwrap_err()
+            .to_string()
+            .contains("at most one selector"));
     }
 }

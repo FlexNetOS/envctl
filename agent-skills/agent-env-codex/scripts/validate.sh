@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="${1:-$(git -C "$(dirname "${BASH_SOURCE[0]}")/../../.." rev-parse --show-toplevel)}"
 SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DURABLE="$ROOT/agent-skills/capability-packs/agent-env-codex"
+DURABLE="$ROOT/agent-skills/agent-env-codex"
 ACTIVE="${CODEX_HOME:-/home/flexnetos/.codex}/skills/agent-env-codex"
 PROJECT_CODEX="$ROOT/.codex/skills/agent-env-codex"
 PROJECT_CLAUDE="$ROOT/.claude/skills/agent-env-codex"
@@ -117,7 +117,7 @@ echo 'canonical = full-access = bundled snapshot: yes'
 
 printf '\n== one-skill target contract ==\n'
 grep -Fq 'one compact `/agent-env-codex`' "$FULL"
-grep -Fq 'agent-skills/capability-packs/agent-env-codex/' "$FULL"
+grep -Fq 'agent-skills/agent-env-codex/' "$FULL"
 grep -Fq 'This is one skill.' "$FULL"
 for path in \
   'references/source-prompt.md' \

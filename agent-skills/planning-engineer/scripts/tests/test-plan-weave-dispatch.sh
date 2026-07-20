@@ -13,7 +13,7 @@ resolve_script_under_test() {
     "$root/scripts/$rel" \
     "$root/harness/skills/planning-engineer/scripts/$rel" \
     "$root/.claude/skills/planning-engineer/scripts/$rel" \
-    "$root/agent-skills/capability-packs/planning-engineer/scripts/$rel"; do
+    "$root/agent-skills/planning-engineer/scripts/$rel"; do
     [ -x "$candidate" ] && { printf '%s\n' "$candidate"; return 0; }
   done
   return 1

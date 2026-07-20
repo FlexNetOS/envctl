@@ -16,7 +16,7 @@
 | Session permission/capability toggles | `SKILL.md` steps 7 and Internal capabilities. |
 | Sol/Terra/Luna model lanes | `SKILL.md` Mandatory constraints; complete snapshot. |
 | Bounded subagents and context preservation | Complete snapshot; whole-harness mapping step. |
-| One `/agent-env-codex` target shape | Durable `agent-skills/capability-packs/agent-env-codex/`, project Codex/Claude projections, active materialization, `SKILL.md`, metadata, and this bundled file tree. |
+| One `/agent-env-codex` target shape | Durable `agent-skills/agent-env-codex/`, project Codex/Claude projections, active materialization, `SKILL.md`, metadata, and this bundled file tree. |
 | Full-access incident controller and local-first repair | Complete snapshot; archive/re-anchor/proof workflow. |
 | Absolute laws and no-downgrade rules | Complete snapshot; Mandatory constraints. |
 | Phase 0 historical research gate | Complete snapshot, retained as historical context under the active controller. |

@@ -142,7 +142,7 @@ JS imports) — those are **wrong for this repo**.
   area-prefixed commit subjects (`engine:`, `secretd:`, `docs:`). Ignore any ECC instinct/skill
   that says otherwise.
 - **To change the agent env:** edit the canonical `agent-skills/skill-catalog/` definition or
-  `agent-skills/capability-packs/<skill>/` owner, then activate through `envctl agent catalog`
+  `agent-skills/<skill>/` owner, then activate through `envctl agent catalog`
   and run `envctl agent lock` followed by `envctl agent sync --apply`.
   (the built-in agent-env engine; the external `kasetto` binary is retired — TASK-0018).
   Do **not** hand-maintain `.Codex/skills/*` or `.Codex/homunculus/instincts/*` — they're
@@ -288,7 +288,7 @@ trivial edits may be answered/done directly. (A SINGLE component install → `en
 drift/lock/doctor → `env-stabilize`; conventions → `agent-env-config`.)
 
 **Placement:** harness skills are hand-authored, git-tracked canonical content under
-`agent-skills/capability-packs/`. The compact `agent-skills/skill-catalog/` owner selects only
+`agent-skills/`. The compact `agent-skills/skill-catalog/` owner selects only
 `core` plus explicitly activated packs into `.codex/skills` and `.agents/skills` through
 `envctl agent sync`; inactive skills remain intact in the canonical catalog and never become
 unmanaged copies. Agent definitions remain under `.Codex/agents/*.md`.

@@ -42,10 +42,10 @@ Run from the provisioning worktree (set one up first — never on dirty `master`
 ```bash
 # SAFE / attended (default): destructive --apply & reset are REFUSED (headless agents can't answer
 # permission prompts), so this is a dry, discovery+plan pass that commits non-destructive progress.
-bash agent-skills/capability-packs/auto-provision/scripts/ralph-provision.sh
+bash agent-skills/auto-provision/scripts/ralph-provision.sh
 
 # UNATTENDED APPLY: actually modify THIS workstation with no prompts. Opt in deliberately.
-RALPH_APPLY=1 bash agent-skills/capability-packs/auto-provision/scripts/ralph-provision.sh
+RALPH_APPLY=1 bash agent-skills/auto-provision/scripts/ralph-provision.sh
 ```
 
 Tunables (env): `RALPH_WORKTREE` (default cwd), `RALPH_BUDGET` (cycles/process, default 3),

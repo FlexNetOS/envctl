@@ -34,9 +34,9 @@ repo_root="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)"
 for prompt in planning-engineer plan-loop plan-engineering-loop; do
   [ -f "$repo_root/.codex/prompts/$prompt.md" ] || fail "missing Codex prompt front door: $prompt"
 done
-grep -q 'agent-skills/capability-packs/planning-engineer/SKILL.md' "$repo_root/.codex/prompts/planning-engineer.md" \
+grep -q 'agent-skills/planning-engineer/SKILL.md' "$repo_root/.codex/prompts/planning-engineer.md" \
   || fail "planning-engineer prompt does not point at the authoritative .agents skill"
-grep -q 'agent-skills/capability-packs/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop.md" \
+grep -q 'agent-skills/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop.md" \
   || fail "plan-loop prompt does not point at the authoritative .agents skill"
 grep -q '.codex/prompts/plan-loop.md' "$repo_root/.codex/prompts/plan-engineering-loop.md" \
   || fail "plan-engineering-loop alias does not route to plan-loop"
@@ -74,18 +74,18 @@ done
 # PromptHub / owner-intent alignment: the loop must preserve the recovered upstream prompt contract,
 # including 5x Opus 4.8 background lanes, rusty-idd first-run surfacing, and graph-first code intel.
 grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not cite the PromptHub source of truth"
-grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md"   || fail "plan-loop skill does not cite the PromptHub source of truth"
-grep -q '5× Opus 4.8' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md"   || fail "plan-loop skill does not require 5x Opus 4.8 background lanes"
-grep -q 'Use weave when running from Codex' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md"   || fail "plan-loop skill does not route Codex Opus lanes through weave"
-grep -q 'foreground chat remains interactive' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md"   || fail "plan-loop skill does not protect foreground interactivity"
-grep -q 'rusty-idd' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md"   || fail "plan-loop skill does not seed/surface rusty-idd"
-grep -q 'git-kb code' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not require git-kb code intelligence"
-grep -q 'git-kb code doctor' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not enumerate git-kb code doctor/index/query flow"
+grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/agent-skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not cite the PromptHub source of truth"
+grep -q '5× Opus 4.8' "$repo_root/agent-skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not require 5x Opus 4.8 background lanes"
+grep -q 'Use weave when running from Codex' "$repo_root/agent-skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not route Codex Opus lanes through weave"
+grep -q 'foreground chat remains interactive' "$repo_root/agent-skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not protect foreground interactivity"
+grep -q 'rusty-idd' "$repo_root/agent-skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not seed/surface rusty-idd"
+grep -q 'git-kb code' "$repo_root/agent-skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not require git-kb code intelligence"
+grep -q 'git-kb code doctor' "$repo_root/agent-skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not enumerate git-kb code doctor/index/query flow"
 grep -q 'meta↔envctl' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not capture the meta/envctl/prompt_hub relationship"
-grep -q 'filesystem-layout' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not include the filesystem-layout axis"
-[ -f "$repo_root/agent-skills/capability-packs/plan-filesystem-layout/SKILL.md" ]   || fail "missing plan-filesystem-layout skill"
-grep -q 'FHS/XDG' "$repo_root/agent-skills/capability-packs/plan-filesystem-layout/SKILL.md"   || fail "plan-filesystem-layout skill does not name FHS/XDG standards"
-grep -q 'findings/filesystem-layout-<T>.md' "$repo_root/agent-skills/capability-packs/plan-filesystem-layout/SKILL.md"   || fail "plan-filesystem-layout skill does not define its finding artifact"
+grep -q 'filesystem-layout' "$repo_root/agent-skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not include the filesystem-layout axis"
+[ -f "$repo_root/agent-skills/plan-filesystem-layout/SKILL.md" ]   || fail "missing plan-filesystem-layout skill"
+grep -q 'FHS/XDG' "$repo_root/agent-skills/plan-filesystem-layout/SKILL.md"   || fail "plan-filesystem-layout skill does not name FHS/XDG standards"
+grep -q 'findings/filesystem-layout-<T>.md' "$repo_root/agent-skills/plan-filesystem-layout/SKILL.md"   || fail "plan-filesystem-layout skill does not define its finding artifact"
 for lane in code-graph web-trends governance settings-config rusty-idd-north-star; do
   [ -f "$repo_root/.codex/agents/plan-opus-bg-$lane.toml" ] || fail "missing Opus background lane agent: $lane"
   ! grep -q '^model = "claude-opus-4-8"' "$repo_root/.codex/agents/plan-opus-bg-$lane.toml"     || fail "Opus background lane $lane pins unsupported Codex model instead of using weave"
@@ -96,8 +96,8 @@ if grep -R '^model = "claude-opus-4-8"' "$repo_root/.codex/agents"/plan-*.toml >
 fi
 
 [ -x "$repo_root/scripts/plan-weave-dispatch.sh" ] || fail "missing executable plan weave dispatch helper"
-grep -q 'plan-weave-dispatch.sh' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md"   || fail "plan-loop skill does not point at the weave dispatch helper"
-grep -q 'weave_dispatch' "$repo_root/agent-skills/capability-packs/planning-engineer/scripts/loop_state.template.md"   || fail "loop_state template does not record weave dispatch artifact"
+grep -q 'plan-weave-dispatch.sh' "$repo_root/agent-skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not point at the weave dispatch helper"
+grep -q 'weave_dispatch' "$repo_root/agent-skills/planning-engineer/scripts/loop_state.template.md"   || fail "loop_state template does not record weave dispatch artifact"
 
 # P0-P2 runtime upgrades from June 2026 research: artifact gate, TDP DAG, prompt architecture,
 # observability/backend/risk/evals, source ledger, and interop registry.
@@ -106,32 +106,32 @@ for t in test-plan-artifact-gate.sh test-plan-evals.sh; do
   [ -x "$repo_root/scripts/tests/$t" ] || fail "missing executable planning eval/gate test: $t"
 done
 for skill in plan-memory-vector-intelligence plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute plan-dependency-graph plan-prompt-architecture; do
-  [ -f "$repo_root/agent-skills/capability-packs/$skill/SKILL.md" ] || fail "missing planning P0 skill: $skill"
+  [ -f "$repo_root/agent-skills/$skill/SKILL.md" ] || fail "missing planning P0 skill: $skill"
 done
 for agent in plan-memory-vector-intelligence-auditor plan-autoresearch-loop-auditor plan-rules-policy-org-auditor plan-distributed-compute-auditor plan-dependency-graph-auditor plan-prompt-architecture-auditor; do
   [ -f "$repo_root/.codex/agents/$agent.toml" ] || fail "missing Codex P0 planning agent: $agent"
 done
-grep -q 'plan-artifact-gate.sh' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md" || fail "planning-engineer does not require artifact gate"
-grep -q 'graph/target-dag.json' "$repo_root/agent-skills/capability-packs/plan-loop/SKILL.md" || fail "plan-loop does not require TDP target DAG"
-grep -q 'SELF-REVISION' "$repo_root/agent-skills/capability-packs/plan-dependency-graph/SKILL.md" || fail "TDP skill missing SELF-REVISION"
-grep -q 'findings/prompt-architecture-<T>.md' "$repo_root/agent-skills/capability-packs/plan-prompt-architecture/SKILL.md" || fail "prompt architecture skill missing artifact contract"
-grep -q 'sources-<T>.jsonl' "$repo_root/agent-skills/capability-packs/plan-trend-research/SKILL.md" || fail "trend researcher missing source ledger contract"
-grep -q 'agent-run-ledger' "$repo_root/agent-skills/capability-packs/plan-synthesis/SKILL.md" || fail "synthesis missing agent-run-ledger lift"
-grep -q 'agent_interop' "$repo_root/agent-skills/capability-packs/planning-engineer/scripts/loop_state.template.md" || fail "loop state missing interop registry"
+grep -q 'plan-artifact-gate.sh' "$repo_root/agent-skills/planning-engineer/SKILL.md" || fail "planning-engineer does not require artifact gate"
+grep -q 'graph/target-dag.json' "$repo_root/agent-skills/plan-loop/SKILL.md" || fail "plan-loop does not require TDP target DAG"
+grep -q 'SELF-REVISION' "$repo_root/agent-skills/plan-dependency-graph/SKILL.md" || fail "TDP skill missing SELF-REVISION"
+grep -q 'findings/prompt-architecture-<T>.md' "$repo_root/agent-skills/plan-prompt-architecture/SKILL.md" || fail "prompt architecture skill missing artifact contract"
+grep -q 'sources-<T>.jsonl' "$repo_root/agent-skills/plan-trend-research/SKILL.md" || fail "trend researcher missing source ledger contract"
+grep -q 'agent-run-ledger' "$repo_root/agent-skills/plan-synthesis/SKILL.md" || fail "synthesis missing agent-run-ledger lift"
+grep -q 'agent_interop' "$repo_root/agent-skills/planning-engineer/scripts/loop_state.template.md" || fail "loop state missing interop registry"
 
 # Owner critical architecture-loop axes: persistent memory/vector intelligence, constant research,
 # policy/org/A2A, Rust+Lua, distributed owner hardware, and multi-vendor local+cloud mesh.
-grep -q 'Owner north-star architecture-loop upgrade' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md" || fail "planning-engineer missing owner critical architecture-loop section"
-grep -q 'memory-vector-intelligence-<T>.md' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md" || fail "planning-engineer missing memory/vector artifact"
-grep -q 'autoresearch-<T>.md' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md" || fail "planning-engineer missing autoresearch artifact"
-grep -q 'rules-policy-org-<T>.md' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md" || fail "planning-engineer missing rules/policy/org artifact"
-grep -q 'distributed-compute-<T>.md' "$repo_root/agent-skills/capability-packs/planning-engineer/SKILL.md" || fail "planning-engineer missing distributed compute artifact"
-grep -q 'Pi Zero' "$repo_root/agent-skills/capability-packs/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing Pi Zero target"
-grep -q 'ESP32' "$repo_root/agent-skills/capability-packs/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing ESP32 target"
-grep -q 'Lua' "$repo_root/agent-skills/capability-packs/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing Lua target"
-grep -q 'No Downgrades' "$repo_root/agent-skills/capability-packs/plan-rules-policy-org/SKILL.md" || fail "rules-policy skill missing no-downgrades rule"
-grep -q 'ICM' "$repo_root/agent-skills/capability-packs/plan-memory-vector-intelligence/SKILL.md" || fail "memory-vector skill missing ICM"
-grep -q 'stale-evidence' "$repo_root/agent-skills/capability-packs/plan-autoresearch-loop/SKILL.md" || fail "autoresearch skill missing stale-evidence invalidation"
+grep -q 'Owner north-star architecture-loop upgrade' "$repo_root/agent-skills/planning-engineer/SKILL.md" || fail "planning-engineer missing owner critical architecture-loop section"
+grep -q 'memory-vector-intelligence-<T>.md' "$repo_root/agent-skills/planning-engineer/SKILL.md" || fail "planning-engineer missing memory/vector artifact"
+grep -q 'autoresearch-<T>.md' "$repo_root/agent-skills/planning-engineer/SKILL.md" || fail "planning-engineer missing autoresearch artifact"
+grep -q 'rules-policy-org-<T>.md' "$repo_root/agent-skills/planning-engineer/SKILL.md" || fail "planning-engineer missing rules/policy/org artifact"
+grep -q 'distributed-compute-<T>.md' "$repo_root/agent-skills/planning-engineer/SKILL.md" || fail "planning-engineer missing distributed compute artifact"
+grep -q 'Pi Zero' "$repo_root/agent-skills/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing Pi Zero target"
+grep -q 'ESP32' "$repo_root/agent-skills/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing ESP32 target"
+grep -q 'Lua' "$repo_root/agent-skills/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing Lua target"
+grep -q 'No Downgrades' "$repo_root/agent-skills/plan-rules-policy-org/SKILL.md" || fail "rules-policy skill missing no-downgrades rule"
+grep -q 'ICM' "$repo_root/agent-skills/plan-memory-vector-intelligence/SKILL.md" || fail "memory-vector skill missing ICM"
+grep -q 'stale-evidence' "$repo_root/agent-skills/plan-autoresearch-loop/SKILL.md" || fail "autoresearch skill missing stale-evidence invalidation"
 if grep -nE 'directory = /tmp/\.tmp' "$repo_root/home/.gitconfig" >/tmp/envctl-safe-dir-grep.txt 2>/dev/null; then
   cat /tmp/envctl-safe-dir-grep.txt >&2
   fail "tracked home/.gitconfig must not trust ephemeral /tmp/.tmp* safe.directory paths"

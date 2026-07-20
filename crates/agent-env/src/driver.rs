@@ -1047,7 +1047,7 @@ fn portable_output_proof_is_reattestable(
 }
 
 fn retired_projection_placeholder(destination: &Path) -> bool {
-    const PLACEHOLDER: &str = "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/capability-packs/agent-env-codex/references/source-prompt.md`\n";
+    const PLACEHOLDER: &str = "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/agent-env-codex/references/source-prompt.md`\n";
     fs::read_to_string(destination.join("references/source-prompt.md"))
         .is_ok_and(|contents| contents == PLACEHOLDER)
 }
@@ -3433,7 +3433,89 @@ pub fn rebuild_lock(
     }
     next.assets = new_assets;
     next.source_selectors.extend(new_asset_selectors);
+    migrate_exact_skill_projection_proofs(prev, &mut next);
     Ok(next)
+}
+
+/// Preserve ownership only across an exact canonical skill-source transition.
+///
+/// A catalog can move a skill declaration from one approved canonical source to
+/// another (for example, from a legacy local owner to its pinned remote owner)
+/// without changing the generated skill tree.  The lock identity includes the
+/// source, so the historical proof key changes even though the already
+/// materialized projection is byte-identical.  Re-key that proof only when the
+/// old and new lock entries agree on the skill name and content hash and the
+/// proof is the exact skill-tree unit for that name.  Every other historical
+/// proof stays untouched and therefore remains subject to normal fail-closed
+/// ownership validation.
+fn migrate_exact_skill_projection_proofs(previous: &AgentLockFile, next: &mut AgentLockFile) {
+    let mut migrated = BTreeMap::new();
+
+    for proof in previous.installed_outputs.values() {
+        let Some(previous_entry) = previous.skills.get(&proof.asset_id) else {
+            migrated.insert(
+                installed_output_key(
+                    &proof.asset_id,
+                    &proof.destination,
+                    &proof.format,
+                    &proof.unit,
+                ),
+                proof.clone(),
+            );
+            continue;
+        };
+
+        let exact_skill_proof = proof.format == "skill-tree"
+            && proof.unit == "tree"
+            && proof.hash == previous_entry.hash
+            && Path::new(&proof.destination)
+                .file_name()
+                .is_some_and(|name| name == previous_entry.skill.as_str());
+        let replacements = if exact_skill_proof {
+            next.skills
+                .iter()
+                .filter(|(asset_id, entry)| {
+                    *asset_id != &proof.asset_id
+                        && entry.skill == previous_entry.skill
+                        && entry.hash == previous_entry.hash
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
+
+        if replacements.len() == 1 {
+            let (asset_id, _) = replacements[0];
+            let replacement = InstalledOutput {
+                asset_id: asset_id.clone(),
+                destination: proof.destination.clone(),
+                format: proof.format.clone(),
+                unit: proof.unit.clone(),
+                hash: proof.hash.clone(),
+            };
+            migrated.insert(
+                installed_output_key(
+                    &replacement.asset_id,
+                    &replacement.destination,
+                    &replacement.format,
+                    &replacement.unit,
+                ),
+                replacement,
+            );
+        } else {
+            migrated.insert(
+                installed_output_key(
+                    &proof.asset_id,
+                    &proof.destination,
+                    &proof.format,
+                    &proof.unit,
+                ),
+                proof.clone(),
+            );
+        }
+    }
+
+    next.installed_outputs = migrated;
 }
 
 fn selector_value(value: Option<&str>) -> String {
@@ -5117,6 +5199,104 @@ mod tests {
             source_revision: "local".into(),
             scope: Some(Scope::Project),
         }
+    }
+
+    #[test]
+    fn exact_skill_source_transition_rekeys_only_matching_projection_proofs() {
+        let old_id = skill_key("./legacy-owner", "alpha");
+        let new_id = skill_key("https://github.com/FlexNetOS/meta", "alpha");
+        let hash = "same-tree";
+        let mut previous = AgentLockFile::default();
+        previous.skills.insert(
+            old_id.clone(),
+            skill_entry_for("./legacy-owner", "alpha", ".codex/skills/alpha", hash),
+        );
+        insert_portable_proof(
+            &mut previous,
+            &old_id,
+            ".codex/skills/alpha",
+            "skill-tree",
+            "tree",
+            hash,
+        );
+        insert_portable_proof(
+            &mut previous,
+            "mcp::unchanged",
+            ".codex/config.toml",
+            "codex-toml",
+            "exa",
+            "mcp-hash",
+        );
+
+        let mut next = AgentLockFile {
+            installed_outputs: previous.installed_outputs.clone(),
+            ..AgentLockFile::default()
+        };
+        next.skills.insert(
+            new_id.clone(),
+            skill_entry_for(
+                "https://github.com/FlexNetOS/meta",
+                "alpha",
+                ".codex/skills/alpha",
+                hash,
+            ),
+        );
+
+        migrate_exact_skill_projection_proofs(&previous, &mut next);
+
+        assert!(next.installed_outputs.values().any(|proof| {
+            proof.asset_id == new_id
+                && proof.destination == ".codex/skills/alpha"
+                && proof.hash == hash
+        }));
+        assert!(!next
+            .installed_outputs
+            .values()
+            .any(|proof| proof.asset_id == old_id));
+        assert!(next
+            .installed_outputs
+            .values()
+            .any(|proof| proof.asset_id == "mcp::unchanged"));
+    }
+
+    #[test]
+    fn exact_skill_source_transition_refuses_changed_projection_content() {
+        let old_id = skill_key("./legacy-owner", "alpha");
+        let new_id = skill_key("https://github.com/FlexNetOS/meta", "alpha");
+        let mut previous = AgentLockFile::default();
+        previous.skills.insert(
+            old_id.clone(),
+            skill_entry_for("./legacy-owner", "alpha", ".codex/skills/alpha", "old-tree"),
+        );
+        insert_portable_proof(
+            &mut previous,
+            &old_id,
+            ".codex/skills/alpha",
+            "skill-tree",
+            "tree",
+            "old-tree",
+        );
+
+        let mut next = AgentLockFile {
+            installed_outputs: previous.installed_outputs.clone(),
+            ..AgentLockFile::default()
+        };
+        next.skills.insert(
+            new_id,
+            skill_entry_for(
+                "https://github.com/FlexNetOS/meta",
+                "alpha",
+                ".codex/skills/alpha",
+                "new-tree",
+            ),
+        );
+
+        migrate_exact_skill_projection_proofs(&previous, &mut next);
+
+        assert!(next
+            .installed_outputs
+            .values()
+            .any(|proof| proof.asset_id == old_id && proof.hash == "old-tree"));
     }
 
     struct TestXdg {
@@ -6828,7 +7008,7 @@ commands:
         let destination = root.join("installed/alpha");
         fs::write(
             destination.join("references/source-prompt.md"),
-            "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/capability-packs/agent-env-codex/references/source-prompt.md`\n",
+            "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/agent-env-codex/references/source-prompt.md`\n",
         )
         .unwrap();
         let locked_ctx = DriverCtx::from_mode(

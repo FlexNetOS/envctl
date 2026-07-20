@@ -17,7 +17,7 @@ Write `.handoff/loop/plan/findings/prompt-architecture-<T>.md` for every planned
 
 Required sections:
 
-1. **Instruction surfaces** — AGENTS.md, CLAUDE.md, `.codex/prompts/*`, `agent-skills/capability-packs/*`, `.claude/*`,
+1. **Instruction surfaces** — AGENTS.md, CLAUDE.md, `.codex/prompts/*`, `agent-skills/*`, `.claude/*`,
    `.codex/config.toml`, hooks, policies, and any PromptHub source.
 2. **Tools granted** — MCPs, local scripts, web/search, GitHub, weave, GitKB, filesystem scope,
    destructive/mutating capabilities, and read-only guarantees.
