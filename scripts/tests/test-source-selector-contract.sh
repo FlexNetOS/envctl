@@ -70,6 +70,18 @@ for phase in ("detect", "install", "verify", "fix", "remove"):
         f"{codex_path}: {phase} does not preserve lifecycle phase parity"
     ))
 
+nix_yazelix_path = Path("manifest/nix-yazelix.toml")
+nix_yazelix = parsed_manifests[nix_yazelix_path]["component"]
+nix_cache = next(component for component in nix_yazelix if component["id"] == "nix-yazelix-cache")
+for phase in ("install", "fix"):
+    hook = nix_cache[phase]
+    require(hook.get("needs_sudo") is True, (
+        f"{nix_yazelix_path}: nix-yazelix-cache {phase} must use Envctl's sudo wrapper"
+    ))
+    require("sudo " not in hook["script"], (
+        f"{nix_yazelix_path}: nix-yazelix-cache {phase} must not nest interactive sudo"
+    ))
+
 shell_selector = '"${ENVCTL_SOURCE_ROOT:-$META_ROOT/src/envctl}"'
 env_ctl_component = env_ctl[0]
 for phase in ("install", "fix"):

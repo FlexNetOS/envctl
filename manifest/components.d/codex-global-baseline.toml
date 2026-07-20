@@ -1,9 +1,12 @@
 [[component]]
 id = "codex-global-baseline"
 name = "Codex active-home policy and runtime-shadow retirement"
-description = "Preserves editable active-home Codex policy, delegates profile ownership to Yazelix, and rejects unauthorized runtime shadows. It does not create, configure, or dispatch lifecycle hooks."
+description = "Preserves unrelated editable active-home Codex settings, projects the tracked RTK/Codex instruction surfaces, permits only canonical remote URL MCP entries, disables plugin discovery through the profile-owned official CLI, rejects plugin/marketplace authority, delegates binary ownership to Yazelix, and archives forbidden generated runtime shadows. RTK arrives only through the same Yazelix foundation that owns Codex."
 requires = ["codex-cli"]
 
+# This component deliberately does not regenerate config, models, agents,
+# plugins, marketplaces, or a second state root. It preserves one canonical
+# Codex lifecycle dispatcher through the repository-owned lifecycle script.
 [component.detect]
 kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-global-baseline-lifecycle.sh"

@@ -61,15 +61,16 @@ command = "bash"
 args = ["-lc", "grep -q 'yazelix.cachix.org' /etc/nix/nix.custom.conf 2>/dev/null"]
 [component.install]
 kind = "script"
+needs_sudo = true
 script = '''
-set -e
-sudo install -dm 755 /etc/nix
-sudo touch /etc/nix/nix.custom.conf
-add(){ grep -qF -- "$1" /etc/nix/nix.custom.conf || echo "$1" | sudo tee -a /etc/nix/nix.custom.conf >/dev/null; }
+set -eu
+install -dm 755 /etc/nix
+touch /etc/nix/nix.custom.conf
+add(){ grep -qF -- "$1" /etc/nix/nix.custom.conf || echo "$1" | tee -a /etc/nix/nix.custom.conf >/dev/null; }
 add "eval-cores = 0"
 add "extra-substituters = https://yazelix.cachix.org"
 add "extra-trusted-public-keys = yazelix.cachix.org-1:ZgxIjQvaP0VTWL8Racx27mpUNzDJ97xC2y7QWYjmGNM="
-sudo systemctl restart nix-daemon 2>/dev/null || true
+systemctl restart nix-daemon 2>/dev/null || true
 '''
 [component.verify]
 kind = "command"
@@ -77,11 +78,14 @@ command = "bash"
 args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; nix config show 2>/dev/null | grep -qE 'yazelix\\.cachix\\.org'"]
 [component.fix]
 kind = "script"
+needs_sudo = true
 script = '''
-set -e
-add(){ grep -qF -- "$1" /etc/nix/nix.custom.conf || echo "$1" | sudo tee -a /etc/nix/nix.custom.conf >/dev/null; }
+set -eu
+install -dm 755 /etc/nix
+touch /etc/nix/nix.custom.conf
+add(){ grep -qF -- "$1" /etc/nix/nix.custom.conf || echo "$1" | tee -a /etc/nix/nix.custom.conf >/dev/null; }
 add "extra-substituters = https://yazelix.cachix.org"
-sudo systemctl restart nix-daemon 2>/dev/null || true
+systemctl restart nix-daemon 2>/dev/null || true
 '''
 # Declarative: reset removes ONLY these exact owned lines from
 # /etc/nix/nix.custom.conf (foreign lines survive) and restarts nix-daemon once.

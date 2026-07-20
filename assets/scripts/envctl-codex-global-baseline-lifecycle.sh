@@ -70,6 +70,7 @@ codex_global_setup() {
   CODEX_GLOBAL_SOURCE_ROOT="${ENVCTL_SOURCE_ROOT:-$CODEX_GLOBAL_META_ROOT/src/envctl}"
   CODEX_GLOBAL_CONFIG_ROOT="$CODEX_GLOBAL_REAL_HOME/.codex"
   CODEX_GLOBAL_CONFIG="$CODEX_GLOBAL_CONFIG_ROOT/config.toml"
+  CODEX_GLOBAL_HOOKS="$CODEX_GLOBAL_CONFIG_ROOT/hooks.json"
   CODEX_GLOBAL_PROFILE_LIFECYCLE="$CODEX_GLOBAL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
   CODEX_GLOBAL_RTK="$CODEX_GLOBAL_REAL_HOME/.nix-profile/bin/rtk"
   CODEX_GLOBAL_POLICY_SOURCES=(
@@ -107,9 +108,58 @@ codex_global_setup() {
       "missing canonical profile lifecycle: $CODEX_GLOBAL_PROFILE_LIFECYCLE"
 
   export CODEX_GLOBAL_META_ROOT CODEX_GLOBAL_REAL_HOME CODEX_GLOBAL_SOURCE_ROOT
-  export CODEX_GLOBAL_CONFIG_ROOT CODEX_GLOBAL_CONFIG CODEX_GLOBAL_PROFILE_LIFECYCLE
+  export CODEX_GLOBAL_CONFIG_ROOT CODEX_GLOBAL_CONFIG CODEX_GLOBAL_HOOKS CODEX_GLOBAL_PROFILE_LIFECYCLE
   export CODEX_GLOBAL_RTK
 }
+
+codex_global_require_hook_dispatcher() {
+  local uid expected actual
+  uid="$(/usr/bin/id -u)"
+  [ -f "$CODEX_GLOBAL_HOOKS" ] && [ ! -L "$CODEX_GLOBAL_HOOKS" ] \
+    || codex_global_die "missing canonical Codex hook configuration: $CODEX_GLOBAL_HOOKS"
+  [ "$(/usr/bin/stat -c '%u' -- "$CODEX_GLOBAL_HOOKS")" = "$uid" ] \
+    || codex_global_die "refusing foreign-owned Codex hook configuration"
+  expected='{"hooks":{"PreToolUse":[{"hooks":[{"command":"/home/flexnetos/.nix-profile/bin/rtk hook claude","type":"command"}],"matcher":"Bash"}]}}'
+  actual="$(/usr/bin/jq -ceS . "$CODEX_GLOBAL_HOOKS")" \
+    || codex_global_die "malformed canonical Codex hook configuration"
+  [ "$actual" = "$expected" ] \
+    || codex_global_die "Codex hooks must contain only the RTK Bash PreToolUse dispatcher"
+}
+
+codex_global_sync_hook_dispatcher() (
+  local uid staged
+  uid="$(/usr/bin/id -u)"
+  codex_global_require_safe_dir "$CODEX_GLOBAL_REAL_HOME" "$uid"
+  codex_global_require_safe_dir "$CODEX_GLOBAL_CONFIG_ROOT" "$uid"
+  if [ -e "$CODEX_GLOBAL_HOOKS" ] || [ -L "$CODEX_GLOBAL_HOOKS" ]; then
+    [ ! -L "$CODEX_GLOBAL_HOOKS" ] \
+      || codex_global_die "refusing symlinked Codex hook configuration"
+    [ "$(/usr/bin/stat -c '%u' -- "$CODEX_GLOBAL_HOOKS")" = "$uid" ] \
+      || codex_global_die "refusing foreign-owned Codex hook configuration"
+  fi
+  staged="$(/usr/bin/mktemp "$CODEX_GLOBAL_CONFIG_ROOT/.hooks.json.envctl.XXXXXXXX")"
+  trap '/usr/bin/rm -f -- "$staged"' EXIT HUP INT TERM
+  /usr/bin/install -m 600 /dev/null "$staged"
+  /usr/bin/printf '%s\n' \
+    '{' \
+    '  "hooks": {' \
+    '    "PreToolUse": [' \
+    '      {' \
+    '        "matcher": "Bash",' \
+    '        "hooks": [' \
+    '          {' \
+    '            "type": "command",' \
+    '            "command": "/home/flexnetos/.nix-profile/bin/rtk hook claude"' \
+    '          }' \
+    '        ]' \
+    '      }' \
+    '    ]' \
+    '  }' \
+    '}' >"$staged"
+  /usr/bin/mv -Tf -- "$staged" "$CODEX_GLOBAL_HOOKS"
+  trap - EXIT HUP INT TERM
+  codex_global_require_hook_dispatcher
+)
 
 codex_global_require_policy_sources() {
   local source
@@ -591,6 +641,7 @@ codex_global_repair() {
   codex_global_repair_features \
     || codex_global_die "official feature repair transaction rolled back"
   codex_global_sync_policy_projection
+  codex_global_sync_hook_dispatcher
   codex_global_require_rtk_policy_acceptance
   codex_global_archive_shadows
   codex_global_no_shadows \
@@ -611,6 +662,7 @@ codex_global_main() {
       "$CODEX_GLOBAL_PROFILE_LIFECYCLE" detect >/dev/null
       codex_global_config_policy
       codex_global_require_policy_projection
+      codex_global_require_hook_dispatcher
       codex_global_require_rtk_policy_acceptance
       codex_global_no_shadows
       ;;
@@ -618,6 +670,7 @@ codex_global_main() {
       "$CODEX_GLOBAL_PROFILE_LIFECYCLE" verify >/dev/null
       codex_global_config_policy
       codex_global_require_policy_projection
+      codex_global_require_hook_dispatcher
       codex_global_require_rtk_policy_acceptance
       codex_global_no_shadows \
         || codex_global_die "forbidden Codex runtime shadows are present"
@@ -631,6 +684,7 @@ codex_global_main() {
       "$CODEX_GLOBAL_PROFILE_LIFECYCLE" detect >/dev/null
       codex_global_config_policy
       codex_global_require_policy_projection
+      codex_global_require_hook_dispatcher
       codex_global_require_rtk_policy_acceptance
       codex_global_archive_shadows
       codex_global_no_shadows \
@@ -638,6 +692,7 @@ codex_global_main() {
       "$CODEX_GLOBAL_PROFILE_LIFECYCLE" verify >/dev/null
       codex_global_config_policy
       codex_global_require_policy_projection
+      codex_global_require_hook_dispatcher
       codex_global_require_rtk_policy_acceptance
       printf 'codex-global: removed only forbidden runtime shadows; profile and config remain\n'
       ;;
