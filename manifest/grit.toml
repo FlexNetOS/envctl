@@ -44,8 +44,8 @@ ver="$(cargo --version | awk '{print $2}')"
 printf '1.80.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.80"; exit 1; }
 
 # grit lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
-repo="${GRIT_REPO:-$META_ROOT/grit}"
-test -d "$repo" || { echo "FATAL: grit checkout not found at $repo (set GRIT_REPO)"; exit 1; }
+repo="$META_ROOT/src/grit"
+test -d "$repo" || { echo "FATAL: managed grit checkout not found at $repo"; exit 1; }
 
 cargo install --path "$repo" --locked
 '''
@@ -64,8 +64,8 @@ script = '''
 set -euo pipefail
 export CARGO_HOME="$META_ROOT/.toolchains/cargo"
 export PATH="$CARGO_HOME/bin:$PATH"
-repo="${GRIT_REPO:-$META_ROOT/grit}"
-test -d "$repo" || { echo "FATAL: grit checkout not found at $repo (set GRIT_REPO)"; exit 1; }
+repo="$META_ROOT/src/grit"
+test -d "$repo" || { echo "FATAL: managed grit checkout not found at $repo"; exit 1; }
 cargo install --path "$repo" --force --locked
 '''
 

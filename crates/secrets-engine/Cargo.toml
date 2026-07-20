@@ -12,10 +12,19 @@ path = "src/lib.rs"
 [features]
 default = ["inmem-store", "mitm-ca"]   # default store is inmem until OI-1 is ruled (no C dep ships)
 inmem-store = []                       # RAM-only vault for tests/CI (envctl DryRunRunner analogue)
-mitm-ca = ["dep:rcgen", "dep:x509-parser", "dep:rustls", "dep:rustls-pemfile", "dep:rustls-pki-types", "dep:time"]
-provider-github = ["dep:rsa", "dep:base64"]   # RS256 App-JWT → installation token (src/mint_github.rs)
+mitm-ca = ["dep:rcgen", "dep:x509-parser", "dep:rustls", "dep:rustls-pki-types", "dep:time"]
+provider-github = [
+  "dep:base64",
+  "dep:const-num-traits",
+  "dep:fixed-bigint",
+  "dep:pkcs1",
+  "dep:pkcs8",
+  "dep:rsa-ct",
+  "dep:sha2-rs256",
+] # fixed-width Ct/blinded RS256 App-JWT → installation token (src/mint_github.rs)
+sqld-auth = ["dep:base64"]                    # one-shot Ed25519 SPKI + EdDSA JWT bootstrap
 provider-openai = []
-seed-factor = ["dep:rustls", "dep:rustls-pemfile", "dep:rustls-pki-types"]   # Cognitum Seed USB possession factor (ring is now an unconditional engine dep — see [dependencies]) (opt-in). Direct pure-Rust HTTPS to the Seed's REST custody API, TLS validated against the PINNED Cognitum CA (ring-only rustls — already in the resolved graph, so no-C gate stays green) + ring Ed25519 verify for Profile S. No `ssh`/subprocess (systemd-sandbox-safe). See PLAN-cognitum-seed-envctl-vault-factor.md
+seed-factor = ["dep:rustls", "dep:rustls-pki-types"]   # Cognitum Seed USB possession factor (ring is now an unconditional engine dep — see [dependencies]) (opt-in). Direct pure-Rust HTTPS to the Seed's REST custody API, TLS validated against the PINNED Cognitum CA (ring-only rustls — already in the resolved graph, so no-C gate stays green) + ring Ed25519 verify for Profile S. No `ssh`/subprocess (systemd-sandbox-safe). See PLAN-cognitum-seed-envctl-vault-factor.md
 # TEST-SPEED ONLY (TASK-0032): lowers the Argon2 floor + Default params so the CI `test` job's
 # argon2id derivations cost ~8 KiB×t1 instead of 256 MiB-1 GiB. NOT in `default`, NEVER ship — a
 # release build with this feature trips a compile_error! (see keyslot.rs). Production crypto is
@@ -43,16 +52,21 @@ rand = { workspace = true }
 getrandom = { workspace = true }
 # tls/ca — OPTIONAL, only under mitm-ca (a CA-less engine build drops TLS entirely)
 rustls = { workspace = true, optional = true }
-rustls-pemfile = { workspace = true, optional = true }
 rustls-pki-types = { workspace = true, optional = true }
 rcgen = { workspace = true, optional = true }
 x509-parser = { workspace = true, optional = true }
 # Sub-day (hours-granular) cert validity windows for mitm-ca leaves. Pure-Rust, no C; already in the
 # resolved graph transitively (via x509-parser's asn1-rs). default-features=false drops std/macros.
 time = { version = "0.3", optional = true, default-features = false }
-# GitHub App-JWT mint (provider-github) — pure-Rust RustCrypto; no C in the trust boundary
-rsa = { workspace = true, optional = true }
+# GitHub App-JWT mint (provider-github). The RSA package is exact-pinned, no-alloc, and exposes
+# only its fixed-width modmath backend; ci/gates/no-c.sh locks this feature graph fail-closed.
 base64 = { workspace = true, optional = true }
+rsa-ct = { workspace = true, optional = true }
+fixed-bigint = { workspace = true, optional = true }
+const-num-traits = { workspace = true, optional = true }
+pkcs1 = { workspace = true, optional = true }
+pkcs8 = { workspace = true, optional = true }
+sha2-rs256 = { workspace = true, optional = true }
 # ring is the sanctioned RNG/verifier (same crate rustls already pins on); already in the resolved
 # graph, so no-C stays green. Non-optional because the broker's anti-replay nonce store
 # (broker::nonce, TASK-0031-PR2) injects `ring::rand::SecureRandom` on its always-built `issue` path;

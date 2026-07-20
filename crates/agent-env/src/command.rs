@@ -19,9 +19,12 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::agent::{CommandFormat, CommandTarget};
 use crate::{err, Result};
+
+static COMMAND_TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 // ===========================================================================
 // parse — ported from kasetto v3.2.0 `src/prompts/parse.rs`
@@ -198,6 +201,30 @@ pub fn destination_path(target: &CommandTarget, name: &str) -> PathBuf {
     target.path.join(derive_relpath(name, target.format))
 }
 
+/// Validate a command name before deriving any destination path.
+///
+/// Commands may use `:` namespaces, but every namespace component must be a single safe path
+/// segment. Empty components, traversal, separators, and NUL are rejected fail-closed.
+pub fn validate_command_name(name: &str) -> Result<()> {
+    if name.is_empty() {
+        return Err(err("command name must not be empty"));
+    }
+    for segment in name.split(':') {
+        if segment.is_empty()
+            || segment == "."
+            || segment == ".."
+            || segment.contains('/')
+            || segment.contains('\\')
+            || segment.contains('\0')
+        {
+            return Err(err(format!(
+                "invalid command name `{name}`: namespace components must be safe path segments"
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Ensure parent directories of `path` exist.
 pub fn ensure_parent_dirs(path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
@@ -221,13 +248,145 @@ pub fn apply_command(source: &Path, target: &CommandTarget, name: &str) -> Resul
             source.display()
         ))
     })?;
-    let parsed = parse(&text)?;
+    apply_command_text_atomic(&text, target, name)
+}
+
+/// Render already-captured source text and atomically install it for one target.
+pub fn apply_command_text_atomic(
+    source_text: &str,
+    target: &CommandTarget,
+    name: &str,
+) -> Result<PathBuf> {
+    validate_command_name(name)?;
+    let parsed = parse(source_text)?;
     let rendered = render(&parsed, target.format);
-    let dest = destination_path(target, name);
-    ensure_parent_dirs(&dest)?;
-    fs::write(&dest, rendered)
-        .map_err(|e| err(format!("failed to write command {}: {e}", dest.display())))?;
-    Ok(dest)
+    let destination = destination_path(target, name);
+    prepare_command_destination(target, &destination)?;
+    atomic_write(&destination, rendered.as_bytes())?;
+    Ok(destination)
+}
+
+/// Compare a target with the transform of already-captured command source text.
+pub fn command_destination_matches_text(
+    source_text: &str,
+    target: &CommandTarget,
+    name: &str,
+) -> Result<bool> {
+    validate_command_name(name)?;
+    let parsed = parse(source_text)?;
+    let expected = render(&parsed, target.format);
+    let destination = destination_path(target, name);
+    match fs::read_to_string(destination) {
+        Ok(actual) => Ok(actual == expected),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn prepare_command_destination(target: &CommandTarget, destination: &Path) -> Result<()> {
+    let relative = destination.strip_prefix(&target.path).map_err(|_| {
+        err(format!(
+            "command destination escapes target root: {}",
+            destination.display()
+        ))
+    })?;
+    if relative.is_absolute() {
+        return Err(err(format!(
+            "command destination is absolute: {}",
+            destination.display()
+        )));
+    }
+
+    if let Ok(metadata) = fs::symlink_metadata(&target.path) {
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            return Err(err(format!(
+                "command target root must be a real directory: {}",
+                target.path.display()
+            )));
+        }
+    } else {
+        fs::create_dir_all(&target.path)?;
+    }
+
+    let mut current = target.path.clone();
+    if let Some(parent) = relative.parent() {
+        for component in parent.components() {
+            use std::path::Component;
+            let Component::Normal(component) = component else {
+                return Err(err(format!(
+                    "command destination contains unsafe components: {}",
+                    destination.display()
+                )));
+            };
+            current.push(component);
+            match fs::symlink_metadata(&current) {
+                Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => {
+                    return Err(err(format!(
+                        "command destination parent must be a real directory: {}",
+                        current.display()
+                    )));
+                }
+                Ok(_) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    fs::create_dir(&current)?;
+                }
+                Err(error) => return Err(error.into()),
+            }
+        }
+    }
+
+    if let Ok(metadata) = fs::symlink_metadata(destination) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err(err(format!(
+                "command destination must be a real file: {}",
+                destination.display()
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn atomic_write(destination: &Path, bytes: &[u8]) -> Result<()> {
+    let parent = destination
+        .parent()
+        .ok_or_else(|| err("command destination has no parent"))?;
+    let file_name = destination
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("command");
+    let sequence = COMMAND_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let stage = parent.join(format!(
+        ".{file_name}.envctl-stage-{}-{sequence}",
+        std::process::id()
+    ));
+    let backup = parent.join(format!(
+        ".{file_name}.envctl-backup-{}-{sequence}",
+        std::process::id()
+    ));
+
+    fs::write(&stage, bytes)?;
+    if fs::read(&stage)? != bytes {
+        let _ = fs::remove_file(&stage);
+        return Err(err(format!(
+            "staged command verification failed: {}",
+            destination.display()
+        )));
+    }
+    let had_destination = fs::symlink_metadata(destination).is_ok();
+    if had_destination {
+        fs::rename(destination, &backup)?;
+    }
+    if let Err(error) = fs::rename(&stage, destination) {
+        if had_destination {
+            let _ = fs::rename(&backup, destination);
+        }
+        let _ = fs::remove_file(&stage);
+        return Err(error.into());
+    }
+    if had_destination {
+        let _ = fs::remove_file(backup);
+    }
+    Ok(())
 }
 
 #[cfg(test)]

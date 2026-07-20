@@ -1,10 +1,8 @@
 //! Phase-1 wiring e2e: the engine on the DURABLE libSQL store (OI-1 (a)).
 //!
-//! `#[ignore]`d — requires a running loopback sqld AND a FRESH database (it calls `init_vault`). Run:
+//! `#[ignore]`d — requires a fresh runner-managed JWT-authenticated sqld database. Run:
 //! ```sh
-//! rm -rf /tmp/sqld-data && sqld --http-listen-addr 127.0.0.1:8080 -d /tmp/sqld-data &
-//! LIBSQL_TEST_URL=http://127.0.0.1:8080 LIBSQL_TEST_AUTH= \
-//!   cargo test -p envctl-secretd --test libsql_e2e -- --ignored --nocapture
+//! bash ci/run-live-libsql-tests.sh
 //! ```
 //!
 //! Proves the actual Phase-1 deliverable: `Engine::open_with_store` on libSQL does init/unlock/put/get
@@ -17,10 +15,16 @@ use envctl_secrets::{Engine, EventSink, Provider, SecretMeta, Unlock};
 use envctl_secrets_store_libsql::LibSqlStoreBuilder;
 use zeroize::Zeroizing;
 
-fn test_target() -> Option<(String, String)> {
-    let url = std::env::var("LIBSQL_TEST_URL").ok()?;
-    let auth = std::env::var("LIBSQL_TEST_AUTH").unwrap_or_default();
-    Some((url, auth))
+fn test_target() -> (String, String) {
+    let url = std::env::var("LIBSQL_TEST_URL")
+        .expect("LIBSQL_TEST_URL must point to the runner-managed sqld");
+    let auth = std::env::var("LIBSQL_TEST_AUTH")
+        .expect("LIBSQL_TEST_AUTH must contain the runner-generated JWT");
+    assert!(
+        !auth.trim().is_empty(),
+        "LIBSQL_TEST_AUTH must not be empty; open-auth sqld is not a valid test target"
+    );
+    (url, auth)
 }
 
 /// Build a fresh engine on the libSQL store at `url`. Each instance gets its own tempdir `Paths`
@@ -41,10 +45,7 @@ const SECRET_VALUE: &[u8] = b"sk-ant-durable-value";
 #[test]
 #[ignore = "requires a running loopback sqld + a fresh DB; see module docs"]
 fn engine_over_libsql_put_get_and_durability() {
-    let Some((url, auth)) = test_target() else {
-        eprintln!("LIBSQL_TEST_URL unset; skipping");
-        return;
-    };
+    let (url, auth) = test_target();
 
     // ---- instance 1: init a passphrase-only vault, unlock, put + read back a secret ----
     {

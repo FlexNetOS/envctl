@@ -5,6 +5,7 @@
 mod authorizer;
 mod cli;
 mod render;
+mod sqld_auth;
 
 use std::io::Read;
 use std::path::PathBuf;
@@ -25,6 +26,99 @@ type CertsClient = v1::certs_client::CertsClient<tonic::transport::Channel>;
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
+    if let Cmd::InternalSqldAuthBootstrap {
+        public_key,
+        client_token,
+    } = &args.cmd
+    {
+        return sqld_auth::bootstrap(public_key, client_token);
+    }
+    if let Cmd::InternalSqldReadinessProbe {
+        pid,
+        expected_executable,
+        port,
+        client_token,
+        helper_digest,
+        timeout_seconds,
+    } = &args.cmd
+    {
+        let expected_sha256 = [sqld_auth::pinned_sqld_payload_sha256()?.to_owned()];
+        return sqld_auth::readiness_probe(sqld_auth::ReadinessProbeRequest {
+            pid: *pid,
+            expected_executable,
+            expected_sha256: &expected_sha256,
+            expected_mode: 0o755,
+            port: *port,
+            client_token,
+            helper_digest,
+            timeout: std::time::Duration::from_secs(*timeout_seconds),
+        });
+    }
+    if let Cmd::InternalSqldReadinessContract { helper_digest } = &args.cmd {
+        sqld_auth::verify_self_digest(helper_digest)?;
+        println!("envctl-sqld-readiness-v1");
+        return Ok(());
+    }
+    if let Cmd::InternalSqldSelfDigest {
+        output,
+        installed_path,
+    } = &args.cmd
+    {
+        return sqld_auth::write_self_digest(output, installed_path.as_deref());
+    }
+    if let Cmd::InternalSqldVerifySha256 {
+        file,
+        expected_sha256,
+        expected_mode,
+    } = &args.cmd
+    {
+        return sqld_auth::verify_sha256(file, expected_sha256, expected_mode);
+    }
+    if let Cmd::InternalSqldVerifyOwnedDigest { file, digest } = &args.cmd {
+        return sqld_auth::verify_owned_digest(file, digest);
+    }
+    if let Cmd::InternalSqldVerifyCurrentHelper { file, digest } = &args.cmd {
+        return sqld_auth::verify_current_helper(file, digest);
+    }
+    if let Cmd::InternalSqldCommitHelperGeneration {
+        staged_dir,
+        current_dir,
+    } = &args.cmd
+    {
+        return sqld_auth::commit_helper_generation(staged_dir, current_dir);
+    }
+    if let Cmd::InternalSqldSourceDigest {
+        source_root,
+        toolchain_files,
+        toolchain_roots,
+        crate_archives,
+        output,
+    } = &args.cmd
+    {
+        return sqld_auth::write_source_digest(
+            source_root,
+            toolchain_files,
+            toolchain_roots,
+            crate_archives,
+            output,
+        );
+    }
+    if let Cmd::InternalSqldVerifySourceDigest {
+        source_root,
+        toolchain_files,
+        toolchain_roots,
+        crate_archives,
+        digest,
+    } = &args.cmd
+    {
+        return sqld_auth::verify_source_digest(
+            source_root,
+            toolchain_files,
+            toolchain_roots,
+            crate_archives,
+            digest,
+        );
+    }
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
@@ -200,6 +294,18 @@ async fn run(args: Cli) -> anyhow::Result<()> {
         Cmd::MintGithub(a) => mint_github(a, sock).await?,
         Cmd::GithubApp { cmd } => github_app(cmd, sock, json).await?,
         Cmd::Authorizer { cmd } => authorizer::authorizer(cmd, json).await?,
+        Cmd::InternalSqldAuthBootstrap { .. }
+        | Cmd::InternalSqldReadinessProbe { .. }
+        | Cmd::InternalSqldReadinessContract { .. }
+        | Cmd::InternalSqldSelfDigest { .. }
+        | Cmd::InternalSqldVerifySha256 { .. }
+        | Cmd::InternalSqldVerifyOwnedDigest { .. }
+        | Cmd::InternalSqldVerifyCurrentHelper { .. }
+        | Cmd::InternalSqldCommitHelperGeneration { .. }
+        | Cmd::InternalSqldSourceDigest { .. }
+        | Cmd::InternalSqldVerifySourceDigest { .. } => {
+            unreachable!("internal sqld commands are dispatched before the tokio runtime")
+        }
     }
     Ok(())
 }
@@ -1251,24 +1357,36 @@ mod tests {
     // network), uses a TEST-ONLY throwaway key, and asserts ONLY on the request-body permission map —
     // it NEVER logs/prints a token and uses NO real credential (AC2/AC3/AC4).
 
-    /// TEST-ONLY throwaway 1024-bit RSA key (weak BY DESIGN; NEVER a real credential). It only has to
-    /// RS256-sign the App-JWT so `mint_scoped` reaches the body-builder; the canned 201 below means no
-    /// network and no real token. PKCS#8 form (`BEGIN PRIVATE KEY`), accepted by `build_app_jwt`.
+    /// TEST-ONLY throwaway 2048-bit RSA key (NEVER a real credential). It RS256-signs the App-JWT
+    /// so `mint_scoped` reaches the body-builder; the canned 201 below means no network and no real
+    /// token. PKCS#8 form (`BEGIN PRIVATE KEY`), accepted by `build_app_jwt`.
     const POLICY_DRIFT_TEST_KEY_PEM: &str = r#"-----BEGIN PRIVATE KEY-----
-MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAJhBIdXf46YQy/2f
-jy4tlYwwVPTlFzl8YDRRlocnrKvNNYR5Ngj5rs+ULgY4dBXi8ZX7bmKkzkkmZcp0
-7asRcOa6frSXH1/HmE0Glby5ccgVtW0FpwLP1SPT9iWoivYud3xnTsf+27gbGys6
-3iQ4JnMNArV4GkTGJWDhHBqceHRtAgMBAAECgYBIEw0hYcsyYeEvPslY4ttYccjF
-5W0JGYexPK41bOKgsZQUEg0yUoAeY9clurO5aKVUiqHGsJ22oyasoI2h3a/DzrM6
-MNDoMAJyP9mMfwqgSD4BjN44R0NcK1DzHWoLV3c4dmmUOjcc7GeLdySIjs5QgV7G
-AeWy1i5DWQ1xepDrQQJBAMi9bSq25j+Xka+kAsqr4mcF4peJ+l+m2/OYSztpRsiT
-s8GsxA0MAy1a7KVOp9ADM3TXDoEiJF4daKCMTTWmzacCQQDCKtO8D4vgG+kiTNre
-V8rbdPjYywB4qp8oNoWtt1TQradDhSVQ6LuiEA5F8sXJQLIyQHOZyzLKxzKuAWP6
-Z7fLAkAq33IqVkfUux1tYt0Jxi4jjLk5XkmwFiYR36vps3Ffs1QIAEsa8j7Xd/zk
-zWi/338k7C133P/hbeyDpZNz6v0vAkEAsf/w+4aFBH6RyxAJ1atGHMmvF4+Cbxx7
-q7HP+uEGsAeCPzPgcbvpxzhQ3W8iQs08jzTmxSay+ZKDs2Ey9mv+4QJALSKKsEbb
-k+VHrssB9kiF920GQUWgbhQ3rMRpRN9OAa5NKY8GjvCOj3pjJr1/H+J0vqYPnWqz
-42vWSRYw7ZnIRA==
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDQbyeYcNicDWbV
+yFkmD2k0y9Zb4h00s/rcJ2sN+H6iuG/p0w9T9d5VTP/XJFXEzevTC2aiHSciLpZs
+BP1Dnwcr39PpbJVExJtmUNBaWj7G/a8UKlFcJMnaC6gX80PqI8RjcQ8/XBZtSWzc
+VVsSbxEdNt/AXHoeoKFu5jDljTFNejcSLxSPlxTMUKNKT5pj5x26zXUVvX+M3cpo
+CfwmysDPAsFfvlRWtlSzGZq5ktmXArrg/60gUfSQokowVj5xLW+NrPR6uQqGnwV6
+POv9EmyDUbv90KapDUWov1w6J72z+3mt3wZm0Efw+KZHDS3ftCHt6ZdUMODALrJh
+MV1qvdi5AgMBAAECggEADQ00ycUhLy5gptjXijxTTmjIKLNBOGxftDrsp3CMv3Q0
+n8vlTRDbhfRfHdHq4/qv/mRbniGcsnV/2k46rKoP2SW4H4j61NZJ08+SKGI3xZ6b
+gLQAqbgtApARy8QiF857DO4GsiU6S0gafraCkCYvyGhH/QPdar8MtMTJwYoEkREN
+w5mmpE7Mq4SauaYTeubtD3JeewZ6f70OjeueYxpi+8PS4evQTQAGjXi4aCpBplJ4
+JIGAZ7Q7MBNLgO769YnDQlxy0RQ+CEuZowlA9bBs60PIQfHEPquYhtcvA/jYjUSR
+L1fGzYYa4qBK9ijHLgWZpUVY1qE2FCq6xDdOmqtJHQKBgQD+JEj9F0nKzhGqLDvo
+7rOp/aj7bTqIFxiKsjZ0KzfB5xdWejthSnMhRz7TGPluOYKweU2W2YVO6llAAjnW
+y/bMkqyNTOy7YiYlOugFFLLoLkqPyhRQWX04sMuNuye/ozHpZH4nCJgrB8y5NAJR
++U7fZOv4sSUEqKw1jY+qY7j61QKBgQDR9U/cXZcqkGPLZCzrLZejz+SFzFJGp/AO
+SiDtktFbULu7onxGurV7OR78iM5UszidkM/dRx5P0vOuQvqNwnTsDaAPABGD1liY
+961cIIIp0dOA3xjybPRdOhhnEpq2vYP+vVFUkKUpi1qFGiuSoRZaE6aTDQe6wZsp
+8KZ3mDBQVQKBgG9UK9ka64t47AoU6IWok3HDGdRSTBKzs1+GpA4NpJY/ilyqnPqI
+p5iLYj0NMq8TaGmwKcoMLbadOE2u6/FpVgrVsdsQOJ/5ZeZnQJ6BK8JEDQuiJXXx
+TcaYxAKpWsc7UTEBgbXNsQMgnpD+9Ik+YkvAJRLDXwkEbrPi+G1W1AClAoGBAK+A
+vVbZLMk5lRGpFRspKz6VQtLM7mF9c96d/FRai4InRCYeNn/xBk6QeuRhfweyIDsl
+l3vCPQZAsc0S09m3mIDRCuA/EGUBwWFsd48w5V0Lth5dXr8WcFWVgFx4YrcqR7Gi
+kt97YXQOtoXYUF/rI4H8NxtoovNrbsZqENybbJdZAoGAQPBxtBQ/Xtimlu/Pv3D0
+DaWPPMwSAG6UcuQ3qJKoB9cxpCRp2to+mylYSDwrmJUhertb4a+uShp8KiboUO7F
+vYCCurr2Doy4WohZzL9KOn1AwIclFD8QpIizedoh+mUVfuvNAlHE1h1iK9gkDq9F
+8+r0Rtz5VY+aK/CgRWl3HSI=
 -----END PRIVATE KEY-----"#;
 
     #[test]

@@ -1,8 +1,14 @@
 [[component]]
 id = "codex-global-baseline"
-name = "Codex meta baseline and real-home shadow cleanup"
-description = "Owns the meta-local Codex baseline only. Real-home Codex config and user-bin entries are not generated control paths; stale shadows are archived so active runtime ownership can mirror Yazelix."
+name = "Codex active-home policy and runtime-shadow retirement"
+description = "Preserves unrelated editable active-home Codex settings, projects the tracked RTK/Codex instruction surfaces, permits only canonical remote URL MCP entries, disables plugin discovery through the profile-owned official CLI, rejects plugin/marketplace authority, delegates binary ownership to Yazelix, and archives forbidden generated runtime shadows. RTK arrives only through the same Yazelix foundation that owns Codex."
 requires = ["codex-cli"]
+
+# This component deliberately does not regenerate config, models, agents,
+# hooks, plugins, marketplaces, or a second state root.  It surgically disables
+# only the two plugin features through the official profile Codex command.  The
+# user config tree remains editable input; Yazelix's Nix profile remains the
+# sole binary/runtime owner.
 [component.detect]
 kind = "command"
 command = "bash"
@@ -228,78 +234,11 @@ hooks.write_text(json.dumps({
     },
 }, indent=2) + '\n')
 
+[component.install]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-global-baseline-lifecycle.sh"
+args = ["install"]
 
-def model_entry(slug, display_name, description, context_window=4000000, priority=0, reasoning=('low','medium','high','xhigh'), fast=False, visibility='list'):
-    return {
-        'additional_speed_tiers': ['fast'] if fast else [],
-        'apply_patch_tool_type': 'freeform',
-        'auto_compact_token_limit': None,
-        'availability_nux': {'message': f'{display_name} is configured by the FlexNetOS/meta Codex baseline.'},
-        'base_instructions': '',
-        'context_window': context_window,
-        'default_reasoning_level': 'medium',
-        'default_reasoning_summary': 'none',
-        'default_service_tier': None,
-        'default_verbosity': 'low',
-        'description': description,
-        'display_name': display_name,
-        'effective_context_window_percent': 95,
-        'experimental_supported_tools': [],
-        'input_modalities': ['text', 'image'],
-        'max_context_window': context_window,
-        'priority': priority,
-        'service_tiers': [{'description': '1.5x speed, increased usage', 'id': 'priority', 'name': 'Fast'}] if fast else [],
-        'shell_type': 'shell_command',
-        'slug': slug,
-        'support_verbosity': True,
-        'supported_in_api': True,
-        'supported_reasoning_levels': [
-            {'effort': e, 'description': {
-                'low': 'Fast responses with lighter reasoning',
-                'medium': 'Balances speed and reasoning depth for everyday tasks',
-                'high': 'Greater reasoning depth for complex problems',
-                'xhigh': 'Extra high reasoning depth for complex problems',
-                'max': 'Maximum reasoning depth for GPT-5.6 Sol preview workloads',
-            }.get(e, e)} for e in reasoning
-        ],
-        'supports_image_detail_original': True,
-        'supports_parallel_tool_calls': True,
-        'supports_reasoning_summaries': True,
-        'supports_search_tool': True,
-        'truncation_policy': {'limit': 10000, 'mode': 'tokens'},
-        'upgrade': None,
-        'visibility': visibility,
-        'web_search_tool_type': 'text_and_image',
-    }
-(home / 'model-catalog.json').write_text(json.dumps({'models': [
-    model_entry('gpt-5.5', 'GPT-5.5', 'Compatibility-only inventory; not a routeable envctl harness lane.', priority=20, fast=True, visibility='hide'),
-    model_entry('gpt-5.4-mini', 'GPT-5.4 mini', 'Fast OpenAI model for lighter coding tasks and subagents.', context_window=400000, priority=1, reasoning=('low','medium','high','xhigh')),
-    model_entry('gpt-5.4-nano', 'GPT-5.4 nano', 'Smallest GPT-5.4 frontier variant for the lowest-latency, lowest-cost text/image tasks when available.', context_window=400000, priority=2, reasoning=('low','medium','high')),
-    model_entry('gpt-5.4', 'GPT-5.4', 'OpenAI GPT-5 family model retained for compatibility and explicit routing.', priority=3),
-    model_entry('gpt-5.3-codex-spark', 'GPT-5.3 Codex Spark', 'Research-preview Codex model optimized for near-instant coding iteration when the account has access.', context_window=1000000, priority=4, reasoning=('low','medium','high')),
-    model_entry('gpt-5.6-sol', 'GPT-5.6 Sol', 'Limited-preview high-stakes reasoning and coding lane; live Codex account proof passed on 2026-07-11.', priority=10, reasoning=('low','medium','high','xhigh','max')),
-    model_entry('gpt-5.6-terra', 'GPT-5.6 Terra', 'Limited-preview balanced professional workhorse lane; live Codex account proof passed on 2026-07-11.', priority=0),
-    model_entry('gpt-5.6-luna', 'GPT-5.6 Luna', 'Limited-preview high-throughput lane for simple, high-volume work; live Codex account proof passed on 2026-07-11.', priority=12),
-]}, indent=2) + '\n')
-agent_dir = home / 'agents'
-agent_dir.mkdir(parents=True, exist_ok=True)
-agent_src = Path(os.environ.get('ENVCTL_ROOT', str(M / 'src/envctl'))) / 'home/.codex/agents'
-if agent_src.exists():
-    for src in agent_src.glob('*.toml'):
-        (agent_dir / src.name).write_text(src.read_text())
-else:
-    raise SystemExit(f'missing project Codex agent source: {agent_src}')
-PY
-export CODEX_HOME="$CODEX_HOME_DIR" CODEX_SQLITE_HOME="$CODEX_STATE_DIR"
-"$M/usr/bin/codex" plugin marketplace add "$M/codex-plugins" --json >/dev/null || true
-"$M/usr/bin/codex" plugin add meta@flexnetos-codex >/dev/null || true
-"$M/usr/bin/codex" plugin add gitkb@gitkb >/dev/null || true
-"$M/usr/bin/codex" plugin add meta@gitkb >/dev/null || true
-"$M/usr/bin/codex" plugin add harness@harness-marketplace >/dev/null || true
-"$M/usr/bin/codex" mcp list >/dev/null
-"$E/assets/scripts/envctl-codex-cleanup.sh" clean
-"$E/assets/scripts/envctl-codex-cleanup.sh" verify
-'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -324,7 +263,17 @@ python3 - "$M/.local/share/codex/hooks.json" <<'PY'
 import json
 import sys
 
-expected = {'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': '/home/flexnetos/.nix-profile/bin/rtk hook claude'}]}]}}
+expected = {
+    'hooks': {
+        'PreToolUse': [{
+            'matcher': 'Bash',
+            'hooks': [{
+                'type': 'command',
+                'command': '/home/flexnetos/.nix-profile/bin/rtk hook claude',
+            }],
+        }],
+    },
+}
 with open(sys.argv[1]) as source:
     actual = json.load(source)
 if actual != expected:

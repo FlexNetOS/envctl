@@ -9,11 +9,12 @@
 //! / unfocused), so a long `engine.run` never starves telemetry.
 use crate::{
     agent::{
-        AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentListSpec, AgentLockSpec,
-        AgentRemoveSpec, AgentSyncSpec,
+        AgentAddSpec, AgentAuditSpec, AgentCleanSpec, AgentDoctorSpec, AgentListSpec,
+        AgentLockSpec, AgentRemoveSpec, AgentSyncSpec,
     },
     component::Phase,
     dashboard::DashboardSpec,
+    doctor::DoctorSpec,
     migration::MigrationSpec,
     model::{AddRepoSpec, RunPlan},
     Engine, Event, EventSink,
@@ -30,6 +31,10 @@ use std::time::Duration;
 #[allow(clippy::large_enum_variant)]
 pub enum EngineCommand {
     Detect,
+    /// Strictly read-only whole-environment diagnostics shared by CLI and GUI.
+    Doctor {
+        spec: DoctorSpec,
+    },
     Install {
         targets: Vec<String>,
         dry_run: bool,
@@ -106,6 +111,8 @@ pub enum AgentCommandSpec {
     /// Read-only diagnostics (TASK-0019, Item 1) — the GUI Doctor sub-tab drives the identical
     /// `Engine::agent_doctor` the CLI's `agent doctor` does.
     Doctor(AgentDoctorSpec),
+    /// Strict config → lock → installed-assets audit. Read-only and zero-network.
+    Audit(AgentAuditSpec),
 }
 
 /// The five migration/adoption verbs. Mutating forms carry the same explicit
@@ -239,6 +246,11 @@ pub fn run_event_loop(
                     emit_setup_error(&sink, "detect", &e);
                 }
             }
+            EngineCommand::Doctor { spec } => {
+                if let Err(e) = engine.doctor(&spec, &sink) {
+                    emit_setup_error(&sink, "doctor", &e);
+                }
+            }
             EngineCommand::Install { targets, dry_run } => {
                 if let Err(e) = engine.run(RunPlan::new(Phase::Install, targets, dry_run), &sink) {
                     emit_setup_error(&sink, "install", &e);
@@ -329,6 +341,7 @@ pub fn run_event_loop(
                     AgentCommandSpec::List(s) => engine.agent_list(s, &sink).map(|_| ()),
                     AgentCommandSpec::Clean(s) => engine.agent_clean(s, &sink).map(|_| ()),
                     AgentCommandSpec::Doctor(s) => engine.agent_doctor(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Audit(s) => engine.agent_audit(s, &sink).map(|_| ()),
                 };
                 if let Err(e) = result {
                     emit_setup_error(&sink, "agent", &e);

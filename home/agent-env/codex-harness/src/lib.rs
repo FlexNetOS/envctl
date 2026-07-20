@@ -2723,6 +2723,115 @@ pub fn openrouter_wire_compatibility_summary(openapi_json: &Value) -> Value {
     })
 }
 
+pub fn openrouter_responses_summary(
+    http_code: &str,
+    exit_code: i32,
+    response_json: &Value,
+    expected_marker: Option<&str>,
+) -> Value {
+    fn output_text(response_json: &Value) -> String {
+        if let Some(text) = response_json.get("output_text").and_then(Value::as_str) {
+            return text.trim().to_string();
+        }
+        response_json
+            .get("output")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .flat_map(|item| {
+                item.get("content")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+            })
+            .filter(|content| {
+                content
+                    .get("type")
+                    .and_then(Value::as_str)
+                    .map(|kind| kind == "output_text" || kind == "text")
+                    .unwrap_or(false)
+            })
+            .filter_map(|content| content.get("text").and_then(Value::as_str))
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    let http_success = http_code
+        .parse::<u16>()
+        .map(|code| (200..300).contains(&code))
+        .unwrap_or(false);
+    let completed = response_json.get("status").and_then(Value::as_str) == Some("completed");
+    let api_error = response_json
+        .get("error")
+        .map(|error| !error.is_null())
+        .unwrap_or(false);
+    let output = output_text(response_json);
+    let output_nonempty = !output.is_empty();
+    let marker_present = expected_marker
+        .map(|marker| !marker.is_empty() && output.contains(marker))
+        .unwrap_or(true);
+    let ok = exit_code == 0
+        && http_success
+        && completed
+        && !api_error
+        && output_nonempty
+        && marker_present;
+
+    json!({
+        "ok": ok,
+        "http_success": http_success,
+        "completed": completed,
+        "api_error": api_error,
+        "output_nonempty": output_nonempty,
+        "output_len": output.len(),
+        "marker_required": expected_marker.is_some(),
+        "marker_present": marker_present,
+    })
+}
+
+pub fn openrouter_transport_summary(
+    http_code: &str,
+    exit_code: i32,
+    response_body: &str,
+    stderr: &str,
+    expected_marker: Option<&str>,
+) -> Value {
+    let parsed: Value = serde_json::from_str(response_body).unwrap_or(Value::Null);
+    let result = openrouter_responses_summary(http_code, exit_code, &parsed, expected_marker);
+    let error_message = parsed
+        .pointer("/error/message")
+        .or_else(|| parsed.get("message"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    let account_policy_blocked = http_code == "404"
+        && (error_message.contains("guardrail restrictions")
+            || error_message.contains("settings/privacy"));
+
+    json!({
+        "http_code": http_code,
+        "exit_code": exit_code,
+        "result": result,
+        "response_body_len": response_body.len(),
+        "stderr_len": stderr.len(),
+        "account_policy_blocked": account_policy_blocked,
+    })
+}
+
+const OPENROUTER_DEFAULT_PROOF_MARKER: &str = "HY3_OPENROUTER_LIVE_OK";
+
+pub fn openrouter_probe_prompt(prompt: Option<&str>) -> (&str, Option<&'static str>) {
+    match prompt {
+        Some(prompt) => (prompt, None),
+        None => (
+            "Do not use tools. Reply exactly: HY3_OPENROUTER_LIVE_OK",
+            Some(OPENROUTER_DEFAULT_PROOF_MARKER),
+        ),
+    }
+}
+
 pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Result<Value> {
     if !session_capability_enabled("external_providers") || !session_capability_enabled("network") {
         return Err(anyhow!(
@@ -2730,7 +2839,7 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
         ));
     }
     let model = model.unwrap_or("tencent/hy3:free");
-    let prompt = prompt.unwrap_or("Return the single word pong.");
+    let (prompt, expected_marker) = openrouter_probe_prompt(prompt);
     let has_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
         .unwrap_or(false);
@@ -2752,6 +2861,10 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
         .unwrap_or(false);
     let has_anthropic = catalog_summary
         .get("has_anthropic_models")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let has_target_model = catalog_summary
+        .get("has_target_model")
         .and_then(Value::as_bool)
         .unwrap_or(false);
 
@@ -2829,7 +2942,7 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
                 "is_provisioning_key": data.get("is_provisioning_key").cloned().unwrap_or(Value::Null),
                 "expires_at": data.get("expires_at").cloned().unwrap_or(Value::Null)
             },
-            "stderr_redacted": redact(&stderr),
+            "stderr_len": stderr.len(),
             "secret_printed": false
         })
     } else {
@@ -2842,7 +2955,8 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
     };
 
     let responses_probe = if has_key {
-        let body = json!({"model": model, "input": prompt, "max_output_tokens": 64}).to_string();
+        let request_body =
+            json!({"model": model, "input": prompt, "max_output_tokens": 64}).to_string();
         let mut curl = Command::new("curl");
         curl.args([
             "-sS",
@@ -2855,7 +2969,7 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
             "-H",
             "content-type: application/json",
             "-d",
-            &body,
+            &request_body,
             "https://openrouter.ai/api/v1/responses",
         ]);
         remove_secret_env(&mut curl);
@@ -2877,14 +2991,21 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
             .find_map(|line| line.strip_prefix("HTTP_CODE:"))
             .unwrap_or("unknown")
             .to_string();
-        json!({
-            "attempted": true,
-            "authenticated": true,
-            "http_code": http_code,
-            "exit_code": output.status.code().unwrap_or(1),
-            "response_redacted_preview": redact(&stdout.lines().take(5).collect::<Vec<_>>().join("\\n")),
-            "stderr_redacted": redact(&stderr),
-        })
+        let response_body = stdout
+            .lines()
+            .filter(|line| !line.starts_with("HTTP_CODE:"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut transport = openrouter_transport_summary(
+            &http_code,
+            output.status.code().unwrap_or(1),
+            &response_body,
+            &stderr,
+            expected_marker,
+        );
+        transport["attempted"] = json!(true);
+        transport["authenticated"] = json!(true);
+        transport
     } else {
         let mut unauth = Command::new("curl");
         unauth.args([
@@ -2905,37 +3026,36 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
             .find_map(|line| line.strip_prefix("HTTP_CODE:"))
             .unwrap_or("unknown")
             .to_string();
-        json!({
-            "attempted": true,
-            "authenticated": false,
-            "missing_env": "OPENROUTER_API_KEY",
-            "http_code": http_code,
-            "exit_code": exit_code,
-            "response_redacted_preview": redact(&stdout.lines().take(5).collect::<Vec<_>>().join("\\n")),
-            "stderr_redacted": redact(&stderr),
-        })
+        let response_body = stdout
+            .lines()
+            .filter(|line| !line.starts_with("HTTP_CODE:"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut transport =
+            openrouter_transport_summary(&http_code, exit_code, &response_body, &stderr, None);
+        transport["attempted"] = json!(true);
+        transport["authenticated"] = json!(false);
+        transport["missing_env"] = json!("OPENROUTER_API_KEY");
+        transport
     };
 
-    let response_http = responses_probe
-        .get("http_code")
-        .and_then(Value::as_str)
-        .unwrap_or("unknown");
-    let response_preview = responses_probe
-        .get("response_redacted_preview")
-        .and_then(Value::as_str)
-        .unwrap_or("");
     let key_valid = key_probe
         .get("valid")
         .and_then(Value::as_bool)
         .unwrap_or(false);
-    let generation_ok = response_http.starts_with('2');
-    let account_policy_blocked = response_http == "404"
-        && (response_preview.contains("guardrail restrictions")
-            || response_preview.contains("settings/privacy"));
+    let generation_ok = responses_probe
+        .pointer("/result/ok")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let account_policy_blocked = responses_probe
+        .get("account_policy_blocked")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let catalog_ok = models_exit == 0
         && model_count > 0
         && has_openai
         && has_anthropic
+        && has_target_model
         && direct_responses_wire_compatible;
     let execution_ready = catalog_ok && key_valid && generation_ok;
     let provider_contract_fingerprint = provider_contract_fingerprint("openrouter")?;

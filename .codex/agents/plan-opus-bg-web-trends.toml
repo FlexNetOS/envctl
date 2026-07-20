@@ -1,0 +1,21 @@
+name = "plan-opus-bg-web-trends"
+description = "Fleet web/trends lane for Planning Engineer. Opus 4.8 max-effort background lane; keeps the foreground orchestrator interactive."
+model = "gpt-5.6-terra"
+model_reasoning_effort = "xhigh"
+
+# Codex custom subagent layer for the PromptHub-aligned planning loop. This is a dispatcher shim:
+# Codex stays on the supported local provider while weave launches/routes the actual Opus 4.8 worker.
+# Do not perform the lane work in this shim if weave cannot produce an Opus-capable worker.
+developer_instructions = """
+# plan-opus-bg-web-trends
+
+Run rolling 90-day research in the background using current primary sources, context7/Hugging Face where relevant, dated citations, and a skeptic pass. Return structured trend claims and refutations.
+
+Hard requirements:
+- Run as a dispatcher for `.agents/skills/plan-loop/SKILL.md`; use weave to launch/route the actual Opus 4.8 background worker and do not block the foreground chat.
+- Align with `/home/flexnetos/FlexNetOS/prompt_hub/prompts/planning-engineer-loop.prompt.yml`.
+- Treat `/home/flexnetos/FlexNetOS/.meta.yaml`, envctl AGENTS.md, and `.codex/config.toml` as live relationship/config inputs.
+- Produce structured findings with citations, confidence, owner walls, and artifact paths; no prose-only handwave.
+- Strict upgrade only: no downgrades, no destructive resets, no silent fallback to a weaker model for the actual worker.
+- Required transport: `weave attach`, then `weave spawn` or `weave job create`/`weave ask` to an Opus-capable Claude worker; record the weave message/job id in the returned artifact path summary.
+"""

@@ -1,0 +1,75 @@
+# AUTOMATION DISABLED: port every automatic command to Nushell before reactivation.
+name: sync-master
+
+# Keep `master` as a mirror of `develop`, but only after CI for the exact
+# develop commit completes successfully. develop is the integration/working
+# trunk; master is the release mirror.
+#
+# NO-DOWNGRADE: fast-forward-only (never --force) and green-gated. A red develop
+# commit must never be mirrored to master.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: sync-master
+  cancel-in-progress: false
+
+jobs:
+  ff-master:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, linux, x64, local, flexnetos]
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify develop CI is green
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion || '' }}
+        run: |
+          set -euo pipefail
+          git fetch origin develop master
+          develop_sha="$(git rev-parse origin/develop)"
+
+          if [ -n "$WORKFLOW_RUN_CONCLUSION" ]; then
+            if [ "$WORKFLOW_RUN_CONCLUSION" != "success" ]; then
+              echo "::error::CI workflow_run conclusion is $WORKFLOW_RUN_CONCLUSION; refusing master sync."
+              exit 1
+            fi
+            echo "CI workflow_run succeeded for develop; sha=$develop_sha"
+            exit 0
+          fi
+
+          conclusion="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow CI --branch develop --json headSha,status,conclusion --limit 20 \
+            -q ".[] | select(.headSha == \"$develop_sha\" and .status == \"completed\") | .conclusion" | head -n1)"
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::latest completed CI for develop@$develop_sha is '${conclusion:-missing}', not success; refusing master sync."
+            exit 1
+          fi
+          echo "CI success verified for develop@$develop_sha"
+
+      - name: Fast-forward master to develop
+        run: |
+          set -euo pipefail
+          git config user.name  "flexnetos-sync[bot]"
+          git config user.email "sync@flexnetos.local"
+          git fetch origin master develop
+          if git merge-base --is-ancestor origin/master origin/develop; then
+            git push origin "origin/develop:refs/heads/master"
+            echo "master fast-forwarded to $(git rev-parse --short origin/develop)"
+          else
+            echo "::error::develop is not a fast-forward of master — refusing to sync."
+            exit 1
+          fi

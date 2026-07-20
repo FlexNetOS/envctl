@@ -45,9 +45,9 @@ if any(row["target"] != "rusty-idd" for row in rows):
 PY
 
 # Real mode must fail closed when neither a PLAN_OPUS_PEER nor an executable PLAN_OPUS_CMD exists.
-if PLAN_OPUS_CMD="$tmp/no-such-claude" bash "$dispatcher" --target rusty-idd --root "$tmp" --run-id fail-run --state-dir "$tmp/real" >/tmp/plan-weave-dispatch.out 2>/tmp/plan-weave-dispatch.err; then
+if WEAVE_BIN="$tmp/no-such-weave" PLAN_OPUS_CMD="$tmp/no-such-claude" bash "$dispatcher" --target rusty-idd --root "$tmp" --run-id fail-run --state-dir "$tmp/real" >"$tmp/plan-weave-dispatch.out" 2>"$tmp/plan-weave-dispatch.err"; then
   fail "real dispatch succeeded without an Opus route"
 fi
-grep -q 'NEEDS-HUMAN' /tmp/plan-weave-dispatch.err || fail "missing fail-closed NEEDS-HUMAN error"
+grep -q 'NEEDS-HUMAN' "$tmp/plan-weave-dispatch.err" || fail "missing fail-closed NEEDS-HUMAN error"
 
 echo "PASS: plan weave dispatcher emits five Opus lanes and fails closed without a weave/Opus route"

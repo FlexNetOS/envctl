@@ -148,17 +148,22 @@ commands get written for that agent).
 
 ## 7. MCP-merge: additive / never-clobber (HARD INVARIANT + regression fixture)
 
-**Hard invariant:** MCP provisioning is **additive and never-clobbering**. `agent sync` installs the
-6 baseline MCP servers (`github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`)
-**without removing or overwriting** any server already present in the target config. Critically, a
-config that already contains the **global `broker` / `repowire` / `weave`** servers MUST still contain
-them after `agent sync`, side-by-side with the 6 baseline servers.
+**Current selection versus compatibility corpus:** the absorbed v3.2.0 source carried a historical
+six-server fixture (`github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`). Keep
+that fixture as an engine parity test, but do not mistake it for the active repository selection:
+current `agent-env.yaml` provisions remote `exa` only, and local launchers remain retired until they
+have Yazelix-compatible profile frontdoors.
 
-**Named regression fixture (must be a test):** seed a target config containing `broker`, `repowire`,
-and `weave`; run `agent sync`; assert the post-sync config contains **all 9** servers — the original 3
-(`broker`/`repowire`/`weave`) **plus** the 6 baseline. A sync that drops, renames, or overwrites any
-pre-existing server FAILS this fixture and is a downgrade. (This is the single most likely silent
-regression in the absorption — the guardian asserts it explicitly, see §13.)
+**Hard invariant:** MCP provisioning is **additive and never-clobbering**. Whatever pack the
+configuration selects must install **without removing or overwriting** any server already present in
+the target config. Critically, a compatibility fixture that already contains the historical global
+`broker` / `repowire` / `weave` servers must still contain them after `agent sync`.
+
+**Named regression fixture (must remain a test):** seed a target config containing `broker`,
+`repowire`, and `weave`; apply the historical six-server compatibility pack; assert the post-sync
+config contains all nine servers. Separately, the current repo configuration must prove that its
+selected `exa` row is additive and that it does not rehydrate the other five launchers. A sync that
+drops, renames, or overwrites any pre-existing server fails the fixture and is a downgrade.
 
 There are **4 MCP-merge formats** (per-agent config layouts) — all 4 must merge additively, never
 clobber, per ADR-0001 §No-downgrade.

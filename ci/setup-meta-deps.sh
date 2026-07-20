@@ -22,26 +22,63 @@ repo_url() {
 }
 
 workspace_version() {
-  local version
-  version="$(grep -A3 'name = "loop_lib"' "$root/Cargo.lock" | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1)"
-  if [ -z "$version" ]; then
-    echo "FAIL: unable to determine loop_lib version from Cargo.lock" >&2
+  local loop_version protocol_version
+  loop_version="$(locked_package_version loop_lib)"
+  protocol_version="$(locked_package_version meta_plugin_protocol)"
+  if [ -z "$loop_version" ] || [ -z "$protocol_version" ]; then
+    echo "FAIL: unable to determine shared substrate versions from Cargo.lock" >&2
     exit 1
   fi
-  printf '%s\n' "$version"
+  if [ "$loop_version" != "$protocol_version" ]; then
+    echo "FAIL: shared substrate lock versions diverge: loop_lib=$loop_version meta_plugin_protocol=$protocol_version" >&2
+    exit 1
+  fi
+  printf '%s\n' "$loop_version"
 }
 
-ensure_parent_workspace() {
-  local manifest="$meta_root/Cargo.toml"
-  if [ -f "$manifest" ]; then
-    echo "meta-dep: parent workspace manifest already exists at $manifest"
-    return
-  fi
+locked_package_version() {
+  local package="$1"
+  awk -v package="$package" '
+    $0 == "name = \"" package "\"" { in_package=1; next }
+    in_package && /^version = "/ {
+      gsub(/^version = "/, "")
+      gsub(/"$/, "")
+      print
+      exit
+    }
+    in_package && /^\[\[/ { in_package=0 }
+  ' "$root/Cargo.lock"
+}
 
-  local version
-  version="$(workspace_version)"
-  echo "meta-dep: writing minimal parent workspace manifest at $manifest"
-  cat > "$manifest" <<EOF_MANIFEST
+parent_workspace_is_compatible() {
+  local manifest="$1"
+  local expected_version="$2"
+  local actual_version
+  actual_version="$(awk '
+    /^\[workspace\.package\]$/ { in_package=1; next }
+    /^\[/ { in_package=0 }
+    in_package && /^version[[:space:]]*=/ {
+      value=$0
+      sub(/^[^=]*=[[:space:]]*"/, "", value)
+      sub(/".*$/, "", value)
+      print value
+      exit
+    }
+  ' "$manifest")"
+  [ "$actual_version" = "$expected_version" ] || return 1
+
+  awk '
+    /^\[workspace\]$/ { in_workspace=1; next }
+    /^\[/ { in_workspace=0 }
+    in_workspace && /"loop_lib"/ { loop_lib=1 }
+    in_workspace && /"meta_plugin_protocol"/ { protocol=1 }
+    END { exit !(loop_lib && protocol) }
+  ' "$manifest"
+}
+
+render_parent_workspace() {
+  local version="$1"
+  cat <<EOF_MANIFEST
 [workspace]
 members = ["loop_lib", "meta_plugin_protocol"]
 resolver = "2"
@@ -54,6 +91,47 @@ repository = "https://github.com/FlexNetOS/meta"
 EOF_MANIFEST
 }
 
+parent_workspace_is_envctl_generated() {
+  local manifest="$1"
+  local normalized expected
+  normalized="$(sed -E 's/^version = "[^"]+"$/version = "__ENVCTL_VERSION__"/' "$manifest")"
+  expected="$(render_parent_workspace __ENVCTL_VERSION__)"
+  [ "$normalized" = "$expected" ]
+}
+
+write_parent_workspace() {
+  local manifest="$1"
+  local version="$2"
+  local temporary="${manifest}.envctl.$$"
+  trap 'rm -f "$temporary"' RETURN
+  umask 022
+  render_parent_workspace "$version" >"$temporary"
+  mv -f "$temporary" "$manifest"
+  trap - RETURN
+}
+
+ensure_parent_workspace() {
+  local manifest="$meta_root/Cargo.toml"
+  local version
+  version="$(workspace_version)"
+  if [ -f "$manifest" ]; then
+    if parent_workspace_is_compatible "$manifest" "$version"; then
+      echo "meta-dep: validated parent workspace manifest at $manifest (version $version)"
+      return
+    fi
+    if parent_workspace_is_envctl_generated "$manifest"; then
+      echo "meta-dep: refreshing stale generated parent workspace at $manifest to version $version"
+      write_parent_workspace "$manifest" "$version"
+      return
+    fi
+    echo "FAIL: refusing to overwrite unrelated or incompatible parent workspace at $manifest; require loop_lib + meta_plugin_protocol members and workspace version $version" >&2
+    exit 1
+  fi
+
+  echo "meta-dep: writing minimal parent workspace manifest at $manifest"
+  write_parent_workspace "$manifest" "$version"
+}
+
 ensure_repo() {
   local repo="$1"
   local target="$meta_root/$repo"
@@ -64,11 +142,19 @@ ensure_repo() {
     ref="${LOOP_LIB_REF:-HEAD}"
   fi
 
-  if [ -d "$target/.git" ]; then
-    echo "meta-dep: updating $repo at $target"
+  if git -C "$target" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
+     [ "$(git -C "$target" rev-parse --show-toplevel)" = "$(cd "$target" && pwd -P)" ]; then
+    if [ -f "$target/.git" ]; then
+      echo "meta-dep: preserving linked worktree $repo at $target"
+      test -f "$target/Cargo.toml" || { echo "FAIL: $repo missing Cargo.toml at $target" >&2; exit 1; }
+      return
+    fi
+    echo "meta-dep: updating standalone checkout $repo at $target"
+  elif [ -e "$target" ]; then
+    echo "FAIL: refusing to replace non-repository sibling path $target" >&2
+    exit 1
   else
     echo "meta-dep: cloning $repo to $target"
-    rm -rf "$target"
     GIT_TERMINAL_PROMPT=0 git clone --depth=1 "$url" "$target"
   fi
   # A pinned upgrade-branch ref can vanish once its PR merges and origin reaps the

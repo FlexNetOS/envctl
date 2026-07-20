@@ -25,6 +25,7 @@ use envctl_secrets::{
     VpsPresenceGate,
 };
 use ring::signature::{Ed25519KeyPair, KeyPair};
+use rustls::pki_types::pem::PemObject;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
@@ -482,17 +483,17 @@ fn build_operator_acceptor(
     use rustls::pki_types::{CertificateDer, PrivateKeyDer};
     let certs: Vec<CertificateDer<'static>> = {
         let mut r = std::io::BufReader::new(cert_pem);
-        rustls_pemfile::certs(&mut r)
+        CertificateDer::pem_reader_iter(&mut r)
             .collect::<Result<_, _>>()
             .unwrap()
     };
     let key: PrivateKeyDer<'static> = {
         let mut r = std::io::BufReader::new(key_pem);
-        rustls_pemfile::private_key(&mut r).unwrap().unwrap()
+        PrivateKeyDer::from_pem_reader(&mut r).unwrap()
     };
     let mut roots = rustls::RootCertStore::empty();
     let mut r = std::io::BufReader::new(client_ca_pem);
-    for c in rustls_pemfile::certs(&mut r) {
+    for c in CertificateDer::pem_reader_iter(&mut r) {
         roots.add(c.unwrap()).unwrap();
     }
     let provider = Arc::new(rustls::crypto::ring::default_provider());

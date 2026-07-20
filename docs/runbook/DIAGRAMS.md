@@ -320,9 +320,10 @@ Registry/Lock/Env/Dashboard/Agent/Secret/Self/Completions); docs/ARCHITECTURE.md
 
 envctl wires AI providers/models on two axes. **Config baseline:** the `envctl agent`
 agent-env engine provisions an identical MCP baseline across Claude (`.mcp.json`) and Codex
-(`.codex/config.toml`) — `github`, `context7`, `exa`, `memory`, `playwright`,
-`sequential-thinking` — using additive, never-clobber MCP merge so user-authored servers/secrets
-survive. **Credentials:** provider API keys are served by the vault auto-inject seam (diagram 3)
+(`.codex/config.toml`). The current baseline contains only the remote `exa` server; local-launcher
+servers stay retired until their commands have Yazelix-compatible profile frontdoors. Reconciliation
+uses additive, never-clobber MCP merge so unrelated user-authored servers/secrets survive.
+**Credentials:** provider API keys are served by the vault auto-inject seam (diagram 3)
 — the child gets a ≤24h bearer + base-URL repoint (or HTTPS_PROXY/MITM), and the real key is
 swapped in only at egress to the host-allowlisted upstream. **Local model serving:** components
 manage local engines (ollama / shimmy / ruvllm) so models can run on-box; their keys (where
@@ -336,8 +337,7 @@ docs/secrets/AUTO-INJECT-STATUS.md (provider key auto-inject); [[secrets-auto-in
    ┌─ CONFIG (envctl agent — Kasetto engine) ────────────────────────────────┐
    │ MCP baseline → additive merge, identical on both targets:               │
    │   .mcp.json (Claude)      ◀──┐                                          │
-   │   .codex/config.toml (Codex)◀─┴─ github · context7 · exa · memory ·     │
-   │                                  playwright · sequential-thinking        │
+   │   .codex/config.toml (Codex)◀─┴─ exa (remote; no local binary launcher) │
    └─────────────────────────────────────────────────────────────────────────┘
    ┌─ CREDENTIALS (vault auto-inject seam) ──────────────────────────────────┐
    │ provider key  ──held in vault──▶  child gets ≤24h bearer + base-URL/proxy│
@@ -454,9 +454,9 @@ override `ENVCTL_MANIFEST_DIR`); docs/ARCHITECTURE.md §3 (component model), §6
  SECRETS STACK ─ env-ctl.toml/secretd.toml/sqld.toml + seed ────────────────────────┤
    [A]  env-ctl(builds+installs secretd/secretctl→.toolchains) · secretd · sqld       │
    [A*] cognitum-seed-net · cognitum-seed-trust · cognitum-seed-autounlock (udev/units)│
- nix-yazelix.toml ─ interactive shell (nix-sourced; being de-nixed) ────────────────┤
-   [A]  nix · nix-yazelix-cache · home-manager · yazelix · yazelix-config             │
-   [A]  yazelix-desktop · yazelix-shell · ghostty-default-terminal  group-nix-yazelix │
+ nix-yazelix.toml ─ profile-owned FlexNetOS foundation runtime ─────────────────────┤
+   [A]  nix · nix-yazelix-cache · yazelix · home-manager · yazelix-config             │
+   [A]  yazelix-shell · ghostty-default-terminal                    group-nix-yazelix │
  dashboard.toml :  [A] dashboard (zellij mission-control)                             │
  desktop-app.toml :  [A] desktop-app (envctl-gui .desktop entry)                      │
  n8n-mcp.toml :  [A] n8n-mcp     grit.toml : [A] grit     rusty-idd.toml : [A] rusty-idd│
