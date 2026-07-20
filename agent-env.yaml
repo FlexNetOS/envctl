@@ -1,9 +1,11 @@
 # agent-env.yaml — agent environment for the envctl workspace.
 # (Renamed from kasetto.yaml; the external kasetto binary was retired in TASK-0018/#98 and the
 # absorbed engine is now `envctl agent`. The absorbed CLI resolves this filename by default.)
-# Provisions a curated, locked agent toolkit (skills + MCP baseline) into the Claude Code and
-# Codex environments. This is the source of truth for the agent config; it supersedes the
-# ECC-auto-generated .claude/.codex files. Lock-of-record: agent-env.lock (was kasetto.lock).
+# Provisions a curated, locked agent toolkit (skills + MCP baseline) into the Codex environment.
+# The retired root `.claude/skills` projection is deliberately not an agent-env destination;
+# current Claude lifecycle settings are owned separately under `home/.claude/`. This is the source
+# of truth for the agent config; it supersedes ECC-generated mirrors. Lock-of-record:
+# agent-env.lock (was kasetto.lock).
 #
 # Stabilize/refresh:
 #   envctl agent lock --check --locked --color never # read-only, zero-network
@@ -29,7 +31,6 @@ scope: project
 runtime: yazelix-nushell
 
 agent:
-  - claude-code
   - codex
 
 skills:

@@ -82,7 +82,7 @@ Required runbook facts to carry into the skill:
 - `envctl agent sync --json --color never` is the review surface; use
   `envctl agent sync --apply --color never` only for the explicit skill-sync
   phase after prompt review.
-- `envctl agent lock --check` is the no-drift gate.
+- `envctl agent lock --check --locked` is the zero-network no-drift gate.
 - envctl sync tracks and removes only what the lock says envctl installed; it
   must not adopt unrelated MCP servers or skills.
 - `envctl agent init` creates starter config; `add` and `remove` are
@@ -292,7 +292,7 @@ ICM:          ICM_READONLY=1 rtk icm wake-up --max-tokens 200, or ICM_READONLY=1
 Meta:         rtk meta git status; rtk meta exec -- <inspection command> only when needed
 RTK:          rtk init --show and rtk --help
 Weave:        command/frontdoor check, repo docs if no executable is installed
-envctl:       envctl agent lock --check; envctl agent sync --json --color never
+envctl:       envctl agent lock --check --locked; envctl agent sync --json --color never
 ```
 
 Do not run `git-kb init`, `grit init`, `icm init`, `meta init`, mutating
@@ -552,7 +552,7 @@ ACTIVE MODE
   - `sandbox_mode = "danger-full-access"`
   - `default_permissions = ":danger-full-access"`
   - launch flag: `--dangerously-bypass-approvals-and-sandbox`
-  - retired lifecycle hooks disabled until clean-room rebuild
+  - approved lifecycle dispatch is limited to `rtk hook claude` and PATH-resolved `icm hook` commands; do not create copied scripts, hook JSON, fallback scanners, or local hook archives.
 - Secret-deny, archive-first, and no destructive user-data deletion remain
   mandatory behavioral rules. They do not justify downgrading the session to
   restricted mode.
@@ -610,8 +610,9 @@ missing or wrong:
 
 - `/home/flexnetos/.codex/config.toml` uses full-access execution and does not
   default to a limited permission profile.
-- `features.hooks = false` while the retired lifecycle hook family has no
-  clean-room replacement.
+- The approved Claude lifecycle contract contains only `rtk hook claude` and
+  PATH-resolved `icm hook` commands. Retired copied scripts, hook JSON, archives,
+  installers, and fallback scanners remain absent.
 - `/home/flexnetos/meta/.ignore` and/or `.rgignore` excludes:
   `var/lib/ruvector/pgdata/`
 - This prompt contains this controller above the old v2 phase gates.
@@ -755,7 +756,7 @@ ABSOLUTE LAWS
    the operator has already granted full access.
 
 6. CONTAINMENT BEFORE CAPABILITY.
-   Subagent fan-out, background jobs, browser/computer use, OpenRouter, Claude routing, local model jobs, MCP mutation tools, plugins, GitHub actions, network access, and yolo-style modes toggle disabled until containment hooks/rules/policies/kill switch test pass. Test Must Pass and toggled on before Phase is complete. 
+   Subagent fan-out, background jobs, browser/computer use, OpenRouter, Claude routing, local model jobs, MCP mutation tools, plugins, GitHub actions, network access, and yolo-style modes toggle disabled until containment hooks/rules/policies/kill switch test pass. Test Must Pass and toggled on before Phase is complete.
 
 7. STOP MEANS STOP.
    Any unresolved operator decision blocks once.
@@ -1080,30 +1081,8 @@ Subagents:
 - Whether Codex has a native “agent teams” feature separate from subagents.
 - If no native teams feature exists, define “team” as a harness-owned role group of bounded subagents.
 - Whether subagents can spawn subagents.
-- Whether hooks can block subagent starts.
 - Whether subagents inherit full-access/no-extra-gate/runtime overrides.
 - How inactive-agent approvals surface.
-
-Hooks:
-- Exact hook locations:
-  - `~/.codex/hooks.json`
-  - `~/.codex/config.toml`
-  - `<repo>/.codex/hooks.json`
-  - `<repo>/.codex/config.toml`
-  - plugin-bundled hooks
-  - managed hooks
-- Trusted project requirement.
-- Hook trust review mechanism.
-- Exact hook event list.
-- Exact hook matcher support.
-- Exact hook JSON input/output schema.
-- Whether hook commands run concurrently.
-- Whether one matching hook can prevent another from starting.
-- Hook timeout behavior.
-- Hook block/deny shapes.
-- Hook rewrite/update input support.
-- Whether WebSearch/Browser/Computer/MCP tools are hook-interceptable.
-- Whether unified exec affects hook coverage.
 
 Rules:
 - `.rules` file locations.
@@ -1288,7 +1267,6 @@ Inspect without modifying:
 - "$HOME/.codex"
 - "$HOME/.codex/config.toml"
 - "$HOME/.codex/*.config.toml"
-- "$HOME/.codex/hooks.json"
 - "$HOME/.codex/rules"
 - "$HOME/.codex/agents"
 - "$HOME/.codex/skills"
@@ -1448,9 +1426,6 @@ Create:
 "$HARNESS_WORKSPACE"
 
 Binaries:
-
-- codex-harness-hook
-  Parses Codex hook JSON, enforces policy, emits documented hook JSON responses.
 
 - codex-harness-runner
   Supervises background commands, Codex exec lanes, subagent jobs, local model calls, Rust shims, Claude wrappers, GitHub commands, browser/computer-use gates.
@@ -1695,105 +1670,11 @@ Rules must deny or prompt:
 Every rule must include match/not_match tests where supported.
 Validate with `codex execpolicy check --pretty`.
 
-1.7 Hooks
+1.7 Retired lifecycle-hook boundary
 
-Wire hooks to `codex-harness-hook`.
-
-Required hooks:
-
-SessionStart:
-- verify Nix-owned Codex.
-- verify trusted project state.
-- verify model/provider/profile.
-- verify hooks/rules loaded.
-- verify ledger/db health.
-- print concise status.
-
-UserPromptSubmit:
-- hash/redact prompt.
-- detect bypass/yolo/destructive/secrets/uncontrolled background/model swap requests.
-- increment counters.
-- block where hook schema permits.
-
-PermissionRequest:
-- deny hidden yolo/bypass outside the explicit operator full-access launch; never deny the baseline `danger-full-access` mode for this prompt.
-- deny secrets.
-- route unmanaged network through the full-access network policy; do not downgrade to network-off.
-- deny GitHub mutation without guard.
-- deny provider key reads.
-- route browser/computer-use through the full-access profile.
-
-PreToolUse Bash:
-- enforce command rules.
-- deny direct nested Codex/Claude/model server spawns outside runner.
-- deny uncontrolled background.
-- deny destructive commands.
-- deny non-Nix Codex installs.
-- deny secrets.
-- deny direct SQLite/ledger mutation.
-- deny yolo.
-- enforce model-router before subagent spawn.
-
-PreToolUse apply_patch/Edit/Write:
-- archive target first.
-- deny protected paths.
-- deny ledgers/db/archive except sanctioned binary.
-- route symlink replacement through archive-first full-access controller.
-- enforce file ownership/worktree boundary.
-
-PreToolUse MCP:
-- enforce MCP allowlist.
-- enforce output caps.
-- route mutation tools through the full-access controller.
-
-PreToolUse Browser/Computer:
-- if tool names exist, enforce browser/computer policy.
-- block auth flows, cookies, secrets, and unredacted screenshots outside the declared full-access task scope.
-- require redacted ledger event.
-
-PostToolUse:
-- capture result.
-- update timers.
-- update bad-behavior counters.
-- update process registry.
-- update budget ledger.
-- queue verification through runner.
-
-SubagentStart:
-- require task id.
-- require model-router decision.
-- require agent role allowlist.
-- enforce max depth.
-- enforce team cap.
-- enforce model/provider/profile policy.
-- enforce worktree/file ownership.
-- increment active agent counters.
-
-SubagentStop:
-- require proof references.
-- record duration.
-- record model/provider.
-- record cost/usage if available.
-- mark task complete/incomplete.
-
-PreCompact:
-- write compact-safe invariants:
-  - laws
-  - open decisions
-  - active agents
-  - active jobs
-  - provider restrictions
-  - current phase
-  - denied actions
-
-PostCompact:
-- verify invariants survived.
-- print concise status.
-
-Stop:
-- block once if open decision exists.
-- no scaffold markers.
-- no loop.
+Codex and Claude lifecycle hooks are intentionally unconfigured. Enforcement
+remains in repository policy, validators, and explicit commands; this prompt
+must not recreate a hook JSON, dispatcher, installer, archive, or fallback.
 
 1.8 Kill switch
 
@@ -1835,7 +1716,7 @@ Run real tests in a scratch worktree:
 - GitHub mutation without guard denied.
 - OpenRouter direct use denied until compatibility verified.
 - Claude direct use denied outside bridge.
-- Stop hook blocks once.
+- Stop behavior is validated through explicit policy tests.
 - kill switch stops all harness-owned jobs.
 - `codex execpolicy check --pretty` passes.
 - cargo fmt/clippy/test pass.
@@ -2129,7 +2010,7 @@ Before any subagent:
 2. model-router emits route JSON.
 3. security policy checks route.
 4. worktree/file owner assigned.
-5. SubagentStart hook verifies all fields.
+5. The task router verifies all fields before the agent starts.
 6. agent starts.
 
 If any step missing, block.
@@ -2279,14 +2160,10 @@ Agents:
 - computer-use-auditor.
 - computer-use-operator under the full-access no-sandbox controller.
 
-5.3 Hooks
+5.3 Browser/computer controls
 
-If browser/computer tools expose hook names, enforce:
-- PreToolUse gate.
-- PostToolUse ledger.
-- screenshot redaction.
-- timeout.
-- kill switch awareness.
+Use explicit policy checks, screenshot redaction, timeouts, and kill-switch
+ownership; do not introduce lifecycle-hook interception.
 
 ──────────────────────────────────────────────────────────────────────────────
 PHASE 6 — MEMORY AND DATABASE
@@ -2560,7 +2437,7 @@ No decorative prose.
 Audit before install:
 - official status.
 - source.
-- hooks.
+- retired lifecycle-hook absence.
 - MCP servers.
 - context cost.
 - network.
@@ -2992,16 +2869,3 @@ This file was created as a new `.codex/prompts` prompt from the harness v3
 source prompt at operator request. It normalizes inherited permission language to
 full access, no sandbox, no extra gate requests, and the explicit launch flag
 `--dangerously-bypass-approvals-and-sandbox`.
-# Generated mirror blocked pending owner regeneration
-
-This generated mirror previously contained the retired multi-lifecycle-hook
-instructions. Do not use it as hook authority and do not reconstruct the old
-payload from Git history, archives, logs, or another checkout.
-
-The authoritative source is:
-
-`agent-skills/agent-env-codex/references/source-prompt.md`
-
-That source permits only the generated RTK `PreToolUse`/Bash dispatcher. Run
-the owning `envctl agent sync --apply` flow from an approved FlexNetOS
-toolchain to regenerate this mirror; never hand-copy a lifecycle hook bundle.

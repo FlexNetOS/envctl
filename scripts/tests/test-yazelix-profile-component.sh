@@ -44,49 +44,41 @@ make_executable "$fake_candidate/bin/yzx" 'yzx fixture'
 make_executable "$fake_candidate/toolbin/codex" 'codex fixture'
 make_executable "$fake_candidate/toolbin/rtk" 'rtk fixture'
 make_executable "$fake_candidate/toolbin/nu" 'nu fixture'
-make_executable "$fake_candidate/bin/yzx-desktop-launch" 'desktop fixture'
-make_executable "$fake_candidate/bin/yzx-agent-workspace-launch" 'agent workspace fixture'
 ln -s ../toolbin/codex "$fake_candidate/bin/codex"
 ln -s ../toolbin/rtk "$fake_candidate/bin/rtk"
 printf '%s\n' 'use rtk_wrappers.nu *' >"$fake_candidate/nushell/config/config.nu"
 printf '%s\n' \
-  'export def --wrapped codex [...rest] { ^rtk codex ...$rest }' \
-  'export def --wrapped cargo [...rest] { ^rtk cargo ...$rest }' \
+  'export def --wrapped codex [...rest] {' \
+  '  ^rtk codex ...$rest' \
+  '}' \
+  'export def --wrapped cargo [...rest] {' \
+  '  ^rtk cargo ...$rest' \
+  '}' \
   >"$fake_candidate/nushell/config/rtk_wrappers.nu"
-mkdir -p "$fake_candidate/share/applications" "$fake_candidate/share/yazelix"
+mkdir -p "$fake_candidate/share/yazelix/applications" "$fake_candidate/share/yazelix"
 write_desktop_fixture() {
   printf '%s\n' \
     '[Desktop Entry]' \
-    'Version=1.4' \
-    'Type=Application' \
-    'Name=New Yazelix - Kitty' \
-    'Comment=Yazi + Zellij + Helix integrated terminal environment' \
-    'Icon=yazelix' \
-    'StartupWMClass=com.yazelix.Yazelix' \
-    'Terminal=false' \
-    'X-Yazelix-Managed=true' \
-    'Exec=/usr/bin/env sh -lc "exec ~/.nix-profile/bin/yzx-desktop-launch"' \
-    'Categories=Development;' \
-    >"$fake_candidate/share/applications/com.yazelix.Yazelix.Kitty.desktop"
-  printf '%s\n' \
-    '[Desktop Entry]' \
-    'Version=1.4' \
+    'Version=1.5' \
     'Type=Application' \
     'Name=FlexNetOS Yazelix Agent' \
-    'Comment=Yazelix Kitty with FlexNetOS agent workspace layout' \
-    'Icon=yazelix' \
-    'StartupWMClass=com.yazelix.Yazelix' \
+    'GenericName=Terminal Emulator' \
+    'Comment=Yazelix Nova with the profile-owned FlexNetOS agent workspace' \
+    'Icon=/home/flexnetos/.nix-profile/share/pixmaps/yazelix.png' \
+    'StartupWMClass=mars' \
+    'StartupNotify=true' \
     'Terminal=false' \
     'X-FlexNetOS-Managed=true' \
-    'Exec=/usr/bin/env sh -lc "exec ~/.nix-profile/bin/yzx-agent-workspace-launch"' \
-    'Categories=Development;' \
-    >"$fake_candidate/share/applications/com.flexnetos.Yazelix.Agent.desktop"
+    'X-Yazelix-Managed=true' \
+    'Exec=/home/flexnetos/.nix-profile/bin/yzx launch' \
+    'Categories=System;TerminalEmulator' \
+    >"$fake_candidate/share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
 }
 write_desktop_fixture
 for size in 48x48 64x64 128x128 256x256; do
   mkdir -p "$fake_candidate/share/icons/hicolor/$size/apps"
   printf 'fixture icon %s\n' "$size" \
-    >"$fake_candidate/share/icons/hicolor/$size/apps/yazelix.png"
+    >"$fake_candidate/share/icons/hicolor/$size/apps/yzx.png"
 done
 printf '%s\n' '{"name":"Yazelix Nova","version":"1.0.0-test"}' \
   >"$fake_candidate/share/yazelix/runtime_identity.json"
@@ -305,26 +297,22 @@ ln -s "$foreign_store/rtk" "$active_generation/toolbin/rtk"
 expect_failure hostile-toolbin yazelix_validate_installed "$uid"
 fake_activate_profile
 
-# The user-local entries are stale only when the active profile has a canonical,
-# content-valid launcher. Missing or store-owner-bypassing profile desktop entries
+# The user-local entries are stale only when the active profile has its canonical,
+# content-valid Agent entry. Missing or store-owner-bypassing profile entries
 # therefore fail before any shadow archival can occur.
 active_generation="$(readlink -f "$real/.nix-profile")"
-rm "$active_generation/share/applications/com.yazelix.Yazelix.Kitty.desktop"
+rm "$active_generation/share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
 expect_failure missing-profile-desktop yazelix_validate_installed "$uid"
 fake_activate_profile
 sed -i 's#^Exec=.*#Exec="/tmp/foreign/yzx" desktop launch#' \
-  "$fake_candidate/share/applications/com.yazelix.Yazelix.Kitty.desktop"
+  "$fake_candidate/share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
 expect_failure hostile-profile-desktop-exec yazelix_validate_installed "$uid"
 write_desktop_fixture
 yazelix_validate_installed "$uid"
-active_generation="$(readlink -f "$real/.nix-profile")"
-rm "$active_generation/share/applications/com.flexnetos.Yazelix.Agent.desktop"
-expect_failure missing-agent-profile-desktop yazelix_validate_installed "$uid"
-fake_activate_profile
-rm "$fake_candidate/share/icons/hicolor/128x128/apps/yazelix.png"
+rm "$fake_candidate/share/icons/hicolor/128x128/apps/yzx.png"
 expect_failure missing-profile-icon yazelix_validate_installed "$uid"
 printf 'fixture icon 128x128\n' \
-  >"$fake_candidate/share/icons/hicolor/128x128/apps/yazelix.png"
+  >"$fake_candidate/share/icons/hicolor/128x128/apps/yzx.png"
 yazelix_validate_installed "$uid"
 
 # Explicit repair archives stale user-bin and desktop shadows only after the

@@ -997,9 +997,9 @@ fn require_output_ownership(
 /// the live, normalized tree is exactly the locked desired tree.  A normal (lock-writing) sync
 /// may repair that attestation; a locked audit deliberately remains fail-closed.
 ///
-/// This is intentionally narrower than ordinary ownership acceptance: every identity field must
-/// still match, the output must already equal the verified desired hash, and the caller must be
-/// preparing a transaction that persists the replacement proof.
+/// The only other repairable form is the exact retired hook-cleanup placeholder emitted by the
+/// old purge. It is not user content and has no executable payload; an explicit owner sync may
+/// replace it with the verified source snapshot. Every other differing tree remains refused.
 #[allow(clippy::too_many_arguments)]
 fn portable_output_proof_is_reattestable(
     lock: &AgentLockFile,
@@ -1013,7 +1013,9 @@ fn portable_output_proof_is_reattestable(
     desired_hash: &str,
     persist_lock: bool,
 ) -> Result<bool> {
-    if !persist_lock || current_hash != desired_hash {
+    if !persist_lock
+        || (current_hash != desired_hash && !retired_projection_placeholder(destination))
+    {
         return Ok(false);
     }
     let Some((portable_key, expected)) = portable_output_claim(
@@ -1042,6 +1044,12 @@ fn portable_output_proof_is_reattestable(
         && proof.destination == expected.destination
         && proof.format == expected.format
         && proof.unit == expected.unit)
+}
+
+fn retired_projection_placeholder(destination: &Path) -> bool {
+    const PLACEHOLDER: &str = "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/agent-env-codex/references/source-prompt.md`\n";
+    fs::read_to_string(destination.join("references/source-prompt.md"))
+        .is_ok_and(|contents| contents == PLACEHOLDER)
 }
 
 #[cfg(test)]
@@ -6701,6 +6709,71 @@ commands:
             .values()
             .filter(|proof| proof.asset_id == asset_id)
             .all(|proof| proof.hash == desired_hash));
+        let _ = crate::runtime::clear_runtime_state(Scope::Project, &root);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn explicit_plain_sync_restores_the_retired_hook_placeholder_projection() {
+        let root = temp_dir("agent-env-repair-owned-project-skill");
+        let _xdg = TestXdg::pin(&root);
+        let source = root.join("pack/alpha");
+        fs::create_dir_all(&source).unwrap();
+        fs::write(source.join("SKILL.md"), "verified source").unwrap();
+        fs::create_dir_all(source.join("references")).unwrap();
+        fs::write(
+            source.join("references/source-prompt.md"),
+            "canonical owner snapshot",
+        )
+        .unwrap();
+        let cfg: Config = serde_yaml::from_str(
+            "scope: project\ndestination: ./installed\nskills:\n  - source: ./pack\n    skills: [alpha]\n",
+        )
+        .unwrap();
+        let destinations = resolve_destinations(&root, &cfg, Scope::Project).unwrap();
+        let plain_ctx = DriverCtx::from_mode(
+            &cfg,
+            &root,
+            &destinations,
+            root.clone(),
+            Scope::Project,
+            true,
+            &LockMode::Plain,
+        );
+        let mut lock =
+            rebuild_lock(&cfg, &root, Scope::Project, &AgentLockFile::default(), &[]).unwrap();
+        let mut updated = UpdatedAt::default();
+        assert_eq!(
+            sync(&plain_ctx, &mut lock, &mut updated).summary.installed,
+            1
+        );
+
+        let destination = root.join("installed/alpha");
+        fs::write(
+            destination.join("references/source-prompt.md"),
+            "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/agent-env-codex/references/source-prompt.md`\n",
+        )
+        .unwrap();
+        let locked_ctx = DriverCtx::from_mode(
+            &cfg,
+            &root,
+            &destinations,
+            root.clone(),
+            Scope::Project,
+            true,
+            &LockMode::Locked,
+        );
+        assert_eq!(
+            sync(&locked_ctx, &mut lock, &mut updated).actions[0].status,
+            "locked_error"
+        );
+
+        let repaired = sync(&plain_ctx, &mut lock, &mut updated);
+        assert_eq!(repaired.summary.updated, 1, "{:?}", repaired.actions);
+        assert_eq!(
+            fs::read_to_string(destination.join("references/source-prompt.md")).unwrap(),
+            "canonical owner snapshot"
+        );
         let _ = crate::runtime::clear_runtime_state(Scope::Project, &root);
         let _ = fs::remove_dir_all(root);
     }

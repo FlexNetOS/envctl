@@ -65,8 +65,7 @@ yazelix_setup() {
   YAZELIX_FRONTDOOR="$YAZELIX_REAL_HOME/.nix-profile"
   YAZELIX_ELEMENT=lifeos_foundation_yzx
   YAZELIX_INSTALLABLE="path:$YAZELIX_SOURCE#$YAZELIX_ELEMENT"
-  YAZELIX_KITTY_DESKTOP_REL="share/applications/com.yazelix.Yazelix.Kitty.desktop"
-  YAZELIX_AGENT_DESKTOP_REL="share/applications/com.flexnetos.Yazelix.Agent.desktop"
+  YAZELIX_AGENT_DESKTOP_REL="share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
   YAZELIX_SYSTEM="$(/usr/bin/uname -m)-linux"
   case "$YAZELIX_SYSTEM" in x86_64-linux|aarch64-linux) ;; *) yazelix_die "unsupported Nix system: $YAZELIX_SYSTEM" ;; esac
   YAZELIX_ATTR="packages.$YAZELIX_SYSTEM.$YAZELIX_ELEMENT"
@@ -74,7 +73,7 @@ yazelix_setup() {
   export YAZELIX_PROFILE_DIR YAZELIX_PROFILE YAZELIX_FRONTDOOR YAZELIX_ELEMENT
   export YAZELIX_LEGACY_PROFILE_DIR YAZELIX_LEGACY_PROFILE
   export YAZELIX_INSTALLABLE YAZELIX_SYSTEM YAZELIX_ATTR
-  export YAZELIX_KITTY_DESKTOP_REL YAZELIX_AGENT_DESKTOP_REL
+  export YAZELIX_AGENT_DESKTOP_REL
 }
 
 yazelix_validate_roots() {
@@ -222,14 +221,17 @@ yazelix_validate_one_desktop_entry() {
   [ -f "$desktop" ] && [ -r "$desktop" ] || return 1
   for required in \
     '[Desktop Entry]' \
-    'Version=1.4' \
+    'Version=1.5' \
     'Type=Application' \
     "$name" \
-    'Icon=yazelix' \
-    'StartupWMClass=com.yazelix.Yazelix' \
+    'GenericName=Terminal Emulator' \
+    'Icon=/home/flexnetos/.nix-profile/share/pixmaps/yazelix.png' \
+    'StartupWMClass=mars' \
+    'StartupNotify=true' \
     'Terminal=false' \
+    'X-Yazelix-Managed=true' \
     "$marker" \
-    'Categories=Development;'; do
+    'Categories=System;TerminalEmulator'; do
     [ "$(/usr/bin/grep -Fxc -- "$required" "$desktop")" -eq 1 ] || return 1
   done
   exec_count="$(/usr/bin/grep -c '^Exec=' "$desktop" || true)"
@@ -246,16 +248,11 @@ yazelix_validate_one_desktop_entry() {
 
 yazelix_validate_desktop_surface() {
   local store="$1" profile_root="${2:-}" size icon profile_icon resolved expected
-  local kitty_exec agent_exec
-  kitty_exec='Exec=/usr/bin/env sh -lc "exec ~/.nix-profile/bin/yzx-desktop-launch"'
-  agent_exec='Exec=/usr/bin/env sh -lc "exec ~/.nix-profile/bin/yzx-agent-workspace-launch"'
-  [ -x "$store/bin/yzx-desktop-launch" ] && [ -x "$store/bin/yzx-agent-workspace-launch" ] \
-    || return 1
-  yazelix_validate_one_desktop_entry \
-    "$store" "$profile_root" "$YAZELIX_KITTY_DESKTOP_REL" \
-    'Name=New Yazelix - Kitty' 'X-Yazelix-Managed=true' \
-    "$kitty_exec" \
-    || return 1
+  local agent_exec
+  # The foundation deliberately exposes one profile-owned Agent entry.  It
+  # invokes yzx directly; obsolete copied desktop-launch wrapper binaries are
+  # not part of the package contract and must not become a fallback path.
+  agent_exec='Exec=/home/flexnetos/.nix-profile/bin/yzx launch'
   yazelix_validate_one_desktop_entry \
     "$store" "$profile_root" "$YAZELIX_AGENT_DESKTOP_REL" \
     'Name=FlexNetOS Yazelix Agent' 'X-FlexNetOS-Managed=true' \
@@ -263,12 +260,12 @@ yazelix_validate_desktop_surface() {
     || return 1
 
   for size in 48x48 64x64 128x128 256x256; do
-    icon="$store/share/icons/hicolor/$size/apps/yazelix.png"
+    icon="$store/share/icons/hicolor/$size/apps/yzx.png"
     [ -f "$icon" ] && [ -s "$icon" ] || return 1
     resolved="$(/usr/bin/readlink -f -- "$icon" 2>/dev/null)"
     case "$resolved" in "$YAZELIX_STORE_ROOT"/*) ;; *) return 1 ;; esac
     if [ -n "$profile_root" ]; then
-      profile_icon="$profile_root/share/icons/hicolor/$size/apps/yazelix.png"
+      profile_icon="$profile_root/share/icons/hicolor/$size/apps/yzx.png"
       [ -f "$profile_icon" ] && [ -s "$profile_icon" ] || return 1
       expected="$(/usr/bin/readlink -f -- "$profile_icon" 2>/dev/null)"
       [ "$expected" = "$resolved" ] || return 1
@@ -317,9 +314,9 @@ yazelix_validate_runtime_tree() {
     "$(/usr/bin/readlink -f -- "$store/toolbin/rtk" 2>/dev/null)" ] || return 1
   /usr/bin/grep -Fqx 'use rtk_wrappers.nu *' "$store/nushell/config/config.nu" || return 1
   /usr/bin/grep -Fq 'export def --wrapped codex' "$store/nushell/config/rtk_wrappers.nu" || return 1
-  /usr/bin/grep -Fq '^rtk codex' "$store/nushell/config/rtk_wrappers.nu" || return 1
+  /usr/bin/grep -Eq '^[[:space:]]*\^rtk codex' "$store/nushell/config/rtk_wrappers.nu" || return 1
   /usr/bin/grep -Fq 'export def --wrapped cargo' "$store/nushell/config/rtk_wrappers.nu" || return 1
-  /usr/bin/grep -Fq '^rtk cargo' "$store/nushell/config/rtk_wrappers.nu" || return 1
+  /usr/bin/grep -Eq '^[[:space:]]*\^rtk cargo' "$store/nushell/config/rtk_wrappers.nu" || return 1
 
   while IFS= read -r -d '' entry; do
     relative="${entry#"$store/"}"
