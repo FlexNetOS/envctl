@@ -546,7 +546,7 @@ fn main() -> Result<()> {
     let has_claude_cli = which("claude").is_some();
     let has_gh = which("gh").is_some();
     let session_status = session_capability_status();
-    let source_skill = envctl_root.join("agent-skills/agent-env-codex/SKILL.md");
+    let source_skill = envctl_root.join("agent-skills/capability-packs/agent-env-codex/SKILL.md");
     let active_skill = Path::new("/home/flexnetos/.codex/skills/agent-env-codex/SKILL.md");
     let installed_skill_matches = files_equal(&source_skill, active_skill);
     let session_controls_ok = session_capability_map_valid(&session_status)

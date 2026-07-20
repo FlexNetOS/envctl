@@ -1,4 +1,0 @@
-interface:
-  display_name: "CodeDB Config Tables"
-  short_description: "CodeDB config-to-table ingestion"
-  default_prompt: "Use this skill when you need to ingest config files, settings trees, environment state, runtime-owned files, or Yazelix-generated surfaces into CodeDB tables via codedb or nu_plugin_codedb while preserving semantic rows, blob references, structured-row extraction, and explicit gap/error reporting."

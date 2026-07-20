@@ -1047,7 +1047,7 @@ fn portable_output_proof_is_reattestable(
 }
 
 fn retired_projection_placeholder(destination: &Path) -> bool {
-    const PLACEHOLDER: &str = "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/agent-env-codex/references/source-prompt.md`\n";
+    const PLACEHOLDER: &str = "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/capability-packs/agent-env-codex/references/source-prompt.md`\n";
     fs::read_to_string(destination.join("references/source-prompt.md"))
         .is_ok_and(|contents| contents == PLACEHOLDER)
 }
@@ -6828,7 +6828,7 @@ commands:
         let destination = root.join("installed/alpha");
         fs::write(
             destination.join("references/source-prompt.md"),
-            "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/agent-env-codex/references/source-prompt.md`\n",
+            "# Generated mirror blocked pending owner regeneration\n\nThis generated mirror previously contained the retired multi-lifecycle-hook\ninstructions. Do not use it as hook authority and do not reconstruct the old\npayload from Git history, archives, logs, or another checkout.\n\nThe authoritative source is:\n\n`agent-skills/capability-packs/agent-env-codex/references/source-prompt.md`\n",
         )
         .unwrap();
         let locked_ctx = DriverCtx::from_mode(

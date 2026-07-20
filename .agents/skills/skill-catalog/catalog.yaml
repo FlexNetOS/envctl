@@ -1,0 +1,483 @@
+version: 1
+active_packs:
+- core
+packs:
+  core:
+    description: Minimal ownership, catalog, memory, and Rust-convention surface.
+    skills:
+    - skill-catalog
+    - agent-env-config
+    - env-stabilize
+    - meta-gitkb-review
+    - icm-memory
+  git:
+    description: Git, review, reference, and evidence verification.
+    skills:
+    - meta-gitkb-review
+    - code-research-verify
+    - cross-repo-reference
+    - harness-evolution
+    - code-intelligence
+    - explore
+    - gitkb
+    - kb-board
+    - kb-close
+    - kb-commit
+    - kb-context
+    - kb-create
+    - kb-handoff
+    - kb-progress
+    - kb-review
+    - kb-search
+    - kb-start
+    - kb-status
+    - kb-tasks
+    - refactor-safety
+    - understand
+  planning:
+    description: Planning-engineer and feature-delivery orchestration.
+    skills:
+    - feature-forge
+    - forge-loop
+    - planning-engineer
+    - plan-autoresearch-loop
+    - plan-cartography
+    - plan-dependency-graph
+    - plan-distributed-compute
+    - plan-filesystem-layout
+    - plan-governance-config
+    - plan-loop
+    - plan-memory-vector-intelligence
+    - plan-prompt-architecture
+    - plan-rules-policy-org
+    - plan-synthesis
+    - plan-test-strategy
+    - plan-trend-research
+  research:
+    description: Evidence, CodeDB, architecture, and research workflows.
+    skills:
+    - code-research-verify
+    - codedb-config-tables
+    - codedb-ingest
+    - plan-trend-research
+    - plan-cartography
+  runtime:
+    description: Runtime ownership, provisioning, and continuity workflows.
+    skills:
+    - env-toolchain-install
+    - env-install-loop
+    - auto-provision
+    - agent-env-codex
+    - handoff-sync
+    - harness-loop-init
+    - session-relay
+    - session-relay-resume
+    - session-relay-wrap-up
+  rust:
+    description: Rust implementation, porting, and cross-repository health.
+    skills:
+    - rust-feature-impl
+    - rust-port
+    - rust-port-inventory
+    - rust-port-translate
+    - rust-port-parity
+    - rust-port-merge
+    - cross-repo-health
+skills:
+  agent-env-codex:
+    source: null
+    aliases:
+    - codex-harness
+    intents:
+    - codex-harness
+    - agent-env-codex
+    keywords:
+    - codex
+    - harness
+  agent-env-config:
+    source: null
+    aliases:
+    - conventions
+    intents:
+    - rust-conventions
+    - agent-config
+    keywords:
+    - rust
+    - conventions
+  auto-provision:
+    source: null
+    aliases:
+    - provision
+    intents:
+    - provision-workstation
+    keywords: []
+  code-intelligence:
+    source: ./.kb/skills/code-intelligence
+    aliases: []
+    intents: []
+    keywords: []
+  code-research-verify:
+    source: null
+    aliases:
+    - verify-code
+    intents:
+    - verify-claim
+    keywords: []
+  codedb-config-tables:
+    source: null
+    aliases:
+    - codedb-config
+    intents:
+    - config-inventory
+    keywords: []
+  codedb-ingest:
+    source: null
+    aliases:
+    - codedb
+    intents:
+    - codedb-ingest
+    keywords: []
+  cross-repo-health:
+    source: null
+    aliases:
+    - health
+    intents:
+    - cross-repo-health
+    keywords: []
+  cross-repo-reference:
+    source: null
+    aliases:
+    - xref
+    intents:
+    - cross-repo-reference
+    keywords: []
+  env-install-loop:
+    source: null
+    aliases:
+    - install-loop
+    intents:
+    - install-environment
+    keywords: []
+  env-stabilize:
+    source: null
+    aliases:
+    - drift
+    intents:
+    - agent-sync
+    - lock-check
+    keywords:
+    - drift
+    - reproducibility
+  env-toolchain-install:
+    source: null
+    aliases:
+    - toolchain
+    intents:
+    - install-toolchain
+    keywords: []
+  explore:
+    source: ./.kb/skills/explore
+    aliases: []
+    intents: []
+    keywords: []
+  feature-forge:
+    source: null
+    aliases:
+    - forge
+    intents:
+    - implement-feature
+    keywords:
+    - implementation
+    - feature
+  forge-loop:
+    source: null
+    aliases:
+    - feature-loop
+    intents:
+    - implement-backlog
+    keywords: []
+  gitkb:
+    source: ./.kb/skills/gitkb
+    aliases: []
+    intents: []
+    keywords: []
+  handoff-sync:
+    source: null
+    aliases:
+    - handoff
+    intents:
+    - sync-handoff
+    keywords: []
+  harness-evolution:
+    source: null
+    aliases:
+    - evolve-harness
+    intents:
+    - improve-harness
+    keywords: []
+  harness-loop-init:
+    source: null
+    aliases:
+    - loop-init
+    intents:
+    - initialize-loop
+    keywords: []
+  icm-memory:
+    source: null
+    aliases:
+    - memory
+    intents:
+    - icm-recall
+    keywords: []
+  kb-board:
+    source: ./.kb/skills/kb-board
+    aliases: []
+    intents: []
+    keywords: []
+  kb-close:
+    source: ./.kb/skills/kb-close
+    aliases: []
+    intents: []
+    keywords: []
+  kb-commit:
+    source: ./.kb/skills/kb-commit
+    aliases: []
+    intents: []
+    keywords: []
+  kb-context:
+    source: ./.kb/skills/kb-context
+    aliases: []
+    intents: []
+    keywords: []
+  kb-create:
+    source: ./.kb/skills/kb-create
+    aliases: []
+    intents: []
+    keywords: []
+  kb-handoff:
+    source: ./.kb/skills/kb-handoff
+    aliases: []
+    intents: []
+    keywords: []
+  kb-progress:
+    source: ./.kb/skills/kb-progress
+    aliases: []
+    intents: []
+    keywords: []
+  kb-review:
+    source: ./.kb/skills/kb-review
+    aliases: []
+    intents: []
+    keywords: []
+  kb-search:
+    source: ./.kb/skills/kb-search
+    aliases: []
+    intents: []
+    keywords: []
+  kb-start:
+    source: ./.kb/skills/kb-start
+    aliases: []
+    intents: []
+    keywords: []
+  kb-status:
+    source: ./.kb/skills/kb-status
+    aliases: []
+    intents: []
+    keywords: []
+  kb-tasks:
+    source: ./.kb/skills/kb-tasks
+    aliases: []
+    intents: []
+    keywords: []
+  meta-gitkb-review:
+    source: null
+    aliases:
+    - review
+    intents:
+    - review-pr
+    keywords:
+    - git
+    - review
+  plan-autoresearch-loop:
+    source: null
+    aliases:
+    - autoresearch-plan
+    intents:
+    - research-plan
+    keywords: []
+  plan-cartography:
+    source: null
+    aliases:
+    - code-map
+    intents:
+    - map-system
+    keywords: []
+  plan-dependency-graph:
+    source: null
+    aliases:
+    - dependency-plan
+    intents:
+    - plan-dependencies
+    keywords: []
+  plan-distributed-compute:
+    source: null
+    aliases:
+    - distributed-plan
+    intents:
+    - plan-distributed-compute
+    keywords: []
+  plan-filesystem-layout:
+    source: null
+    aliases:
+    - layout-plan
+    intents:
+    - plan-layout
+    keywords: []
+  plan-governance-config:
+    source: null
+    aliases:
+    - governance-plan
+    intents:
+    - plan-governance
+    keywords: []
+  plan-loop:
+    source: null
+    aliases:
+    - planning-loop
+    intents:
+    - plan-backlog
+    keywords: []
+  plan-memory-vector-intelligence:
+    source: null
+    aliases:
+    - memory-plan
+    intents:
+    - plan-memory
+    keywords: []
+  plan-prompt-architecture:
+    source: null
+    aliases:
+    - prompt-plan
+    intents:
+    - plan-prompts
+    keywords: []
+  plan-rules-policy-org:
+    source: null
+    aliases:
+    - policy-plan
+    intents:
+    - plan-policy
+    keywords: []
+  plan-synthesis:
+    source: null
+    aliases:
+    - synthesis
+    intents:
+    - synthesize-plan
+    keywords: []
+  plan-test-strategy:
+    source: null
+    aliases:
+    - test-plan
+    intents:
+    - plan-tests
+    keywords: []
+  plan-trend-research:
+    source: null
+    aliases:
+    - trend-research
+    intents:
+    - research-trends
+    keywords:
+    - research
+    - official-sources
+  planning-engineer:
+    source: null
+    aliases:
+    - planner
+    intents:
+    - plan-architecture
+    keywords: []
+  refactor-safety:
+    source: ./.kb/skills/refactor-safety
+    aliases: []
+    intents: []
+    keywords: []
+  rust-feature-impl:
+    source: null
+    aliases:
+    - rust-impl
+    intents:
+    - implement-rust
+    keywords:
+    - rust
+    - implementation
+  rust-port:
+    source: null
+    aliases:
+    - port
+    intents:
+    - port-rust
+    keywords: []
+  rust-port-inventory:
+    source: null
+    aliases:
+    - port-inventory
+    intents:
+    - inventory-port
+    keywords: []
+  rust-port-merge:
+    source: null
+    aliases:
+    - port-merge
+    intents:
+    - merge-port
+    keywords: []
+  rust-port-parity:
+    source: null
+    aliases:
+    - port-parity
+    intents:
+    - verify-port
+    keywords: []
+  rust-port-translate:
+    source: null
+    aliases:
+    - port-translate
+    intents:
+    - translate-rust
+    keywords: []
+  session-relay:
+    source: null
+    aliases:
+    - relay
+    intents:
+    - relay-session
+    keywords: []
+  session-relay-resume:
+    source: null
+    aliases:
+    - resume-relay
+    intents:
+    - resume-session
+    keywords: []
+  session-relay-wrap-up:
+    source: null
+    aliases:
+    - wrapup
+    intents:
+    - wrap-up-session
+    keywords: []
+  skill-catalog:
+    source: null
+    aliases:
+    - skills
+    intents:
+    - find-skill
+    - activate-skill
+    keywords: []
+  understand:
+    source: ./.kb/skills/understand
+    aliases: []
+    intents: []
+    keywords: []

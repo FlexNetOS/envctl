@@ -302,7 +302,10 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         "split status/full/restricted/toggle skill products must not return"
     );
 
-    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    let skill = fs::read_to_string(
+        root.join("agent-skills/capability-packs/agent-env-codex/SKILL.md"),
+    )
+    .unwrap();
     assert!(skill.contains("references/github-execution-policy.md"));
     assert!(skill.contains("references/github-org-and-ccboard.md"));
     assert!(skill.contains("references/bunx-and-github-ssh.md"));
@@ -312,7 +315,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
     assert!(skill.contains("Never add macOS or Windows GitHub Actions jobs"));
 
     let github_policy = fs::read_to_string(
-        root.join("agent-skills/agent-env-codex/references/github-execution-policy.md"),
+        root.join("agent-skills/capability-packs/agent-env-codex/references/github-execution-policy.md"),
     )
     .unwrap();
     for required in [
@@ -335,7 +338,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
     assert!(github_policy.contains("enable auto-merge"));
 
     let bunx_ssh = fs::read_to_string(
-        root.join("agent-skills/agent-env-codex/references/bunx-and-github-ssh.md"),
+        root.join("agent-skills/capability-packs/agent-env-codex/references/bunx-and-github-ssh.md"),
     )
     .unwrap();
     for required in [
@@ -351,14 +354,14 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         assert!(bunx_ssh.contains(required), "missing {required}");
     }
     let bun_policy = Command::new("python3")
-        .arg(root.join("agent-skills/agent-env-codex/scripts/check-bun-command-policy.py"))
+        .arg(root.join("agent-skills/capability-packs/agent-env-codex/scripts/check-bun-command-policy.py"))
         .arg(&root)
         .status()
         .expect("run Bun/Bunx skill command policy");
     assert!(bun_policy.success(), "skill command policy must pass");
 
     let org_ccboard = fs::read_to_string(
-        root.join("agent-skills/agent-env-codex/references/github-org-and-ccboard.md"),
+        root.join("agent-skills/capability-packs/agent-env-codex/references/github-org-and-ccboard.md"),
     )
     .unwrap();
     for required in [
@@ -429,7 +432,10 @@ fn persistent_runner_jobs_have_isolated_cargo_targets() {
 #[test]
 fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     let root = envctl_root();
-    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    let skill = fs::read_to_string(
+        root.join("agent-skills/capability-packs/agent-env-codex/SKILL.md"),
+    )
+    .unwrap();
     for required in [
         "references/yazelix-cli-plugin-policy.md",
         "A toggle may be off",
@@ -445,7 +451,7 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     }
 
     let policy = fs::read_to_string(
-        root.join("agent-skills/agent-env-codex/references/yazelix-cli-plugin-policy.md"),
+        root.join("agent-skills/capability-packs/agent-env-codex/references/yazelix-cli-plugin-policy.md"),
     )
     .unwrap();
     for required in [

@@ -176,6 +176,8 @@ jobs:
           cargo --version
       - name: cargo test --workspace
         run: cargo test --workspace --features envctl-secrets-engine/low-cost-kdf-tests
+      - name: live libSQL durability tests
+        run: bash ci/run-live-libsql-tests.sh
 
   gates:
     name: gates

@@ -25,7 +25,7 @@ do
     || fail "retired hook payload remains: $path"
 done
 
-source=agent-skills/agent-env-codex/references/source-prompt.md
+source=agent-skills/capability-packs/agent-env-codex/references/source-prompt.md
 [ -f "$source" ] || fail "missing lifecycle owner prompt: $source"
 ! grep -Eq 'codex-harness-hook|\.claude/hooks|\.codex/hooks' "$source" \
   || fail "retired lifecycle instructions remain in owner prompt"

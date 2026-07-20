@@ -1164,6 +1164,35 @@ impl From<ListKindArg> for AgentListKind {
 /// The six agent-asset verbs. Each maps field-by-field to its `Agent*Spec`.
 #[derive(Subcommand)]
 enum AgentCmd {
+    /// Search, inspect, and owner-activate locked Codex capability packs.
+    #[command(
+        long_about = "Read the compact, repository-owned skill catalog and capability-pack state. Search and show are read-only. Activation changes only the canonical catalog state plus its generated agent-env.active.yaml projection when --apply is supplied. Add --sync to run the owner lock, sync --apply, and locked verification lifecycle. The command rejects ambiguous aliases and intents and never uses home, cache, archive, hook, or legacy-path fallbacks.",
+        after_help = envctl_examples!(
+        "envctl agent catalog",
+        "envctl agent catalog --search rust",
+        "envctl agent catalog --activate-pack rust --apply --sync",
+        "envctl agent catalog --activate-skill rust-feature-impl --apply --sync",
+        "envctl agent catalog --activate-intent implement-rust --apply --sync",
+    ))]
+    Catalog {
+        #[arg(long)]
+        search: Option<String>,
+        #[arg(long)]
+        show: Option<String>,
+        #[arg(long)]
+        activate_pack: Option<String>,
+        #[arg(long)]
+        activate_skill: Option<String>,
+        #[arg(long)]
+        activate_intent: Option<String>,
+        #[arg(long)]
+        deactivate_pack: Option<String>,
+        /// Run lock → sync --apply → locked verification after applying the catalog change.
+        #[arg(long, requires = "apply")]
+        sync: bool,
+        #[arg(long)]
+        apply: bool,
+    },
     /// Reconcile installed assets with the config. PREVIEW by default; `--apply` writes.
     #[command(
         long_about = "Read the agent-env config, discover the requested skills / MCP servers / commands, then install, update, or remove local copies so the destination matches the config. PREVIEW by default; pass --apply to write. Use --locked (alias --frozen) to audit against the lock with zero network fetch (fail-closed if the lock cannot satisfy the config), or --update [NAME...] to re-resolve moving refs and rewrite the lock.",
@@ -3242,6 +3271,7 @@ fn should_spawn_background_update_check(cmd: &Cmd, json: bool, quiet: u8) -> boo
         | Cmd::Lock { check: true }
         | Cmd::Doctor { .. } => false,
         Cmd::Agent { cmd } => match cmd {
+            AgentCmd::Catalog { apply, .. } => *apply,
             AgentCmd::Sync { apply, locked, .. }
             | AgentCmd::Add { apply, locked, .. }
             | AgentCmd::Remove { apply, locked, .. } => *apply && !locked,
@@ -3595,7 +3625,9 @@ mod env_cmd_tests {
 
 #[cfg(test)]
 mod agent_cmd_tests {
-    use super::{AgentScope, ScopeArg};
+    use clap::Parser;
+
+    use super::{AgentScope, Cli, Cmd, ScopeArg};
 
     // Note: `lock_mode_from` moved to the engine as `AgentLockMode::from_flags` (TASK-0014b
     // open-Q1) so the CLI and GUI share one source; its unit test moved with it
@@ -3605,6 +3637,22 @@ mod agent_cmd_tests {
     fn scope_arg_converts_to_agent_scope() {
         assert_eq!(AgentScope::from(ScopeArg::Global), AgentScope::Global);
         assert_eq!(AgentScope::from(ScopeArg::Project), AgentScope::Project);
+    }
+
+    #[test]
+    fn catalog_activation_requires_apply_and_accepts_owner_sync() {
+        assert!(Cli::try_parse_from(["envctl", "agent", "catalog", "--sync"]).is_err());
+        let cli = Cli::try_parse_from([
+            "envctl",
+            "agent",
+            "catalog",
+            "--activate-pack",
+            "rust",
+            "--apply",
+            "--sync",
+        ])
+        .expect("parse catalog owner lifecycle");
+        assert!(matches!(cli.cmd, Cmd::Agent { .. }));
     }
 }
 
@@ -3747,6 +3795,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
 /// the main thread renders + exits. This keeps the failure→exit policy a pure decision
 /// the unit tests can exercise without a live network fetch.
 enum AgentResult {
+    Catalog(envctl_engine::AgentCatalogReport),
     /// `sync` / `clean` — nonzero iff `report.summary.failed > 0`.
     Report(envctl_engine::AgentReport),
     /// `add` / `remove` — nonzero iff the follow-up sync had `summary.failed > 0`.
@@ -3769,6 +3818,7 @@ impl AgentResult {
     fn to_json(&self) -> anyhow::Result<String> {
         Ok(match self {
             AgentResult::Report(r) => serde_json::to_string_pretty(r)?,
+            AgentResult::Catalog(r) => serde_json::to_string_pretty(r)?,
             AgentResult::Edit(o) => serde_json::to_string_pretty(o)?,
             AgentResult::Lock(o) => serde_json::to_string_pretty(o)?,
             AgentResult::List(l) => serde_json::to_string_pretty(l)?,
@@ -3790,6 +3840,7 @@ impl AgentResult {
             |r: &envctl_engine::AgentReport| r.summary.failed == 0 && r.summary.broken == 0;
         match self {
             AgentResult::Report(r) => report_ok(r),
+            AgentResult::Catalog(_) => true,
             AgentResult::Edit(o) => o.sync.as_ref().is_none_or(report_ok),
             AgentResult::Lock(o) => !o.check || o.drift.is_empty(),
             AgentResult::List(_) => true,
@@ -3807,6 +3858,20 @@ impl AgentResult {
     fn render_human(&self) {
         match self {
             AgentResult::List(l) => render_agent_list(l),
+            AgentResult::Catalog(r) => println!(
+                "{}: {} capability packs, active [{}], {} catalog skills{}",
+                r.action,
+                r.packs.len(),
+                r.active_packs.join(", "),
+                r.skills.len(),
+                if r.lifecycle_verified {
+                    " (owner lifecycle verified)"
+                } else if r.changed {
+                    " (apply to materialize)"
+                } else {
+                    ""
+                }
+            ),
             AgentResult::Edit(o) => {
                 let n = o.items.len();
                 println!(
@@ -4076,6 +4141,44 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
     let eng = engine.clone();
     let handle = std::thread::spawn(move || -> anyhow::Result<AgentResult> {
         let result = match cmd {
+            AgentCmd::Catalog {
+                search,
+                show,
+                activate_pack,
+                activate_skill,
+                activate_intent,
+                deactivate_pack,
+                sync,
+                apply,
+            } => {
+                let selectors = [
+                    search.is_some(),
+                    show.is_some(),
+                    activate_pack.is_some(),
+                    activate_skill.is_some(),
+                    activate_intent.is_some(),
+                    deactivate_pack.is_some(),
+                ]
+                .into_iter()
+                .filter(|v| *v)
+                .count();
+                if selectors > 1 {
+                    anyhow::bail!("agent catalog accepts at most one selector");
+                }
+                AgentResult::Catalog(eng.agent_catalog(
+                    envctl_engine::AgentCatalogSpec {
+                        search,
+                        show,
+                        activate_pack,
+                        activate_skill,
+                        activate_intent,
+                        deactivate_pack,
+                        sync,
+                        apply,
+                    },
+                    &sink,
+                )?)
+            }
             AgentCmd::Sync {
                 config,
                 scope,
