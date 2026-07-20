@@ -5,7 +5,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 
 root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 runner="$root/ci/run-live-libsql-tests.sh"
-workflow="$root/.github/workflows/ci.yml"
+workflow="$root/.github/workflows_disabled/ci.yml"
 e2e="$root/crates/secretd/tests/libsql_e2e.rs"
 
 [ -x "$runner" ] || fail "missing executable live-libSQL runner: $runner"

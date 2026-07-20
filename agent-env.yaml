@@ -23,6 +23,8 @@
 #   /home/flexnetos/lifeos/.codex and /home/flexnetos/FlexNetOS/.codex are
 #   retired mirrors; do not use them as inputs or fallback outputs.
 
+extends: agent-env.active.yaml
+
 scope: project
 
 # The only active user runtime is the Yazelix-managed Nushell route.  Agent sync/lock/doctor
@@ -33,17 +35,9 @@ runtime: yazelix-nushell
 agent:
   - codex
 
-skills:
-  # Meta's narrow shared review policy; envctl-specific skills remain below.
-  - source: https://github.com/FlexNetOS/meta
-    ref: fb7273a7c8d05dce0bac649ded940a86ad41e107
-    sub-dir: agent-env/skills
-    skills:
-      - meta-gitkb-review
-
-  # Curated, envctl-grounded dev skills (correct Rust conventions).
-  - source: ./agent-skills
-    skills: "*"
+# `agent-env.active.yaml` is the generated, lock-verified active projection.
+# Canonical sources, pack definitions, aliases, and task-intent mappings remain
+# under `agent-skills/skill-catalog/`; activate through `envctl agent catalog`.
 
 mcps:
   # Yazelix is the normative runtime model. Only MCP entries that do not launch

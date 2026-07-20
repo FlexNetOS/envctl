@@ -82,7 +82,7 @@ Required runbook facts to carry into the skill:
 - `envctl agent sync --json --color never` is the review surface; use
   `envctl agent sync --apply --color never` only for the explicit skill-sync
   phase after prompt review.
-- `envctl agent lock --check` is the no-drift gate.
+- `envctl agent lock --check --locked` is the zero-network no-drift gate.
 - envctl sync tracks and removes only what the lock says envctl installed; it
   must not adopt unrelated MCP servers or skills.
 - `envctl agent init` creates starter config; `add` and `remove` are
@@ -292,7 +292,7 @@ ICM:          ICM_READONLY=1 rtk icm wake-up --max-tokens 200, or ICM_READONLY=1
 Meta:         rtk meta git status; rtk meta exec -- <inspection command> only when needed
 RTK:          rtk init --show and rtk --help
 Weave:        command/frontdoor check, repo docs if no executable is installed
-envctl:       envctl agent lock --check; envctl agent sync --json --color never
+envctl:       envctl agent lock --check --locked; envctl agent sync --json --color never
 ```
 
 Do not run `git-kb init`, `grit init`, `icm init`, `meta init`, mutating
@@ -756,7 +756,7 @@ ABSOLUTE LAWS
    the operator has already granted full access.
 
 6. CONTAINMENT BEFORE CAPABILITY.
-   Subagent fan-out, background jobs, browser/computer use, OpenRouter, Claude routing, local model jobs, MCP mutation tools, plugins, GitHub actions, network access, and yolo-style modes toggle disabled until containment hooks/rules/policies/kill switch test pass. Test Must Pass and toggled on before Phase is complete. 
+   Subagent fan-out, background jobs, browser/computer use, OpenRouter, Claude routing, local model jobs, MCP mutation tools, plugins, GitHub actions, network access, and yolo-style modes toggle disabled until containment hooks/rules/policies/kill switch test pass. Test Must Pass and toggled on before Phase is complete.
 
 7. STOP MEANS STOP.
    Any unresolved operator decision blocks once.

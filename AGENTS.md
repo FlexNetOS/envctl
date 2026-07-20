@@ -141,7 +141,9 @@ JS imports) — those are **wrong for this repo**.
   files/modules/functions, PascalCase types, SCREAMING_SNAKE_CASE consts, `#[cfg(test)]` tests,
   area-prefixed commit subjects (`engine:`, `secretd:`, `docs:`). Ignore any ECC instinct/skill
   that says otherwise.
-- **To change the agent env:** edit `agent-skills/` + `agent-env.yaml`, then `envctl agent sync --apply`
+- **To change the agent env:** edit the canonical `agent-skills/skill-catalog/` definition or
+  `agent-skills/<skill>/` owner, then activate through `envctl agent catalog`
+  and run `envctl agent lock` followed by `envctl agent sync --apply`.
   (the built-in agent-env engine; the external `kasetto` binary is retired — TASK-0018).
   Do **not** hand-maintain `.Codex/skills/*` or `.Codex/homunculus/instincts/*` — they're
   generated. CI enforces with `envctl agent lock --check` (read-only, zero-network, exits 1 on
@@ -285,13 +287,11 @@ fresh `Codex -p` per cycle (the `/new` effect) wrapping `env-install-loop`. To *
 trivial edits may be answered/done directly. (A SINGLE component install → `env-toolchain-install`;
 drift/lock/doctor → `env-stabilize`; conventions → `agent-env-config`.)
 
-**Placement:** the harness is **hand-authored and git-tracked**, intentionally *outside* the
-kasetto/agent-env pipeline. Agent definitions live in `.Codex/agents/*.md` and the harness skills
-(`feature-forge`, `rust-feature-impl`, `forge-loop`, `session-relay`, `env-install-loop`,
-`auto-provision`, `handoff-sync`) live directly in `.Codex/skills/` — edit those files in place and commit them. They are **not** sourced from `agent-skills/`, not in `agent-env.yaml` /
-`agent-env.lock`, and not produced by `envctl agent sync`. (Note: this is a deliberate exception to the
-general "`.Codex/skills/*` are kasetto-generated" rule above — the kasetto-managed skills remain
-`agent-env-config`, `env-stabilize`, `env-toolchain-install`.)
+**Placement:** harness skills are hand-authored, git-tracked canonical content under
+`agent-skills/`. The compact `agent-skills/skill-catalog/` owner selects only
+`core` plus explicitly activated packs into `.codex/skills` and `.agents/skills` through
+`envctl agent sync`; inactive skills remain intact in the canonical catalog and never become
+unmanaged copies. Agent definitions remain under `.Codex/agents/*.md`.
 
 > **Packaged upstream (TASK-0052, owner-locked 2026-06-18):** the generic construction-crew core —
 > `feature-forge` + `forge-loop` + `rust-feature-impl` + the architect/implementer/guardian/

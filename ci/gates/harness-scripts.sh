@@ -37,14 +37,14 @@ if grep -RIn "push unless asked" "$root/.agents" "$root/.claude" "$root/.codex" 
 fi
 
 for skill in \
-  "$root/.agents/skills/feature-forge/SKILL.md" \
+  "$root/agent-skills/feature-forge/SKILL.md" \
   "$root/.claude/skills/feature-forge/SKILL.md"; do
   grep -q "gh pr create --fill" "$skill" || { echo "FAIL: $skill missing PR-create publish contract" >&2; exit 1; }
   grep -q "gh pr merge <PR> --auto --squash" "$skill" || { echo "FAIL: $skill missing auto-merge publish contract" >&2; exit 1; }
 done
 
 for skill in \
-  "$root/.agents/skills/forge-loop/SKILL.md" \
+  "$root/agent-skills/forge-loop/SKILL.md" \
   "$root/.claude/skills/forge-loop/SKILL.md"; do
   grep -q "Write-side (no post-arm push)" "$skill" || { echo "FAIL: $skill missing no-post-arm-push safeguard" >&2; exit 1; }
 done

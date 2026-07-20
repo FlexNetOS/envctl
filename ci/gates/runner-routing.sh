@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # Overridable for the hermetic contract test (scripts/tests/test-runner-routing.sh) only.
-CI_WORKFLOW="${RUNNER_ROUTING_CI:-$ROOT/.github/workflows/ci.yml}"
-SYNC_WORKFLOW="${RUNNER_ROUTING_SYNC:-$ROOT/.github/workflows/sync-master.yml}"
+CI_WORKFLOW="${RUNNER_ROUTING_CI:-$ROOT/.github/workflows_disabled/ci.yml}"
+SYNC_WORKFLOW="${RUNNER_ROUTING_SYNC:-$ROOT/.github/workflows_disabled/sync-master.yml}"
 
 python3 - "$CI_WORKFLOW" "$SYNC_WORKFLOW" <<'PY'
 from pathlib import Path

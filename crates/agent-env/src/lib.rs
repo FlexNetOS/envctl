@@ -22,6 +22,7 @@
 //! `--locked` zero-network), and `#![forbid(unsafe_code)]` (set via `[lints]`).
 
 pub mod agent;
+pub mod catalog;
 pub mod command;
 pub mod config;
 pub mod config_edit;
@@ -90,6 +91,10 @@ pub use agent::{
     all_command_global_targets, all_command_project_targets, all_mcp_project_targets,
     all_mcp_settings_targets, command_global_targets, command_project_targets, CommandFormat,
     CommandTarget, McpSettingsFormat, McpSettingsTarget,
+};
+pub use catalog::{
+    Catalog, CatalogPack, CatalogSkill, Pack as CapabilityPack, Skill as CatalogSkillDefinition,
+    ACTIVE_RELATIVE as CATALOG_ACTIVE_RELATIVE, CATALOG_RELATIVE, CORE_PACK,
 };
 pub use command::{
     apply_command, apply_command_text_atomic, command_destination_matches_text, destination_path,

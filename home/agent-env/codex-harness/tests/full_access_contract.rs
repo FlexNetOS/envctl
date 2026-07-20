@@ -302,7 +302,10 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         "split status/full/restricted/toggle skill products must not return"
     );
 
-    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    let skill = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/SKILL.md"),
+    )
+    .unwrap();
     assert!(skill.contains("references/github-execution-policy.md"));
     assert!(skill.contains("references/github-org-and-ccboard.md"));
     assert!(skill.contains("references/bunx-and-github-ssh.md"));
@@ -410,7 +413,11 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
 #[test]
 fn persistent_runner_jobs_have_isolated_cargo_targets() {
     let root = envctl_root();
-    let workflow = fs::read_to_string(root.join(".github/workflows/ci.yml")).unwrap();
+    assert!(
+        !root.join(".github/workflows/ci.yml").exists(),
+        "the retired CI workflow must not become an active runner path"
+    );
+    let workflow = fs::read_to_string(root.join(".github/workflows_disabled/ci.yml")).unwrap();
     assert!(workflow.contains("CARGO_TARGET_DIR"));
     assert!(workflow.contains("RUNNER_TEMP"));
     assert!(workflow.contains("GITHUB_RUN_ID"));
@@ -429,7 +436,10 @@ fn persistent_runner_jobs_have_isolated_cargo_targets() {
 #[test]
 fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     let root = envctl_root();
-    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    let skill = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/SKILL.md"),
+    )
+    .unwrap();
     for required in [
         "references/yazelix-cli-plugin-policy.md",
         "A toggle may be off",
@@ -492,27 +502,15 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     assert!(!prompt.contains("`rtk git ...`"));
     assert!(!prompt.contains("/bin/rtk git status"));
 
-    let claude_prompt = fs::read_to_string(
-        root.join(".claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"),
-    )
-    .unwrap();
-    let claude_skill =
-        fs::read_to_string(root.join(".claude/skills/agent-env-claude/SKILL.md")).unwrap();
-    assert_eq!(
-        claude_prompt.matches("## YAZELIX (yzx) SURFACE").count(),
-        1,
-        "Claude prompt must contain one Yazelix policy block"
-    );
-    assert_eq!(
-        claude_skill.matches("## YAZELIX (yzx) SURFACE").count(),
-        1,
-        "Claude skill must contain one Yazelix policy block"
-    );
-
-    let phase0 =
-        fs::read_to_string(root.join(".claude/skills/agent-env-claude/phase0.sh")).unwrap();
-    assert!(phase0.contains("rtk meta --json exec --include yazelix-yazi-assets"));
-    assert!(!phase0.contains("&& git -C \"$PO\" remote get-url origin"));
+    for retired in [
+        ".claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md",
+        ".claude/skills/agent-env-claude",
+    ] {
+        assert!(
+            !root.join(retired).exists(),
+            "retired Claude mirror must remain absent: {retired}"
+        );
+    }
 }
 
 #[test]
