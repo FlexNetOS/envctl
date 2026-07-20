@@ -15,13 +15,14 @@
 //! NEVER binds with a half-built or absent cert). There is NO fallback to any other cert source.
 //!
 //! ring-only crypto provider (the single pinned rustls 0.23, never aws-lc-rs). No client auth in
-//! PR-1 (mTLS hardened mode is PR-2). Zero new deps — rustls/rustls-pemfile are already linked.
+//! PR-1 (mTLS hardened mode is PR-2). PEM decoding uses rustls-pki-types directly.
 
 use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use rustls::client::danger::HandshakeSignatureValid;
+use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::UnixTime;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::server::danger::{ClientCertVerified, ClientCertVerifier};
@@ -82,7 +83,7 @@ impl RelayTlsConfig {
 
         let certs: Vec<CertificateDer<'static>> = {
             let mut rd = std::io::BufReader::new(&cert_pem[..]);
-            rustls_pemfile::certs(&mut rd)
+            CertificateDer::pem_reader_iter(&mut rd)
                 .collect::<Result<Vec<_>, _>>()
                 .context("parsing relay edge cert.pem")?
         };
@@ -95,14 +96,8 @@ impl RelayTlsConfig {
 
         let key: PrivateKeyDer<'static> = {
             let mut rd = std::io::BufReader::new(&key_pem[..]);
-            rustls_pemfile::private_key(&mut rd)
-                .context("parsing relay edge key.pem")?
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "relay edge key.pem at {} contained no private key",
-                        key_path.display()
-                    )
-                })?
+            PrivateKeyDer::from_pem_reader(&mut rd)
+                .with_context(|| format!("parsing relay edge key.pem at {}", key_path.display()))?
         };
 
         // ring-only provider + safe protocol versions are common to both modes. A build error (e.g.
@@ -154,7 +149,7 @@ impl RelayTlsConfig {
 }
 
 /// PR-2b: load the operator-provisioned remote-clients-CA bundle (PEM) into a rustls `RootCertStore`
-/// (the trust anchors a presented client cert is verified against). The SAME `rustls_pemfile::certs`
+/// (the trust anchors a presented client cert is verified against). The SAME `PemObject` decoder
 /// path the server cert uses — a SEPARATE input from the relay-tls cert, NEVER the MITM CA. Fail-
 /// closed: a missing/empty/unparsable file, or a file with zero usable anchors, is an `Err`.
 fn load_client_ca_roots(client_ca_path: &Path) -> anyhow::Result<RootCertStore> {
@@ -166,7 +161,7 @@ fn load_client_ca_roots(client_ca_path: &Path) -> anyhow::Result<RootCertStore> 
     })?;
     let anchors: Vec<CertificateDer<'static>> = {
         let mut rd = std::io::BufReader::new(&anchors_pem[..]);
-        rustls_pemfile::certs(&mut rd)
+        CertificateDer::pem_reader_iter(&mut rd)
             .collect::<Result<Vec<_>, _>>()
             .context("parsing the remote-clients-CA PEM")?
     };

@@ -121,8 +121,21 @@ struct ConfigOrigin {
 /// recursively, then deserialize into a [`Config`]. Returns the config, its base directory,
 /// and a human-readable label.
 pub fn load_config_any(config_path: &str) -> Result<(Config, PathBuf, String)> {
+    load_config_any_with_policy(config_path, true)
+}
+
+/// Load a local config and its local `extends` chain without any network fetch.
+/// Remote root configs and remote parents are refused before constructing an HTTP request.
+pub fn load_config_any_zero_network(config_path: &str) -> Result<(Config, PathBuf, String)> {
+    load_config_any_with_policy(config_path, false)
+}
+
+fn load_config_any_with_policy(
+    config_path: &str,
+    allow_network: bool,
+) -> Result<(Config, PathBuf, String)> {
     let mut visited = HashSet::new();
-    let (merged, origin) = load_value_recursive(config_path, None, &mut visited, 0)?;
+    let (merged, origin) = load_value_recursive(config_path, None, &mut visited, 0, allow_network)?;
     let cfg: Config = serde_yaml::from_value(merged)
         .map_err(|e| err(format!("failed to parse config {}: {e}", origin.label)))?;
     let cfg_dir = match origin.base_dir {
@@ -143,7 +156,7 @@ pub fn load_config_recursive(
     visited: &mut HashSet<String>,
     depth: u8,
 ) -> Result<(Value, PathBuf, String)> {
-    let (value, origin) = load_value_recursive(config_ref, parent_base_dir, visited, depth)?;
+    let (value, origin) = load_value_recursive(config_ref, parent_base_dir, visited, depth, true)?;
     let base_dir = origin.base_dir.clone().unwrap_or_default();
     Ok((value, base_dir, origin.label))
 }
@@ -153,6 +166,7 @@ fn load_value_recursive(
     parent_base_dir: Option<&Path>,
     visited: &mut HashSet<String>,
     depth: u8,
+    allow_network: bool,
 ) -> Result<(Value, ConfigOrigin)> {
     if depth > MAX_EXTENDS_DEPTH {
         return Err(err(format!(
@@ -160,7 +174,7 @@ fn load_value_recursive(
         )));
     }
 
-    let (text, origin) = fetch_config_text(config_ref, parent_base_dir)?;
+    let (text, origin) = fetch_config_text(config_ref, parent_base_dir, allow_network)?;
     if !visited.insert(origin.canonical_id.clone()) {
         return Err(err(format!(
             "circular extends detected involving {}",
@@ -180,6 +194,7 @@ fn load_value_recursive(
             origin.base_dir.as_deref(),
             &mut parent_visited,
             depth + 1,
+            allow_network,
         )
         .map_err(|e| {
             err(format!(
@@ -198,8 +213,14 @@ fn load_value_recursive(
 fn fetch_config_text(
     config_ref: &str,
     parent_base_dir: Option<&Path>,
+    allow_network: bool,
 ) -> Result<(String, ConfigOrigin)> {
     if config_ref.starts_with("http://") || config_ref.starts_with("https://") {
+        if !allow_network {
+            return Err(err(format!(
+                "--locked forbids remote config fetch: {config_ref}"
+            )));
+        }
         let fetch_url =
             rewrite_browse_to_raw_url(config_ref).unwrap_or_else(|| config_ref.to_string());
         let auth = auth_for_request_url(&fetch_url);
@@ -326,8 +347,9 @@ mod tests {
     #[test]
     fn merge_appends_distinct_and_overrides_same_identity() {
         let base = yaml("skills:\n  - source: https://x/a\n    ref: v1\n    skills: \"*\"\n");
-        let overlay =
-            yaml("skills:\n  - source: https://x/a\n    ref: v1\n    skills:\n      - one\n  - source: https://x/b\n    skills: \"*\"\n");
+        let overlay = yaml(
+            "skills:\n  - source: https://x/a\n    ref: v1\n    skills:\n      - one\n  - source: https://x/b\n    skills: \"*\"\n",
+        );
         let merged = merge_yaml(base, overlay);
         let Value::Sequence(seq) = merged.get("skills").unwrap() else {
             panic!("expected sequence")
@@ -462,6 +484,30 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
     }
 
+    #[test]
+    fn zero_network_loader_rejects_remote_root_and_remote_extends() {
+        let remote = "https://network-sentinel.invalid/agent-env.yaml";
+        let root_err = load_config_any_zero_network(remote).unwrap_err();
+        assert!(
+            root_err
+                .to_string()
+                .contains("--locked forbids remote config fetch"),
+            "remote root refusal: {root_err}"
+        );
+
+        let root = temp_dir("agent-env-zero-network-extends");
+        let child = root.join("child.yaml");
+        fs::write(&child, format!("extends: {remote}\nskills: []\n")).unwrap();
+        let extends_err = load_config_any_zero_network(child.to_str().unwrap()).unwrap_err();
+        assert!(
+            extends_err
+                .to_string()
+                .contains("--locked forbids remote config fetch"),
+            "remote extends refusal: {extends_err}"
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
     // --- CFG-03: fetch_config_text remote arm (kasetto src/fsops/config.rs) ---
     //
     // Oracle: kasetto `fetch_config_text` http(s) branch — rewrite browse→raw, derive
@@ -513,7 +559,7 @@ mod tests {
         let (base, handle) = spawn_canned_http(vec![("200 OK", yaml_body.clone())]);
         let url = format!("{base}/config.yaml");
 
-        let (text, origin) = match fetch_config_text(&url, None) {
+        let (text, origin) = match fetch_config_text(&url, None, true) {
             Ok(pair) => pair,
             Err(e) => panic!("200 must return Ok, got Err: {e}"),
         };
@@ -530,7 +576,7 @@ mod tests {
         let (base, handle) = spawn_canned_http(vec![("404 Not Found", "nope".to_string())]);
         let url = format!("{base}/missing.yaml");
 
-        let e = match fetch_config_text(&url, None) {
+        let e = match fetch_config_text(&url, None, true) {
             Ok(_) => panic!("non-2xx must be Err"),
             Err(e) => e,
         };
@@ -551,7 +597,7 @@ mod tests {
         let (base, handle) = spawn_canned_http(vec![("200 OK", html)]);
         let url = format!("{base}/login.yaml");
 
-        let e = match fetch_config_text(&url, None) {
+        let e = match fetch_config_text(&url, None, true) {
             Ok(_) => panic!("HTML body must be Err"),
             Err(e) => e,
         };

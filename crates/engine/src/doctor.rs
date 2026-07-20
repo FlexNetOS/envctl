@@ -6,7 +6,7 @@
 //! workspace-aware and has no historical `~/Desktop/meta` fallback.
 
 use crate::lock::{self, LockDriftKind, LockFile};
-use crate::model::{MetaBoundaryReport, Registry};
+use crate::model::MetaBoundaryReport;
 use crate::runtime::LastRun;
 use crate::{Engine, Event, EventSink, LayoutKind, MetaLayout};
 use loop_lib::{build_command, SpawnSpec};
@@ -385,7 +385,7 @@ fn build_report(
     }
 }
 
-pub(crate) fn manifest_lock_check(registry: &Registry, manifest_dir: &Path) -> ManifestLockReport {
+pub(crate) fn manifest_lock_check(manifest_dir: &Path) -> ManifestLockReport {
     let path = lock::lock_path(manifest_dir);
     if !path.is_file() {
         return ManifestLockReport {
@@ -409,7 +409,19 @@ pub(crate) fn manifest_lock_check(registry: &Registry, manifest_dir: &Path) -> M
             };
         }
     };
-    let drift = lock::diff(registry, &loaded)
+    let registry = match crate::model::Registry::load(manifest_dir) {
+        Ok(registry) => registry,
+        Err(error) => {
+            return ManifestLockReport {
+                status: ManifestLockStatus::Corrupt,
+                path,
+                locked: false,
+                drift: Vec::new(),
+                detail: Some(format!("cannot load current manifest: {error}")),
+            };
+        }
+    };
+    let drift = lock::diff(&registry, &loaded)
         .into_iter()
         .map(|(component, drift)| ManifestLockDrift { component, drift })
         .collect::<Vec<_>>();
@@ -448,17 +460,24 @@ fn resolve_meta_root(spec: &DoctorSpec) -> Result<ResolvedRoot, String> {
     } else {
         start.clone()
     };
+    let start_dir = canonical_or_self(start_dir);
+    let managed_root = verified_managed_meta_root(&start_dir)?;
 
     let mut roots = BTreeSet::new();
     for ancestor in start_dir.ancestors() {
         if ancestor.join(".meta.yaml").is_file() {
-            roots.insert(canonical_or_self(normalize_managed_root(ancestor)));
+            roots.insert(canonical_or_self(ancestor.to_path_buf()));
         }
     }
     match roots.len() {
         1 => {
             let root = roots.into_iter().next().expect("one root");
-            validate_root(&root, RootSource::MetaFile)
+            let source = if managed_root.as_ref() == Some(&root) {
+                RootSource::ManagedWorktree
+            } else {
+                RootSource::MetaFile
+            };
+            validate_root(&root, source)
         }
         n if n > 1 => Err(format!(
             "ambiguous meta roots discovered above {}: {}",
@@ -469,23 +488,17 @@ fn resolve_meta_root(spec: &DoctorSpec) -> Result<ResolvedRoot, String> {
                 .collect::<Vec<_>>()
                 .join(", ")
         )),
-        _ => {
-            let managed = normalize_managed_root(&start_dir);
-            if managed != start_dir {
-                validate_root(&managed, RootSource::ManagedWorktree)
-            } else {
-                Err(format!(
-                    "no meta root: set META_ROOT, pass --root, or run below a .meta.yaml (start: {})",
-                    start_dir.display()
-                ))
-            }
-        }
+        _ => Err(format!(
+            "no meta root: set META_ROOT, pass --root, or run below a .meta.yaml (start: {})",
+            start_dir.display()
+        )),
     }
 }
 
 fn validate_root(path: &Path, source: RootSource) -> Result<ResolvedRoot, String> {
     let path = absolutize(path.to_path_buf())?;
-    let path = canonical_or_self(normalize_managed_root(&path));
+    let path = canonical_or_self(path);
+    let path = verified_managed_meta_root(&path)?.unwrap_or(path);
     match std::fs::metadata(&path) {
         Ok(metadata) if metadata.is_dir() => Ok(ResolvedRoot { path, source }),
         Ok(_) => Err(format!("meta root is not a directory: {}", path.display())),
@@ -506,15 +519,99 @@ fn absolutize(path: PathBuf) -> Result<PathBuf, String> {
     }
 }
 
-fn normalize_managed_root(path: &Path) -> PathBuf {
+/// Resolve a path below `<meta>/.worktrees/<slug>/<repo>` to its owning Meta
+/// root only when the filesystem proves that topology. The lexical component
+/// alone is not evidence: require the canonical `.meta.yaml`, a declared repo
+/// id, and live linked-worktree gitdir metadata for the checkout.
+fn verified_managed_meta_root(path: &Path) -> Result<Option<PathBuf>, String> {
     let mut prefix = PathBuf::new();
-    for component in path.components() {
+    let mut components = path.components();
+    while let Some(component) = components.next() {
         if component.as_os_str() == ".worktrees" {
-            return prefix;
+            let slug = match components.next() {
+                Some(std::path::Component::Normal(slug)) if !slug.is_empty() => slug,
+                _ => {
+                    return Err(format!(
+                        "unverified managed-worktree path {}: missing worktree-set slug",
+                        path.display()
+                    ));
+                }
+            };
+            let repo = match components.next() {
+                Some(std::path::Component::Normal(repo)) if !repo.is_empty() => repo,
+                _ => {
+                    return Err(format!(
+                        "unverified managed-worktree path {}: missing repository identity",
+                        path.display()
+                    ));
+                }
+            };
+            let Some(repo_id) = repo.to_str() else {
+                return Err(format!(
+                    "unverified managed-worktree path {}: repository identity is not UTF-8",
+                    path.display()
+                ));
+            };
+            let root = canonical_or_self(prefix);
+            let meta_file = root.join(".meta.yaml");
+            let workspace = crate::dashboard::read_workspace(&meta_file).map_err(|error| {
+                format!(
+                    "unverified managed-worktree path {}: cannot prove owning Meta root from {}: {error}",
+                    path.display(),
+                    meta_file.display()
+                )
+            })?;
+            if !workspace
+                .repos
+                .iter()
+                .any(|declared| declared.id == repo_id)
+            {
+                return Err(format!(
+                    "unverified managed-worktree path {}: repository {repo_id} is not declared in {}",
+                    path.display(),
+                    meta_file.display()
+                ));
+            }
+
+            let checkout = root.join(".worktrees").join(slug).join(repo);
+            let git_file = checkout.join(".git");
+            let git_metadata = std::fs::read_to_string(&git_file).map_err(|error| {
+                format!(
+                    "unverified managed-worktree path {}: cannot read linked-worktree metadata {}: {error}",
+                    path.display(),
+                    git_file.display()
+                )
+            })?;
+            let gitdir = git_metadata
+                .lines()
+                .next()
+                .and_then(|line| line.strip_prefix("gitdir: "))
+                .filter(|gitdir| !gitdir.trim().is_empty())
+                .ok_or_else(|| {
+                    format!(
+                        "unverified managed-worktree path {}: malformed linked-worktree metadata {}",
+                        path.display(),
+                        git_file.display()
+                    )
+                })?;
+            let gitdir = PathBuf::from(gitdir);
+            let gitdir = if gitdir.is_absolute() {
+                gitdir
+            } else {
+                checkout.join(gitdir)
+            };
+            if !gitdir.is_dir() {
+                return Err(format!(
+                    "unverified managed-worktree path {}: linked gitdir does not exist: {}",
+                    path.display(),
+                    gitdir.display()
+                ));
+            }
+            return Ok(Some(root));
         }
         prefix.push(component.as_os_str());
     }
-    path.to_path_buf()
+    Ok(None)
 }
 
 fn canonical_or_self(path: PathBuf) -> PathBuf {
@@ -592,7 +689,11 @@ fn path_state(path: &Path) -> PathState {
 }
 
 fn write_access(path: &Path) -> bool {
-    rustix::fs::access(path, rustix::fs::Access::WRITE_OK).is_ok()
+    rustix::fs::access(
+        path,
+        rustix::fs::Access::WRITE_OK | rustix::fs::Access::EXEC_OK,
+    )
+    .is_ok()
 }
 
 fn probe_tools(run_versions: bool) -> Vec<ToolCheck> {
@@ -666,6 +767,9 @@ fn command_output(
         args: &args,
         current_dir: None,
         env: &[],
+        // Version/sudo probes are read-only diagnostics. Do not let loader,
+        // shell, or exported-function state from the caller influence them.
+        clear_env: true,
     });
     let mut child = command
         .stdout(Stdio::piped())
@@ -703,7 +807,7 @@ fn read_secure_boot() -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::DryRunRunner;
+    use crate::{DryRunRunner, Registry};
     use std::sync::atomic::{AtomicU64, Ordering};
 
     struct Fixture {
@@ -791,6 +895,21 @@ command = "true"
         assert_eq!(summary.errors, 1);
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn write_only_directory_is_not_reported_writable_without_search_access() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let fixture = Fixture::new("write-without-search");
+        let directory = fixture.root.join("write-only");
+        std::fs::create_dir_all(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o200)).unwrap();
+
+        assert_eq!(path_state(&directory), PathState::ReadOnly);
+
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
+
     #[test]
     fn doctor_is_non_mutating_and_emits_exactly_one_doctored_event() {
         let fixture = Fixture::new("non-mutating");
@@ -868,7 +987,19 @@ command = "true"
         std::env::remove_var("META_ROOT");
         let fixture = Fixture::new("worktree");
         let nested = fixture.root.join(".worktrees/slug/envctl");
+        let gitdir = fixture.root.join(".git/worktrees/envctl-test");
         std::fs::create_dir_all(&nested).unwrap();
+        std::fs::create_dir_all(&gitdir).unwrap();
+        std::fs::write(
+            fixture.root.join(".meta.yaml"),
+            "projects:\n  envctl:\n    repo: test://envctl\n",
+        )
+        .unwrap();
+        std::fs::write(
+            nested.join(".git"),
+            format!("gitdir: {}\n", gitdir.display()),
+        )
+        .unwrap();
         let resolved = resolve_meta_root(&DoctorSpec {
             meta_root: None,
             start: Some(nested),
@@ -877,6 +1008,59 @@ command = "true"
         .unwrap();
         assert_eq!(resolved.source, RootSource::ManagedWorktree);
         assert_eq!(resolved.path, fixture.root.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn lexical_dot_worktrees_path_without_meta_identity_is_refused() {
+        let _guard = crate::test_env_lock();
+        std::env::remove_var("META_ROOT");
+        let fixture = Fixture::new("fake-worktree");
+        let nested = fixture.root.join(".worktrees/fake/envctl");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let error = resolve_meta_root(&DoctorSpec {
+            meta_root: None,
+            start: Some(nested),
+            probe_commands: false,
+        })
+        .unwrap_err();
+
+        assert!(
+            error.contains("unverified managed-worktree path"),
+            "{error}"
+        );
+        assert!(error.contains(".meta.yaml"), "{error}");
+    }
+
+    #[test]
+    fn managed_worktree_requires_declared_repo_and_live_linked_gitdir() {
+        let fixture = Fixture::new("worktree-identity");
+        let checkout = fixture.root.join(".worktrees/slug/envctl");
+        let gitdir = fixture.root.join(".git/worktrees/envctl-test");
+        std::fs::create_dir_all(&checkout).unwrap();
+        std::fs::create_dir_all(&gitdir).unwrap();
+        std::fs::write(
+            fixture.root.join(".meta.yaml"),
+            "projects:\n  different-repo:\n    repo: test://different\n",
+        )
+        .unwrap();
+        std::fs::write(
+            checkout.join(".git"),
+            format!("gitdir: {}\n", gitdir.display()),
+        )
+        .unwrap();
+
+        let undeclared = verified_managed_meta_root(&checkout).unwrap_err();
+        assert!(undeclared.contains("repository envctl is not declared"));
+
+        std::fs::write(
+            fixture.root.join(".meta.yaml"),
+            "projects:\n  envctl:\n    repo: test://envctl\n",
+        )
+        .unwrap();
+        std::fs::remove_file(checkout.join(".git")).unwrap();
+        let unlinked = verified_managed_meta_root(&checkout).unwrap_err();
+        assert!(unlinked.contains("cannot read linked-worktree metadata"));
     }
 
     #[test]
@@ -936,21 +1120,66 @@ command = "true"
 "#,
         )
         .unwrap();
-        let drift_engine = fixture.engine();
         assert_eq!(
-            drift_engine.manifest_lock_check().status,
+            engine.manifest_lock_check().status,
             ManifestLockStatus::Drifted
         );
 
         std::fs::remove_file(fixture.manifest.join(lock::LOCK_FILENAME)).unwrap();
         assert_eq!(
-            drift_engine.manifest_lock_check().status,
+            engine.manifest_lock_check().status,
             ManifestLockStatus::Missing
         );
         std::fs::write(fixture.manifest.join(lock::LOCK_FILENAME), "not = [valid").unwrap();
         assert_eq!(
-            drift_engine.manifest_lock_check().status,
+            engine.manifest_lock_check().status,
             ManifestLockStatus::Corrupt
         );
+    }
+
+    #[test]
+    fn manifest_lock_check_rejects_tampered_requires_resolved_and_version() {
+        let fixture = Fixture::new("lock-semantic-tampering");
+        let engine = fixture.engine();
+        let original = LockFile::load(&fixture.manifest).unwrap();
+        let lock_path = fixture.manifest.join(lock::LOCK_FILENAME);
+        let write_lock = |lock_file: &LockFile| {
+            std::fs::write(&lock_path, toml::to_string_pretty(lock_file).unwrap()).unwrap();
+        };
+
+        let mut tampered = original.clone();
+        tampered
+            .components
+            .get_mut("stub")
+            .unwrap()
+            .requires
+            .push("ghost-dependency".to_string());
+        write_lock(&tampered);
+        let report = engine.manifest_lock_check();
+        assert_eq!(report.status, ManifestLockStatus::Drifted);
+        assert!(report
+            .drift
+            .iter()
+            .any(|entry| { entry.component == "stub" && entry.drift == LockDriftKind::Changed }));
+
+        let mut tampered = original.clone();
+        tampered.components.get_mut("stub").unwrap().resolved = "deadbeef".to_string();
+        write_lock(&tampered);
+        let report = engine.manifest_lock_check();
+        assert_eq!(report.status, ManifestLockStatus::Drifted);
+        assert!(report
+            .drift
+            .iter()
+            .any(|entry| { entry.component == "stub" && entry.drift == LockDriftKind::Changed }));
+
+        let mut tampered = original;
+        tampered.version = lock::LOCK_VERSION + 1;
+        write_lock(&tampered);
+        let report = engine.manifest_lock_check();
+        assert_eq!(report.status, ManifestLockStatus::Corrupt);
+        assert!(report
+            .detail
+            .as_deref()
+            .is_some_and(|detail| detail.contains("unsupported envctl.lock version")));
     }
 }

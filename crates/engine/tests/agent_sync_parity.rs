@@ -1,10 +1,10 @@
 //! Differential PARITY verification of the absorbed sync engine (kasetto → envctl, Epic C
 //! TASK-0012, rows C-01..C-06) against kasetto v3.2.0's own certified `#[cfg(test)]` vectors in
 //! `src/commands/sync/{skills,commands,mcps}.rs` (7 + 3 + 3 = 13). Each test below reproduces an
-//! oracle test's EXACT fixture and asserts the IDENTICAL effect — but driven through the engine's
-//! public `Engine::agent_sync` API (over the on-disk lock + installed files + merged `.mcp.json` +
-//! the returned `AgentReport`), proving envctl's `crates/agent-env` driver reproduces kasetto's
-//! behavior. The engine source is FROZEN; this file only verifies it.
+//! oracle test's fixture through the public `Engine::agent_sync` API (over the on-disk lock +
+//! installed files + merged `.mcp.json` + the returned `AgentReport`). Where v3 ownership and
+//! atomic-input invariants intentionally supersede a kasetto behavior, the test names that
+//! hardening delta and pins the fail-closed replacement contract.
 //!
 //! Oracle-mapping note: kasetto's unit tests call `sync_skills`/`sync_commands` directly against an
 //! in-memory `&mut State`/`LockFile`, re-running on the SAME mutated lock. The engine persists the
@@ -146,10 +146,11 @@ fn list_block(names: &[&str]) -> String {
 }
 
 /// Oracle: kasetto src/commands/sync/skills.rs::first_run_installs_then_second_run_unchanged_without_source
-/// First run installs; deleting the SOURCE then re-syncing plainly still reports `unchanged`
-/// (no fetch — re-hash of the locked dest matches), failed == 0.
+/// V3 hardening delta: plain sync rebuilds desired state from source bytes and never treats an
+/// installed output as its own source. Deleting the source therefore fails coherently while the
+/// already-installed, proven output remains untouched.
 #[test]
-fn c02_first_run_installs_then_unchanged_without_source() {
+fn c02_first_run_installs_then_missing_source_fails_closed() {
     let src = unique_dir("parity-skillsrc");
     copy_tree(&skill_pack(), &src);
     let (engine, proj, _cfg) = project("scope: project\n");
@@ -166,18 +167,22 @@ fn c02_first_run_installs_then_unchanged_without_source() {
     assert_eq!(s1.summary.installed, 1, "first run installs");
     assert!(dest.join("alpha/SKILL.md").is_file());
 
-    // Remove the source entirely: a plain re-sync must still report unchanged (no fetch).
+    // Remove the source entirely: plain mode must not self-certify from its destination.
     std::fs::remove_dir_all(&src).unwrap();
     let s2 = sync_apply(&engine, &cfg);
-    assert_eq!(s2.summary.unchanged, 1, "second run unchanged, no fetch");
-    assert_eq!(s2.summary.failed, 0);
+    assert_eq!(s2.summary.failed, 1, "missing source must fail closed");
+    assert_eq!(s2.summary.unchanged, 0);
+    assert!(
+        dest.join("alpha/SKILL.md").is_file(),
+        "coherent preflight failure must preserve the proven install"
+    );
 }
 
 /// Oracle: kasetto src/commands/sync/skills.rs::tampered_dest_is_repaired_from_source
-/// Tampering the installed copy makes the dest hash mismatch the lock → needs_fetch repairs from
-/// source → `updated == 1`.
+/// V3 hardening delta: a destination that differs from its ownership proof is treated as a user
+/// edit or corruption and is never overwritten automatically, even when source bytes are present.
 #[test]
-fn c02_tampered_dest_is_repaired_from_source() {
+fn c02_tampered_dest_is_refused_and_preserved() {
     let src = unique_dir("parity-skillsrc");
     copy_tree(&skill_pack(), &src);
     let (engine, proj, _cfg) = project("scope: project\n");
@@ -191,22 +196,25 @@ fn c02_tampered_dest_is_repaired_from_source() {
     let cfg = cfg_path.to_string_lossy().to_string();
 
     sync_apply(&engine, &cfg);
-    // Tamper the installed copy → no good local copy → repair from source.
-    std::fs::write(
-        dest.join("alpha/SKILL.md"),
-        "---\nname: alpha\n---\nEDITED\n",
-    )
-    .unwrap();
+    // Tamper the installed copy → the ownership proof no longer authorizes replacement.
+    let edited = "---\nname: alpha\n---\nEDITED\n";
+    std::fs::write(dest.join("alpha/SKILL.md"), edited).unwrap();
     let s = sync_apply(&engine, &cfg);
-    assert_eq!(s.summary.updated, 1, "tampered dest repaired from source");
-    assert_eq!(s.summary.failed, 0);
+    assert_eq!(s.summary.updated, 0);
+    assert_eq!(s.summary.failed, 1, "proof drift must fail closed");
+    assert_eq!(
+        std::fs::read_to_string(dest.join("alpha/SKILL.md")).unwrap(),
+        edited,
+        "drifted output must not be overwritten"
+    );
 }
 
 /// Oracle: kasetto src/commands/sync/skills.rs::missing_second_dest_repaired_locally_without_source
-/// Two destinations; drop the second dest AND remove the source — repair must copy from the good
-/// first dest (local repair, no fetch) → `updated == 1`, failed == 0, dest2 restored.
+/// V3 hardening delta: the complete desired input set is validated before any repair. Removing
+/// the configured source fails coherently instead of treating another destination as source
+/// authority; the good destination survives and the missing destination stays absent.
 #[test]
-fn c02_missing_second_dest_repaired_locally_without_source() {
+fn c02_missing_second_dest_and_source_fails_without_partial_repair() {
     let src = unique_dir("parity-skillsrc");
     copy_tree(&skill_pack(), &src);
     let (engine, proj, _cfg) = project("scope: project\n");
@@ -226,20 +234,27 @@ fn c02_missing_second_dest_repaired_locally_without_source() {
     assert!(dest1.is_file());
     assert!(dest2_dir.join("alpha/SKILL.md").exists());
 
-    // Drop dest2 and the source: repair must copy from the good dest1.
+    // Drop dest2 and the source: source validation fails before any destination mutation.
     std::fs::remove_dir_all(&dest2_dir).unwrap();
     std::fs::remove_dir_all(&src).unwrap();
     let s = sync_apply(&engine, &cfg);
-    assert_eq!(s.summary.updated, 1, "repaired locally from the good dest");
-    assert_eq!(s.summary.failed, 0);
-    assert!(dest2_dir.join("alpha/SKILL.md").exists(), "dest2 restored");
+    assert_eq!(s.summary.updated, 0);
+    assert_eq!(s.summary.failed, 1);
+    assert!(
+        dest1.is_file(),
+        "good destination survives coherent failure"
+    );
+    assert!(
+        !dest2_dir.join("alpha/SKILL.md").exists(),
+        "an unverified input set must not partially repair destinations"
+    );
 }
 
-/// Oracle: kasetto src/commands/sync/skills.rs::wildcard_holds_to_locked_set_on_plain_sync
-/// A wildcard source installs {alpha,beta}; removing beta from the SOURCE and re-syncing PLAINLY
-/// keeps the locked set (2 unchanged, 0 removed).
+/// Oracle superseded by the v3 plain/locked split: plain mode re-discovers wildcard contents;
+/// removing beta from the source rewrites desired state and proof-checks its removal. Locked mode
+/// remains the mode that freezes the committed wildcard set.
 #[test]
-fn c02_wildcard_holds_to_locked_set_on_plain_sync() {
+fn c02_wildcard_plain_sync_rediscovers_and_prunes_removed_skill() {
     let src = unique_dir("parity-skillsrc");
     copy_tree(&skill_pack(), &src);
     let (engine, proj, _cfg) = project("scope: project\n");
@@ -255,14 +270,12 @@ fn c02_wildcard_holds_to_locked_set_on_plain_sync() {
     let s1 = sync_apply(&engine, &cfg);
     assert_eq!(s1.summary.installed, 2, "wildcard installs alpha+beta");
 
-    // Remove beta from the SOURCE; a plain wildcard re-sync holds the locked set.
+    // Remove beta from the SOURCE; plain mode intentionally re-discovers the wildcard.
     std::fs::remove_dir_all(src.join("beta")).unwrap();
     let s2 = sync_apply(&engine, &cfg);
-    assert_eq!(s2.summary.unchanged, 2, "locked set still honored");
-    assert_eq!(
-        s2.summary.removed, 0,
-        "plain sync never prunes the wildcard set"
-    );
+    assert_eq!(s2.summary.unchanged, 1);
+    assert_eq!(s2.summary.removed, 1);
+    assert!(!dest.join("beta").exists());
 }
 
 /// Oracle: kasetto src/commands/sync/skills.rs::wildcard_update_prunes_removed_skill
@@ -418,11 +431,11 @@ fn c03_commands_write_to_supported_agents_skip_unsupported_then_prune() {
 }
 
 /// Oracle: kasetto src/commands/sync/commands.rs::second_run_unchanged_without_source_no_fetch
-/// A wildcard command source installs `foo`; removing the SOURCE and re-syncing plainly reports
-/// `unchanged == 1`, `failed == 0`, `removed == 0` (the installed file is a transform, repaired
-/// only via fetch — but the hash+dest-file match means no fetch is needed).
+/// V3 hardening delta: plain mode validates the complete configured source set and does not
+/// self-certify transformed command outputs. A missing source fails coherently and preserves the
+/// installed command.
 #[test]
-fn c03_second_run_unchanged_without_source_no_fetch() {
+fn c03_second_run_missing_source_fails_and_preserves_command() {
     let src = unique_dir("parity-cmdsrc");
     copy_tree(&cmd_pack(), &src);
     // Drop the nested git/commit.md so the only command is `foo` (matches the oracle fixture).
@@ -442,9 +455,10 @@ fn c03_second_run_unchanged_without_source_no_fetch() {
 
     std::fs::remove_dir_all(&src).unwrap();
     let r2 = sync_apply(&engine, &cfg);
-    assert_eq!(r2.summary.unchanged, 1, "second run unchanged, no fetch");
-    assert_eq!(r2.summary.failed, 0);
+    assert_eq!(r2.summary.unchanged, 0);
+    assert_eq!(r2.summary.failed, 1);
     assert_eq!(r2.summary.removed, 0, "lock entry retained, not pruned");
+    assert!(proj.join(".claude/commands/foo.md").is_file());
 }
 
 /// Oracle: kasetto src/commands/sync/commands.rs::locked_errors_when_command_absent_from_lock

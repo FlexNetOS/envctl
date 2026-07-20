@@ -7,3 +7,7 @@
 # before); with it, silent concatenation is impossible.
 .handoff/loop/loop_state.md   merge=handoff-reconcile
 .handoff/loop/backlog.md      merge=handoff-reconcile
+
+# Vendored crate snapshots are retained byte-for-byte from their published
+# archives. Upstream whitespace is not an envctl source-style signal.
+third_party/** -whitespace

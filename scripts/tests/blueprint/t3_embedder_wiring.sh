@@ -16,12 +16,14 @@
 # production rows.
 set -uo pipefail
 
-PSQL="${PSQL_BIN:-/home/flexnetos/lifeos/var/lib/postgresql/pg17-rw/bin/psql}"
-PGHOST="${PGHOST_DIR:-/home/flexnetos/lifeos/var/lib/postgresql}"
+META_ROOT="${META_ROOT:?META_ROOT required}"
+ENVCTL_REAL_HOME="${ENVCTL_REAL_HOME:?ENVCTL_REAL_HOME required}"
+PSQL="${PSQL_BIN:-$ENVCTL_REAL_HOME/.nix-profile/toolbin/psql}"
 PGPORT="${PGPORT:-5432}"
+PGHOST="${PGHOST_DIR:-$META_ROOT/var/lib/postgresql}"
 DB="${RUVECTOR_DB:-ruvector}"
-MANIFEST="${RUVECTOR_MANIFEST:-/home/flexnetos/lifeos/var/lib/ruvector/agents/_manifest.json}"
-RUV_DIR="${RUVECTOR_DIR:-/home/flexnetos/lifeos/var/lib/ruvector}"
+MANIFEST="${RUVECTOR_MANIFEST:-$META_ROOT/var/lib/ruvector/agents/_manifest.json}"
+RUV_DIR="${RUVECTOR_DIR:-$META_ROOT/var/lib/ruvector}"
 
 fail=0
 q() { "$PSQL" -h "$PGHOST" -p "$PGPORT" -d "$DB" -tAc "$1" 2>&1; }

@@ -1,22 +1,16 @@
 //! Integration tests for the libSQL remote `Store` backend.
 //!
-//! These require a RUNNING sqld reachable over HTTP. They are `#[ignore]`d by default so the crate
-//! test suite stays runnable in CI without a server.
+//! These require the runner-managed, JWT-authenticated sqld reachable over HTTP. They are
+//! `#[ignore]`d by default so the crate test suite stays runnable without a server.
 //!
 //! ## How to run
 //!
-//! 1. Start a loopback sqld (open auth is fine for the test; NEVER in production):
+//! Run the repository harness; it verifies the exact pinned artifact, creates a fresh JWT pair,
+//! proves unauthenticated SQL is rejected, and supplies both target variables without exposing the
+//! bearer on the command line:
 //!    ```sh
-//!    sqld --http-listen-addr 127.0.0.1:8080
-//!    # or via Docker:
-//!    # docker run -p 8080:8080 ghcr.io/tursodatabase/libsql-server:latest
+//!    bash ci/run-live-libsql-tests.sh
 //!    ```
-//! 2. Point the tests at it and run the ignored set:
-//!    ```sh
-//!    LIBSQL_TEST_URL=http://127.0.0.1:8080 LIBSQL_TEST_AUTH= \
-//!      cargo test -p envctl-secrets-store-libsql --features remote -- --ignored --nocapture
-//!    ```
-//!    (If you configured `--auth-jwt-key-file`, set `LIBSQL_TEST_AUTH` to a valid JWT.)
 //!
 //! Each test provisions a fresh schema; run against a throwaway database.
 
@@ -29,7 +23,12 @@ use serde_json::json;
 
 fn store() -> envctl_secrets_store_libsql::LibSqlStore {
     let url = std::env::var("LIBSQL_TEST_URL").expect("set LIBSQL_TEST_URL to a running sqld");
-    let auth = std::env::var("LIBSQL_TEST_AUTH").unwrap_or_default();
+    let auth = std::env::var("LIBSQL_TEST_AUTH")
+        .expect("LIBSQL_TEST_AUTH must contain the runner-generated JWT");
+    assert!(
+        !auth.trim().is_empty(),
+        "LIBSQL_TEST_AUTH must not be empty; open-auth sqld is not a valid test target"
+    );
     LibSqlStoreBuilder::new(url, auth)
         .build()
         .expect("open store")

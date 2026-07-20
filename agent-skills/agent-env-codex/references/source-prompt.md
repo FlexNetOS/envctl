@@ -82,7 +82,7 @@ Required runbook facts to carry into the skill:
 - `envctl agent sync --json --color never` is the review surface; use
   `envctl agent sync --apply --color never` only for the explicit skill-sync
   phase after prompt review.
-- `envctl agent lock --check` is the no-drift gate.
+- `envctl agent lock --check --locked` is the zero-network no-drift gate.
 - envctl sync tracks and removes only what the lock says envctl installed; it
   must not adopt unrelated MCP servers or skills.
 - `envctl agent init` creates starter config; `add` and `remove` are
@@ -292,7 +292,7 @@ ICM:          ICM_READONLY=1 rtk icm wake-up --max-tokens 200, or ICM_READONLY=1
 Meta:         rtk meta git status; rtk meta exec -- <inspection command> only when needed
 RTK:          rtk init --show and rtk --help
 Weave:        command/frontdoor check, repo docs if no executable is installed
-envctl:       envctl agent lock --check; envctl agent sync --json --color never
+envctl:       envctl agent lock --check --locked; envctl agent sync --json --color never
 ```
 
 Do not run `git-kb init`, `grit init`, `icm init`, `meta init`, mutating
@@ -552,7 +552,7 @@ ACTIVE MODE
   - `sandbox_mode = "danger-full-access"`
   - `default_permissions = ":danger-full-access"`
   - launch flag: `--dangerously-bypass-approvals-and-sandbox`
-  - retired lifecycle hooks disabled until clean-room rebuild
+  - active hooks are RTK-only: `PreToolUse` for `Bash` runs `/home/flexnetos/.nix-profile/bin/rtk hook claude`; do not restore retired lifecycle hooks or purge this generated hook file
 - Secret-deny, archive-first, and no destructive user-data deletion remain
   mandatory behavioral rules. They do not justify downgrading the session to
   restricted mode.
@@ -610,8 +610,9 @@ missing or wrong:
 
 - `/home/flexnetos/.codex/config.toml` uses full-access execution and does not
   default to a limited permission profile.
-- `features.hooks = false` while the retired lifecycle hook family has no
-  clean-room replacement.
+- `features.hooks = true` and generated `hooks.json` contains only the
+  profile-owned RTK `PreToolUse` hook for `Bash`; retired lifecycle hooks stay
+  absent and the generator must not purge the RTK hook file.
 - `/home/flexnetos/meta/.ignore` and/or `.rgignore` excludes:
   `var/lib/ruvector/pgdata/`
 - This prompt contains this controller above the old v2 phase gates.
@@ -755,7 +756,7 @@ ABSOLUTE LAWS
    the operator has already granted full access.
 
 6. CONTAINMENT BEFORE CAPABILITY.
-   Subagent fan-out, background jobs, browser/computer use, OpenRouter, Claude routing, local model jobs, MCP mutation tools, plugins, GitHub actions, network access, and yolo-style modes toggle disabled until containment hooks/rules/policies/kill switch test pass. Test Must Pass and toggled on before Phase is complete. 
+   Subagent fan-out, background jobs, browser/computer use, OpenRouter, Claude routing, local model jobs, MCP mutation tools, plugins, GitHub actions, network access, and yolo-style modes toggle disabled until containment hooks/rules/policies/kill switch test pass. Test Must Pass and toggled on before Phase is complete.
 
 7. STOP MEANS STOP.
    Any unresolved operator decision blocks once.
@@ -1697,103 +1698,12 @@ Validate with `codex execpolicy check --pretty`.
 
 1.7 Hooks
 
-Wire hooks to `codex-harness-hook`.
-
-Required hooks:
-
-SessionStart:
-- verify Nix-owned Codex.
-- verify trusted project state.
-- verify model/provider/profile.
-- verify hooks/rules loaded.
-- verify ledger/db health.
-- print concise status.
-
-UserPromptSubmit:
-- hash/redact prompt.
-- detect bypass/yolo/destructive/secrets/uncontrolled background/model swap requests.
-- increment counters.
-- block where hook schema permits.
-
-PermissionRequest:
-- deny hidden yolo/bypass outside the explicit operator full-access launch; never deny the baseline `danger-full-access` mode for this prompt.
-- deny secrets.
-- route unmanaged network through the full-access network policy; do not downgrade to network-off.
-- deny GitHub mutation without guard.
-- deny provider key reads.
-- route browser/computer-use through the full-access profile.
-
-PreToolUse Bash:
-- enforce command rules.
-- deny direct nested Codex/Claude/model server spawns outside runner.
-- deny uncontrolled background.
-- deny destructive commands.
-- deny non-Nix Codex installs.
-- deny secrets.
-- deny direct SQLite/ledger mutation.
-- deny yolo.
-- enforce model-router before subagent spawn.
-
-PreToolUse apply_patch/Edit/Write:
-- archive target first.
-- deny protected paths.
-- deny ledgers/db/archive except sanctioned binary.
-- route symlink replacement through archive-first full-access controller.
-- enforce file ownership/worktree boundary.
-
-PreToolUse MCP:
-- enforce MCP allowlist.
-- enforce output caps.
-- route mutation tools through the full-access controller.
-
-PreToolUse Browser/Computer:
-- if tool names exist, enforce browser/computer policy.
-- block auth flows, cookies, secrets, and unredacted screenshots outside the declared full-access task scope.
-- require redacted ledger event.
-
-PostToolUse:
-- capture result.
-- update timers.
-- update bad-behavior counters.
-- update process registry.
-- update budget ledger.
-- queue verification through runner.
-
-SubagentStart:
-- require task id.
-- require model-router decision.
-- require agent role allowlist.
-- enforce max depth.
-- enforce team cap.
-- enforce model/provider/profile policy.
-- enforce worktree/file ownership.
-- increment active agent counters.
-
-SubagentStop:
-- require proof references.
-- record duration.
-- record model/provider.
-- record cost/usage if available.
-- mark task complete/incomplete.
-
-PreCompact:
-- write compact-safe invariants:
-  - laws
-  - open decisions
-  - active agents
-  - active jobs
-  - provider restrictions
-  - current phase
-  - denied actions
-
-PostCompact:
-- verify invariants survived.
-- print concise status.
-
-Stop:
-- block once if open decision exists.
-- no scaffold markers.
-- no loop.
+The active Codex hook surface contains exactly one entry: `PreToolUse` with
+matcher `Bash`, running the profile-owned
+`/home/flexnetos/.nix-profile/bin/rtk hook claude` processor. It performs RTK
+command rewriting only. Do not add SessionStart, UserPromptSubmit,
+PermissionRequest, PostToolUse, subagent, compact, stop, ICM, checkout-local,
+or raw-store hooks; the retired lifecycle bundle remains archive-only.
 
 1.8 Kill switch
 

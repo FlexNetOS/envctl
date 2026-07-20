@@ -11,7 +11,6 @@ members = [
   "crates/secretctl",
   "crates/secrets-store-libsql",
 ]
-
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
@@ -52,12 +51,12 @@ libc = "0.2"
 # --- envctl-only rows (unchanged) ---
 sysinfo = "0.33.1"
 glob = "0.3.1"
-# Keep the GUI on the MSRV-compatible egui API line, but do not enable eframe's
-# full default feature set: accesskit pulls the unmaintained `paste` proc macro
-# on Windows, and current Wayland/winit scanner paths pin vulnerable parser
-# crates that do not yet have compatible upstream fixes. The CLI/catalog proof
-# in this PR does not require those optional GUI stacks.
-eframe = { version = "0.33.2", default-features = false, features = ["default_fonts", "glow", "x11"] }
+# Keep the GUI on the MSRV-compatible egui API line without eframe's full
+# default feature set: accesskit pulls the unmaintained `paste` proc macro on
+# Windows. Both native Linux display backends remain supported. The local
+# wayland-scanner and epaint patches below remove their advisory-only parser
+# paths without changing the stock eframe/egui 0.33 API or the MSRV.
+eframe = { version = "0.33.2", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
 egui = "0.33.2"
 egui_extras = "0.33.2"
 # --- env-ctl-only rows (added verbatim; no conflict — none of these names exist in envctl today) ---
@@ -96,9 +95,25 @@ libsql = { version = "0.9.30", default-features = false, features = ["remote"] }
 chacha20poly1305 = { version = "0.10", features = ["alloc", "getrandom", "rand_core"] }
 argon2 = { version = "0.5", features = ["zeroize"] }
 hkdf = "0.12"
-# `oid` feature exposes `Sha256: AssociatedOid`, required by rsa's PKCS#1 v1.5 SigningKey<Sha256>
-# (the RS256 App-JWT path in secrets-engine `mint_github`). Pure-Rust; links no C.
-sha2 = { version = "0.10", features = ["oid"] }
+# SHA-256 primitives used by the vault and agent-env identity paths.
+sha2 = "0.10"
+# GitHub App JWT RS256 signer. This is a young fork/backend line, so exact pins, the fail-closed
+# feature gate, the 2048..=8192 test matrix, and independent ring verification are compensating
+# controls. `rsa_heapless` is intentionally pinned to its fixed-width, no-alloc `modmath` backend:
+# enabling its defaults would restore the advisory-affected allocating RustCrypto backend.
+# `fixed-bigint`'s Ct personality supplies fixed-iteration arithmetic and its
+# zeroize/CIOS features wipe owned secret buffers while keeping the private operation pure Rust.
+# `use-unsafe` is required on stable/MSRV because generic fixed-width array↔byte conversion cannot
+# use nightly generic_const_exprs; its audited unsafe scope is only slice views over its own fixed
+# `[u64; N]` arrays (no allocation, FFI, raw ownership transfer, or native code).
+# Direct ref-only PKCS parsers preserve both GitHub PKCS#1 and operator PKCS#8 inputs without
+# enabling rsa_heapless's alloc/encoding/std/keygen feature family.
+rsa-ct = { package = "rsa_heapless", version = "=0.4.1", default-features = false, features = ["modmath"] }
+fixed-bigint = { version = "=0.5.2", default-features = false, features = ["cios", "use-unsafe", "zeroize"] }
+const-num-traits = { version = "=0.2.0", default-features = false, features = ["ct"] }
+pkcs1 = { version = "=0.8.0-rc.4", default-features = false }
+pkcs8 = { version = "=0.11.0", default-features = false }
+sha2-rs256 = { package = "sha2", version = "=0.11.0", default-features = false, features = ["oid"] }
 blake3 = "1.5"
 # migration-db store (engine): pure-Rust embedded B-tree store — the same store family as the
 # fleet's handoff ledger (ADR-0017) and CodeDB (which tracks the same major). Links NO C
@@ -110,13 +125,11 @@ zeroize = { version = "1.8", features = ["derive"] }
 subtle = "2.6"
 rand = "0.8"
 getrandom = "0.2"
-# GitHub App-JWT (RS256) for the `provider-github` mint seam — pure-Rust RustCrypto, no C linked
-# (banned-list in ci/gates/no-c.sh unaffected; proven by Gate 1's `--all-features` tree).
-rsa = { version = "0.9", default-features = false, features = ["std", "pem"] }
+# GitHub App-JWT PEM/base64 support. RSA arithmetic is the pinned fixed-width Ct stack above;
+# ring remains the independent post-sign verifier and OS-RNG provider.
 base64 = { version = "0.22", default-features = false, features = ["alloc"] }
 # TLS / local CA: pin ONE rustls on the RING path (NOT aws-lc-rs)
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
-rustls-pemfile = "2.2"
 rustls-pki-types = "1"
 rcgen = { version = "0.13", default-features = false, features = ["ring", "pem"] }
 # MITM TLS termination (PR-3b, secretd `mitm-ca` only). default-features=false is MANDATORY: a bare
@@ -129,16 +142,19 @@ async-trait = "0.1"
 # --- "registries not repo"). Operator directive 2026-07-09: "we want ALL features so we need
 # --- all dependents" — every Linux-viable feature is ON. None of the pulled deps is on the
 # --- no-c.sh ban list (aws-lc/openssl/C-SQLite/mimalloc family): simsimd/onig compile C via
-# --- build-time cc (gate-accepted); reqwest/hf-hub ride rustls-tls. Excluded ONLY:
+# --- build-time cc (gate-accepted); reqwest/hf-hub ride rustls-tls. Excluded:
 # --- target-foreign features (macOS accelerate/coreml/metal/hybrid-ane, wasm/wasm-simd) and
-# --- cuda/inference-cuda (needs nvcc at build; tracked follow-up). Still consumed by the
+# --- cuda/inference-cuda (needs nvcc at build; tracked follow-up), plus 2.3.0's
+# --- lattice-embeddings because lattice-embed/lattice-inference 0.6.1 require Rust 1.93 and
+# --- envctl's tested MSRV is 1.89. Still consumed by the
 # --- engine behind the optional `ruvector` feature (default OFF) — default builds untouched.
 # `onnx-embeddings` (ort) is the ONE exclusion: ort-sys's build-time binary downloader is
-# ureq→native-tls→openssl-sys — on the no-c.sh HARD BAN list. Everything else is ON
+# ureq→native-tls→openssl-sys — on the no-c.sh HARD BAN list. Every other feature compatible
+# with the target and the workspace MSRV is ON
 # (default = simd+simd-avx512+storage+hnsw+api-embeddings+parallel). Embedding generation
 # still flows via ruvllm hub-download/candle and the bun runtime. Re-adding ort requires an
 # operator decision on the no-c ban list, not a manifest edit.
-ruvector-core = { version = "2.2.3", features = ["real-embeddings", "uuid-support"] }
+ruvector-core = { version = "2.3.0", features = ["real-embeddings", "uuid-support"] }
 # Full profile: default (async-runtime, candle inference, routing-metrics, quantize,
 # hub-download) + every additive Linux feature. `ruvector-full` = attention+gnn+graph stack.
 # CUDA (fused-act/inference-cuda → cudarc + nvcc at build) is NOT here: it lives behind the
@@ -148,6 +164,12 @@ ruvector-core = { version = "2.2.3", features = ["real-embeddings", "uuid-suppor
 # re-exported unconditionally — E0432 on x86_64); rayon parallelism still arrives via
 # ruvector-core's `parallel` and candle. Everything else additive is ON.
 ruvllm = { version = "2.3.0", features = ["attention", "gnn", "graph", "gguf-mmap", "mmap", "ruvector-full"] }
+# Maintained, wire-compatible serialization forks used by the exact crates.io-source patches
+# below. Exact pins and old-byte fixtures prevent an advisory cleanup from changing persisted data.
+bincode_reloaded = { version = "=3.1.10", features = ["serde"] }
+fugue-bincode = "=1.3.4"
+serde_cbor_2 = "=0.13.0"
+ruvector-graph = { version = "=2.2.3", default-features = false }
 # AgentDB's Rust surface is the RVF crate family — ruvnet publishes NO `agentdb` crate
 # (crates.io `agentdb` 0.2.0 is a different author; never use it).
 rvf-runtime = { version = "0.3.0", features = ["ed25519", "qr"] }
@@ -156,12 +178,51 @@ rvf-runtime = { version = "0.3.0", features = ["ed25519", "qr"] }
 rvf-types = { version = "0.2.1", features = ["std", "ed25519"] }
 # Postgres extension crate (pgrx-based; needs pg headers at build) — separate engine feature
 # `ruvector-pg`, default OFF: it is a server-side extension, not a client library.
-ruvector-postgres = { version = "2.0.5", default-features = false }
+ruvector-postgres = { version = "2.0.5", default-features = false, features = ["pg17"] }
 # --- internal path deps: keep envctl's + add the three secrets path deps ---
 envctl-engine = { path = "crates/engine" }
 envctl-secrets-engine = { path = "crates/secrets-engine" }
 envctl-secrets-proto = { path = "crates/secrets-proto" }
 envctl-secrets-store-libsql = { path = "crates/secrets-store-libsql" }
+
+# wayland-scanner 0.31.10 is the newest crates.io release compatible with the
+# workspace's eframe 0.33/MSRV 1.89 line, but it pins vulnerable quick-xml 0.39.
+# This exact-source local patch carries only the two already-merged upstream
+# fixes documented in ENVCTL-PATCH.md; it preserves the GUI/Wayland capability
+# without raising the workspace MSRV or importing unreleased breaking changes.
+[patch.crates-io]
+wayland-scanner = { path = "third_party/wayland-scanner-0.31.10" }
+# Exact crates.io epaint 0.33.3 plus only the upstream Skrifa/vello_cpu font
+# migration and traversal correction. ENVCTL-PATCH.md records the archive
+# checksum, commit IDs, licenses, and stock-0.33 compatibility shim.
+epaint = { path = "third_party/epaint-0.33.3" }
+# Exact crates.io release sources with narrow maintained-dependency substitutions. The complete
+# archive checksums, upstream commits, license inventory, and wire-compatibility evidence live in
+# third_party/ADVISORY-PATCHES.md. These are never sourced from the stale meta-ruvector checkout.
+gemm = { path = "third_party/gemm-0.19.0" }
+gemm-0-18 = { package = "gemm", path = "third_party/gemm-0.18.2" }
+gemm-c32 = { path = "third_party/gemm-c32-0.19.0" }
+gemm-c32-0-18 = { package = "gemm-c32", path = "third_party/gemm-c32-0.18.2" }
+gemm-c64 = { path = "third_party/gemm-c64-0.19.0" }
+gemm-c64-0-18 = { package = "gemm-c64", path = "third_party/gemm-c64-0.18.2" }
+gemm-common = { path = "third_party/gemm-common-0.19.0" }
+gemm-common-0-18 = { package = "gemm-common", path = "third_party/gemm-common-0.18.2" }
+gemm-f16 = { path = "third_party/gemm-f16-0.19.0" }
+gemm-f16-0-18 = { package = "gemm-f16", path = "third_party/gemm-f16-0.18.2" }
+gemm-f32 = { path = "third_party/gemm-f32-0.19.0" }
+gemm-f32-0-18 = { package = "gemm-f32", path = "third_party/gemm-f32-0.18.2" }
+gemm-f64 = { path = "third_party/gemm-f64-0.19.0" }
+gemm-f64-0-18 = { package = "gemm-f64", path = "third_party/gemm-f64-0.18.2" }
+hf-hub = { path = "third_party/hf-hub-0.4.3" }
+hnsw_rs = { path = "third_party/hnsw_rs-0.3.4" }
+macro_rules_attribute = { path = "third_party/macro_rules_attribute-0.2.2" }
+pgrx = { path = "third_party/pgrx-0.12.9" }
+pulp = { path = "third_party/pulp-0.22.3" }
+ruvector-core = { path = "third_party/ruvector-core-2.3.0" }
+ruvector-graph = { path = "third_party/ruvector-graph-2.2.3" }
+ruvector-postgres = { path = "third_party/ruvector-postgres-2.0.5" }
+ruvllm = { path = "third_party/ruvllm-2.3.0" }
+tokenizers = { path = "third_party/tokenizers-0.20.4" }
 
 # Build all crates in release for a snappy GUI.
 [profile.release]

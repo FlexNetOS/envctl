@@ -12,6 +12,15 @@ use std::path::PathBuf;
 
 use crate::{err, Result};
 
+#[cfg(test)]
+pub(crate) fn test_env_lock() -> std::sync::MutexGuard<'static, ()> {
+    use std::sync::{Mutex, OnceLock};
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 /// The user's home directory from `$HOME` (errors when unset).
 pub fn dirs_home() -> Result<PathBuf> {
     std::env::var("HOME")
@@ -67,25 +76,24 @@ pub fn dirs_agent_env_cache() -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Mutex, MutexGuard, OnceLock};
-
-    /// `std::env::set_var` mutates process-global state; serialize the env-poking tests so
-    /// parallel threads do not observe each other's `XDG_*_HOME` overrides.
-    fn env_lock() -> MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
-    }
 
     #[test]
     fn home_reads_env() {
-        let _g = env_lock();
+        let _g = test_env_lock();
+        let previous = std::env::var_os("HOME");
         std::env::set_var("HOME", "/home/tester");
         assert_eq!(dirs_home().unwrap(), PathBuf::from("/home/tester"));
+        match previous {
+            Some(value) => std::env::set_var("HOME", value),
+            None => std::env::remove_var("HOME"),
+        }
     }
 
     #[test]
     fn xdg_config_honors_override_only_when_non_empty() {
-        let _g = env_lock();
+        let _g = test_env_lock();
+        let previous_home = std::env::var_os("HOME");
+        let previous_config = std::env::var_os("XDG_CONFIG_HOME");
         std::env::set_var("HOME", "/home/tester");
 
         std::env::set_var("XDG_CONFIG_HOME", "/custom/cfg");
@@ -109,11 +117,22 @@ mod tests {
             dirs_xdg_config_home().unwrap(),
             PathBuf::from("/home/tester/.config")
         );
+        match previous_home {
+            Some(value) => std::env::set_var("HOME", value),
+            None => std::env::remove_var("HOME"),
+        }
+        match previous_config {
+            Some(value) => std::env::set_var("XDG_CONFIG_HOME", value),
+            None => std::env::remove_var("XDG_CONFIG_HOME"),
+        }
     }
 
     #[test]
     fn xdg_data_and_cache_fallbacks() {
-        let _g = env_lock();
+        let _g = test_env_lock();
+        let previous_home = std::env::var_os("HOME");
+        let previous_data = std::env::var_os("XDG_DATA_HOME");
+        let previous_cache = std::env::var_os("XDG_CACHE_HOME");
         std::env::set_var("HOME", "/home/tester");
         std::env::remove_var("XDG_DATA_HOME");
         std::env::remove_var("XDG_CACHE_HOME");
@@ -133,5 +152,17 @@ mod tests {
             dirs_agent_env_cache().unwrap(),
             PathBuf::from("/home/tester/.cache/agent-env")
         );
+        match previous_home {
+            Some(value) => std::env::set_var("HOME", value),
+            None => std::env::remove_var("HOME"),
+        }
+        match previous_data {
+            Some(value) => std::env::set_var("XDG_DATA_HOME", value),
+            None => std::env::remove_var("XDG_DATA_HOME"),
+        }
+        match previous_cache {
+            Some(value) => std::env::set_var("XDG_CACHE_HOME", value),
+            None => std::env::remove_var("XDG_CACHE_HOME"),
+        }
     }
 }

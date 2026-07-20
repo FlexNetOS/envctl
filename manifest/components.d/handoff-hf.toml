@@ -22,7 +22,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-repo="${HANDOFF_REPO:-$M/handoff}"
+repo="$M/src/handoff"
 [ -f "$repo/Cargo.toml" ] || { echo "handoff-hf: missing handoff repo at $repo" >&2; exit 1; }
 export CARGO_HOME="$M/.toolchains/cargo"
 export CARGO_TARGET_DIR="$M/var/cache/envctl/cargo-target/handoff"
@@ -49,7 +49,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-repo="${HANDOFF_REPO:-$M/handoff}"
+repo="$M/src/handoff"
 [ -f "$repo/Cargo.toml" ] || { echo "handoff-hf: missing handoff repo at $repo" >&2; exit 1; }
 export CARGO_HOME="$M/.toolchains/cargo"
 export CARGO_TARGET_DIR="$M/var/cache/envctl/cargo-target/handoff"

@@ -22,6 +22,8 @@ bash "$root/scripts/tests/test-plan-weave-dispatch.sh"
 bash "$root/scripts/tests/test-plan-artifact-gate.sh"
 bash "$root/scripts/tests/test-plan-evals.sh"
 bash "$root/scripts/tests/test-codex-cli-release-lanes.sh"
+bash "$root/scripts/tests/test-codex-profile-lifecycle.sh"
+bash "$root/scripts/tests/test-codex-global-baseline-lifecycle.sh"
 bash "$root/scripts/tests/test-flexnetos-codex-runtime-gate.sh"
 bash "$root/scripts/tests/test-manifest-lock-gate.sh"
 

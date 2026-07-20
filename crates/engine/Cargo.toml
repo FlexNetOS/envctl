@@ -50,13 +50,19 @@ loop_lib = { path = "../../../loop_lib" }
 # RuVector system (slice 0): optional, feature-gated — default builds unchanged. The semantic
 # store client layer for the Database-Hosted Codebase (Gemini-session architecture): vectors +
 # HNSW (ruvector-core), edge LLM runtime (ruvllm), AgentDB .rvf store (rvf-runtime/-types).
-# Registry pins only (see workspace table). Enable with `--features ruvector`.
+# Exact crates.io release sources (see the workspace patch table). Enable with `--features ruvector`.
 ruvector-core = { workspace = true, optional = true }
+ruvector-graph = { workspace = true, optional = true }
 ruvllm = { workspace = true, optional = true }
 rvf-runtime = { workspace = true, optional = true }
 rvf-types = { workspace = true, optional = true }
+# Direct names are intentional: compatibility tests exercise the maintained codecs without a
+# package alias that could conceal the retired advisory-bearing packages.
+bincode_reloaded = { workspace = true, optional = true }
 # pgrx-based Postgres extension crate — heaviest, needs pg headers; its own feature.
 ruvector-postgres = { workspace = true, optional = true }
+fugue-bincode = { workspace = true, optional = true }
+serde_cbor_2 = { workspace = true, optional = true }
 
 [features]
 default = []
@@ -65,9 +71,21 @@ default = []
 # attention/gnn/graph, rvf ed25519+qr. (onnx-embeddings/ort deliberately EXCLUDED — see the
 # workspace table: its build downloader is openssl-sys, no-c hard ban.) Build-time cc
 # (simsimd/onig) is gate-accepted; nothing on the no-c ban list.
-ruvector = ["dep:ruvector-core", "dep:ruvllm", "dep:rvf-runtime", "dep:rvf-types"]
+ruvector = [
+  "dep:ruvector-core",
+  "dep:ruvector-graph",
+  "dep:ruvllm",
+  "dep:rvf-runtime",
+  "dep:rvf-types",
+  "dep:bincode_reloaded",
+]
 # Server-side extension crate on top (pgrx; requires pg headers at build time).
-ruvector-pg = ["ruvector", "dep:ruvector-postgres"]
+ruvector-pg = [
+  "ruvector",
+  "dep:ruvector-postgres",
+  "dep:fugue-bincode",
+  "dep:serde_cbor_2",
+]
 # CUDA acceleration (RTX 5090 workstation): needs nvcc on PATH at build
 # (PATH=/usr/local/cuda/bin). Separate feature because CI runners have no CUDA toolkit.
 ruvector-cuda = ["ruvector", "ruvllm/fused-act", "ruvllm/inference-cuda"]

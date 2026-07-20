@@ -3,9 +3,10 @@
 # First-login developer setup wizard  (Ubuntu 26.04 LTS)
 #
 # Order (yazelix wants Nix + home-manager + Ghostty in place before yazelix):
-#   Nerd Fonts -> AI CLIs (claude/codex/gemini/kimi/devin) -> rtk
+#   Nerd Fonts -> AI CLIs (claude/codex/gemini/kimi/devin) -> Rust toolchain
 #   -> Nix (Determinate) -> /etc/nix/nix.custom.conf edits + yazelix Cachix
-#      cache + restart nix-daemon -> home-manager -> yazelix -> yzx desktop/doctor
+#      cache + restart nix-daemon -> home-manager -> yazelix (profile-owned RTK)
+#      -> profile RTK verification -> yzx desktop/doctor
 #
 # NOT installed here: nushell + mise. The yazelix runtime bundles both (use them
 # via `yzx env` or from inside yazelix). Ghostty + Node come from apt at install.
@@ -43,7 +44,7 @@ cat <<'BANNER'
 
   ┌────────────────────────────────────────────────────────┐
   │   First-login developer environment setup                │
-  │   AI CLIs · rtk · Nix · yazelix · home-manager           │
+  │   AI CLIs · Rust · Nix/yazelix profile (includes RTK)     │
   │   (mise + nushell come bundled inside the yazelix runtime)│
   └────────────────────────────────────────────────────────┘
 
@@ -112,15 +113,12 @@ run "Codex CLI (Rust via envctl)" bash -c '
 run "Kimi CLI"                 bash -c 'curl -LsSf https://code.kimi.com/install.sh | bash'
 run "Devin CLI"                bash -c 'curl -fsSL https://cli.devin.ai/install.sh | bash'
 
-# --- 3. rtk (Rust Token Killer) via rustup ----------------------------------
+# --- 3. Rust toolchain -------------------------------------------------------
 if ! command -v cargo >/dev/null; then
   run "Rust toolchain (rustup)" bash -c \
     "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
 fi
 . "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
-run "rtk (cargo install)" bash -c '
-  . "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
-  cargo install --git https://github.com/rtk-ai/rtk'
 
 # --- 3b. CUDA + cuda-oxide + NVIDIA Container Toolkit + PyTorch --------------
 # Only on machines with an NVIDIA GPU. Per NVIDIA's official CUDA install guide
@@ -214,7 +212,7 @@ fi
 
 # --- 3e. Extra dev toolchains: gh, Vite, wasmer, uv -------------------------
 # (Bun + node->bun were set up in section 2, before the AI CLIs.)
-# cargo is already present (rustup, from the rtk step) — confirm it.
+# cargo is already present from the Rust toolchain step — confirm it.
 . "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
 command -v cargo >/dev/null && c_ok "cargo $(cargo --version 2>/dev/null | awk '{print $2}')" \
   || c_warn "cargo missing (rustup step may have failed)"
@@ -398,6 +396,17 @@ if command -v nix >/dev/null; then
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null || true
     nix profile add --refresh github:luccahuguet/yazelix#yazelix'
   load_nix
+  run "RTK (Yazelix Nix profile verification)" bash -c '
+    set -euo pipefail
+    profile="${HOME:?HOME required}/.nix-profile"
+    bin="$profile/bin/rtk"
+    toolbin="$profile/toolbin/rtk"
+    [ -x "$bin" ] && [ -x "$toolbin" ]
+    resolved_bin="$(readlink -f "$bin")"
+    resolved_toolbin="$(readlink -f "$toolbin")"
+    [ "$resolved_bin" = "$resolved_toolbin" ]
+    case "$resolved_bin" in /nix/store/*-rtk-*/bin/rtk) ;; *) exit 1 ;; esac
+    "$resolved_bin" --version'
   # NOTE: settings.jsonc is intentionally NOT pre-written here. yazelix seeds its
   # own full default (all options) on first launch — letting it do so avoids any
   # conflict with how yazelix installs. The optional helper under $META_ROOT/usr/bin/
@@ -471,7 +480,7 @@ cat <<'NEXT'
   First-run notes:
     • AI logins:     claude / codex / gemini / kimi   (run /login as prompted)
     • Devin:         cd <project> && devin
-    • rtk:           rtk gain ; rtk init -g
+    • rtk policy:    rtk init --global --codex --show   (read-only verification)
     • GPU verify:    runs automatically after you REBOOT (auto-disables once OK);
                      or manually: $META_ROOT/usr/bin/yazelix-gpu-verify.sh
     • cuda-oxide:    cargo oxide run <example>   (reboot first if driver just installed)

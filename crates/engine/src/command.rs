@@ -9,8 +9,8 @@
 //! / unfocused), so a long `engine.run` never starves telemetry.
 use crate::{
     agent::{
-        AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentListSpec, AgentLockSpec,
-        AgentRemoveSpec, AgentSyncSpec,
+        AgentAddSpec, AgentAuditSpec, AgentCleanSpec, AgentDoctorSpec, AgentListSpec,
+        AgentLockSpec, AgentRemoveSpec, AgentSyncSpec,
     },
     component::Phase,
     dashboard::DashboardSpec,
@@ -111,6 +111,8 @@ pub enum AgentCommandSpec {
     /// Read-only diagnostics (TASK-0019, Item 1) — the GUI Doctor sub-tab drives the identical
     /// `Engine::agent_doctor` the CLI's `agent doctor` does.
     Doctor(AgentDoctorSpec),
+    /// Strict config → lock → installed-assets audit. Read-only and zero-network.
+    Audit(AgentAuditSpec),
 }
 
 /// The five migration/adoption verbs. Mutating forms carry the same explicit
@@ -339,6 +341,7 @@ pub fn run_event_loop(
                     AgentCommandSpec::List(s) => engine.agent_list(s, &sink).map(|_| ()),
                     AgentCommandSpec::Clean(s) => engine.agent_clean(s, &sink).map(|_| ()),
                     AgentCommandSpec::Doctor(s) => engine.agent_doctor(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Audit(s) => engine.agent_audit(s, &sink).map(|_| ()),
                 };
                 if let Err(e) = result {
                     emit_setup_error(&sink, "agent", &e);

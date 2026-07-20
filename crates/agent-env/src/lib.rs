@@ -2,7 +2,7 @@
 //!
 //! This crate is the foundational, **standalone** library of the kasetto absorption
 //! (Epic C, TASK-0012): the config model + `extends` inheritance + multi-host source
-//! resolver + OS-invariant SHA-256 content hashing + the agent-asset lock (with its 3
+//! resolver + versioned SHA-256 content hashing + the agent-asset lock (with its 3
 //! modes). It is ported faithfully from the live `kasetto` **v3.2.0** source with NO
 //! capability downgrade (see `.handoff/decisions/ADR-0001`).
 //!
@@ -36,16 +36,65 @@ pub mod mcp;
 pub mod profile;
 pub mod report;
 pub mod runtime;
+pub mod runtime_contract;
+mod secure_file;
 pub mod source;
 pub mod sync;
+pub mod tree;
 pub mod util;
+
+/// Atomically replace an authoritative agent-env config without following a leaf/parent symlink.
+/// Existing stricter permissions are preserved; permissive modes are clamped to project-safe
+/// `0644` semantics on Unix.
+pub fn write_config_atomic(path: &std::path::Path, bytes: &[u8]) -> Result<()> {
+    let path = absolute_local_path(path)?;
+    secure_file::write_atomic(&path, bytes, 0o644)
+}
+
+/// Create a new authoritative config, or replace an existing regular config when `force` is set.
+/// The create-only path uses an atomic no-clobber commit, so an object appearing after the
+/// no-follow authority check is refused rather than overwritten. Returns whether a regular file
+/// was replaced.
+pub fn initialize_config_atomic(path: &std::path::Path, bytes: &[u8], force: bool) -> Result<bool> {
+    let path = absolute_local_path(path)?;
+    secure_file::initialize_atomic(&path, bytes, 0o644, force)
+}
+
+/// Read an optional authoritative agent-env config without following a leaf or parent symlink.
+pub fn read_config_optional(path: &std::path::Path) -> Result<Option<Vec<u8>>> {
+    let path = absolute_local_path(path)?;
+    secure_file::read_optional(&path)
+}
+
+fn absolute_local_path(path: &std::path::Path) -> Result<std::path::PathBuf> {
+    if path.is_absolute() {
+        Ok(path.to_path_buf())
+    } else {
+        Ok(std::env::current_dir()?.join(path))
+    }
+}
+
+/// Read-only safety check for the existing authority chain that would own a managed path.
+pub fn managed_path_authority_is_safe(path: &std::path::Path) -> bool {
+    let authority = match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => path,
+        _ => match path.parent() {
+            Some(parent) => parent,
+            None => return false,
+        },
+    };
+    secure_file::validate_parent_chain(authority).is_ok()
+}
 
 pub use agent::{
     all_command_global_targets, all_command_project_targets, all_mcp_project_targets,
     all_mcp_settings_targets, command_global_targets, command_project_targets, CommandFormat,
     CommandTarget, McpSettingsFormat, McpSettingsTarget,
 };
-pub use command::{apply_command, destination_path, ensure_parent_dirs, parse, render, Parsed};
+pub use command::{
+    apply_command, apply_command_text_atomic, command_destination_matches_text, destination_path,
+    ensure_parent_dirs, parse, render, validate_command_name, Parsed,
+};
 pub use config::{
     git_pin_of, Agent, AgentField, CommandEntry, CommandSourceSpec, CommandsField, Config, GitPin,
     McpEntry, McpSourceSpec, McpsField, Scope, SkillTarget, SkillsField, SourceSpec, AGENT_PRESETS,
@@ -63,30 +112,37 @@ pub use dirs::{
     dirs_xdg_cache_home, dirs_xdg_config_home, dirs_xdg_data_home,
 };
 pub use driver::{
-    apply_removals, clean_counts, load_skills_mcps_commands, plan_add_edits, rebuild_lock, sync,
-    verify_source, AssetRow, CleanCounts, DriverCtx, SectionEdit, SyncResult, UpdatedAt,
+    clean_actions, clean_apply_transaction, inspect_installed_inventory, load_skills_mcps_commands,
+    plan_add_edits, rebuild_lock, sync, verify_source, AssetRow, CleanCounts, DriverCtx,
+    InstalledInventory, SectionEdit, SyncResult, UpdatedAt,
 };
 pub use extend::{
-    extract_extends, load_config_any, load_config_recursive, merge_yaml, MAX_EXTENDS_DEPTH,
+    extract_extends, load_config_any, load_config_any_zero_network, load_config_recursive,
+    merge_yaml, MAX_EXTENDS_DEPTH,
 };
 pub use fsops::{
     copy_dir, copy_dir_contents, copy_file, relativize_dest, resolve_command_targets, resolve_dest,
     resolve_destinations, resolve_mcp_settings_targets, resolve_path, scope_root, select_targets,
     BrokenSkill, SettingsFile, TargetSelection,
 };
-pub use hash::{hash_dir, hash_file, hash_str};
+pub use hash::{hash_bytes, hash_dir, hash_file, hash_str};
 pub use lock::{
     AgentLockEntry, AgentLockFile, AgentLockState, AssetEntry, LockMode, AGENT_ASSETS_KEY,
     LOCK_VERSION,
 };
 pub use mcp::{
-    merge_mcp_config, read_source_mcp_servers, remove_mcp_server, servers_present_in_settings,
+    apply_mcp_config_bytes_atomic, conflicting_mcp_server_names, current_mcp_fragment_hashes,
+    expected_mcp_fragment_hashes, mcp_server_names_from_bytes, merge_mcp_config,
+    read_source_mcp_servers, read_source_mcp_servers_bytes, remove_mcp_server,
+    render_mcp_settings_bytes, servers_present_in_settings,
 };
 pub use profile::{format_updated_ago, read_skill_profile, read_skill_profile_from_dir};
 pub use report::{Action, InstalledSkill, Report, Summary, SyncFailure};
 pub use runtime::{
-    clear_runtime_state, load_runtime_state, runtime_state_path, save_runtime_state, RuntimeState,
+    clear_runtime_state, load_runtime_state, runtime_state_path, save_runtime_state, ManagedOutput,
+    RuntimeState,
 };
+pub use runtime_contract::validate_runtime_contract;
 pub use source::{
     archive_url, derive_browse_url, discover, discover_commands, discover_mcps,
     discover_with_root_name, download_extract, materialize_source, parse_repo_url,
@@ -97,6 +153,7 @@ pub use sync::{
     command_action_label, command_asset_id, mcp_action_label, mcp_asset_id, remove_stale,
     skill_key, StaleEntry,
 };
+pub use tree::TreeSnapshot;
 pub use util::{now_unix, now_unix_str};
 
 /// Result alias for the agent-env crate.

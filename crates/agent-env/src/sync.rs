@@ -22,6 +22,11 @@
 
 use std::collections::HashSet;
 
+use crate::config::{
+    CommandEntry, CommandSourceSpec, CommandsField, McpEntry, McpSourceSpec, McpsField,
+    SkillTarget, SkillsField, SourceSpec,
+};
+use crate::lock::AgentLockFile;
 use crate::report::{Action, Summary};
 
 /// One stale asset candidate processed by [`remove_stale`].
@@ -67,17 +72,18 @@ pub fn remove_stale<F>(
     }
 }
 
-/// Lock key for a skill: `<source>::<name>`. Single point of truth so the key
-/// format cannot drift between the lock writer and the lookup sites.
-/// (kasetto `src/commands/sync/skills.rs::skill_key`.)
-pub fn skill_key(source: &str, skill: &str) -> String {
-    format!("{source}::{skill}")
+fn asset_id(kind: &str, source: &str, name: &str) -> String {
+    format!("{kind}::v3|{}:{source}|{}:{name}", source.len(), name.len())
 }
 
-/// Lock asset id for a command: `command::<source>::<name>`.
-/// (kasetto `src/commands/sync/commands.rs`, inlined `format!`.)
+/// Collision-free lock key for a skill (length-framed in lock schema v3).
+pub fn skill_key(source: &str, skill: &str) -> String {
+    asset_id("skill", source, skill)
+}
+
+/// Collision-free lock asset id for a command (length-framed in lock schema v3).
 pub fn command_asset_id(source: &str, name: &str) -> String {
-    format!("command::{source}::{name}")
+    asset_id("command", source, name)
 }
 
 /// Action-log label for a command: `command:<name>`.
@@ -85,15 +91,85 @@ pub fn command_action_label(name: &str) -> String {
     format!("command:{name}")
 }
 
-/// Lock asset id for an MCP: `mcp::<source>::<file_name>`.
-/// (kasetto `src/commands/sync/mcps.rs`, inlined `format!`.)
+/// Collision-free lock asset id for an MCP (length-framed in lock schema v3).
 pub fn mcp_asset_id(source: &str, file_name: &str) -> String {
-    format!("mcp::{source}::{file_name}")
+    asset_id("mcp", source, file_name)
 }
 
 /// Action-log label for an MCP: `mcp:<file_name>`.
 pub fn mcp_action_label(file_name: &str) -> String {
     format!("mcp:{file_name}")
+}
+
+/// Resolve the skill names selected by one config source using only the lock for wildcard input.
+/// This is the shared zero-network selector used by both sync and fleet audit.
+pub fn desired_skill_names(src: &SourceSpec, lock: &AgentLockFile) -> Vec<String> {
+    match &src.skills {
+        SkillsField::List(items) => items
+            .iter()
+            .map(|item| match item {
+                SkillTarget::Name(name) => name.clone(),
+                SkillTarget::Obj { name, .. } => name.clone(),
+            })
+            .collect(),
+        SkillsField::Wildcard(value) if value == "*" => lock
+            .skills
+            .values()
+            .filter(|entry| entry.source == src.source)
+            .map(|entry| entry.skill.clone())
+            .collect(),
+        SkillsField::Wildcard(_) => Vec::new(),
+    }
+}
+
+/// Resolve the command names selected by one config source without materializing the source.
+pub fn desired_command_names(src: &CommandSourceSpec, lock: &AgentLockFile) -> Vec<String> {
+    match &src.commands {
+        CommandsField::List(entries) => entries
+            .iter()
+            .map(|entry| match entry {
+                CommandEntry::Name(name) => name.clone(),
+                CommandEntry::Obj { name, .. } => name.clone(),
+            })
+            .collect(),
+        CommandsField::Wildcard(value) if value == "*" => lock
+            .assets
+            .values()
+            .filter(|asset| asset.kind == "command" && asset.source == src.source)
+            .map(|asset| asset.name.clone())
+            .collect(),
+        CommandsField::Wildcard(_) => Vec::new(),
+    }
+}
+
+/// Canonical `.json` filename selected by one MCP config entry.
+pub fn desired_mcp_file_name_for_entry(entry: &McpEntry) -> String {
+    let name = match entry {
+        McpEntry::Name(name) => name.clone(),
+        McpEntry::Obj { name, .. } => name.clone(),
+    };
+    if name.ends_with(".json") {
+        name
+    } else {
+        format!("{name}.json")
+    }
+}
+
+/// Resolve the MCP filenames selected by one config source without materializing the source.
+pub fn desired_mcp_file_names(src: &McpSourceSpec, lock: &AgentLockFile) -> Vec<String> {
+    match &src.mcps {
+        McpsField::List(entries) => entries
+            .iter()
+            .map(desired_mcp_file_name_for_entry)
+            .collect(),
+        McpsField::Wildcard(value) if value == "*" => lock
+            .assets
+            .values()
+            .filter(|asset| asset.kind == "mcp" && asset.source == src.source)
+            .map(|asset| asset.name.clone())
+            .collect(),
+        McpsField::Wildcard(_) => Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -109,21 +185,22 @@ mod tests {
     }
 
     #[test]
-    fn key_conventions_match_kasetto_shapes() {
+    fn key_conventions_are_length_framed_and_injective() {
         assert_eq!(
             skill_key("github.com/a/b", "review"),
-            "github.com/a/b::review"
+            "skill::v3|14:github.com/a/b|6:review"
         );
         assert_eq!(
             command_asset_id("github.com/a/b", "foo"),
-            "command::github.com/a/b::foo"
+            "command::v3|14:github.com/a/b|3:foo"
         );
         assert_eq!(command_action_label("foo"), "command:foo");
         assert_eq!(
             mcp_asset_id("github.com/a/b", "github.json"),
-            "mcp::github.com/a/b::github.json"
+            "mcp::v3|14:github.com/a/b|11:github.json"
         );
         assert_eq!(mcp_action_label("github.json"), "mcp:github.json");
+        assert_ne!(skill_key("a::b", "c"), skill_key("a", "b::c"));
     }
 
     #[test]

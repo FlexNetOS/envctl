@@ -1,0 +1,106 @@
+# cargo-audit — external RustSec verifier, kept outside envctl's product graph.
+[[component]]
+id = "cargo-audit"
+name = "cargo-audit 0.22.2 (meta-owned)"
+description = "Installs the current pinned RustSec cargo-audit verifier under META_ROOT with one regular frontdoor; it is not linked into envctl."
+requires = ["rustup"]
+destructive = false
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; p="$M/usr/libexec/envctl/cargo-audit/bin/cargo-audit"; f="$M/usr/bin/cargo-audit"; [ -x "$p" ] && [ -x "$f" ] && [ ! -L "$f" ] && grep -Fqx '# managed-by: envctl component cargo-audit' "$f" && grep -Fqx "export CARGO_HOME=\"\${CARGO_HOME:-$M/.toolchains/cargo}\"" "$f" && grep -Fqx "exec \"$p\" \"\$@\"" "$f" && "$p" --version | grep -Eq '(^| )0\.22\.2($| )' ''']
+
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ROOT="$M/usr/libexec/envctl/cargo-audit"
+PRIVATE="$ROOT/bin/cargo-audit"
+FRONT="$M/usr/bin/cargo-audit"
+export CARGO_HOME="${CARGO_HOME:-$M/.toolchains/cargo}"
+export RUSTUP_HOME="${RUSTUP_HOME:-$M/.toolchains/rustup}"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$M/var/cache/envctl/cargo-target/cargo-audit}"
+export PATH="$CARGO_HOME/bin:$M/usr/bin:$PATH"
+cargo install cargo-audit --locked --version 0.22.2 --root "$ROOT" --force
+test -x "$PRIVATE" || { echo "FATAL: cargo-audit payload missing at $PRIVATE" >&2; exit 1; }
+"$PRIVATE" --version | grep -Eq '(^| )0\.22\.2($| )'
+install -d -m755 "$M/usr/bin"
+managed_frontdoor() {
+  [ -f "$FRONT" ] && [ ! -L "$FRONT" ] &&
+    grep -Fqx '# managed-by: envctl component cargo-audit' "$FRONT" &&
+    grep -Fqx "exec \"$PRIVATE\" \"\$@\"" "$FRONT"
+}
+if [ -e "$FRONT" ] || [ -L "$FRONT" ]; then
+  managed_frontdoor || { echo "REFUSE cargo-audit: foreign frontdoor at $FRONT" >&2; exit 1; }
+fi
+tmp="$M/usr/bin/.cargo-audit.$$"
+printf '%s\n' '#!/bin/sh' '# managed-by: envctl component cargo-audit' \
+  "export CARGO_HOME=\"\${CARGO_HOME:-$M/.toolchains/cargo}\"" \
+  "exec \"$PRIVATE\" \"\$@\"" >"$tmp"
+chmod 755 "$tmp"
+mv -f "$tmp" "$FRONT"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; p="$M/usr/libexec/envctl/cargo-audit/bin/cargo-audit"; f="$M/usr/bin/cargo-audit"; [ -x "$p" ] && [ -x "$f" ] && [ ! -L "$f" ] && grep -Fqx '# managed-by: envctl component cargo-audit' "$f" && grep -Fqx "export CARGO_HOME=\"\${CARGO_HOME:-$M/.toolchains/cargo}\"" "$f" && grep -Fqx "exec \"$p\" \"\$@\"" "$f" && "$p" --version | grep -Eq '(^| )0\.22\.2($| )' && "$f" --version | grep -Eq '(^| )0\.22\.2($| )' ''']
+
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ROOT="$M/usr/libexec/envctl/cargo-audit"
+PRIVATE="$ROOT/bin/cargo-audit"
+FRONT="$M/usr/bin/cargo-audit"
+export CARGO_HOME="${CARGO_HOME:-$M/.toolchains/cargo}"
+export RUSTUP_HOME="${RUSTUP_HOME:-$M/.toolchains/rustup}"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$M/var/cache/envctl/cargo-target/cargo-audit}"
+export PATH="$CARGO_HOME/bin:$M/usr/bin:$PATH"
+cargo install cargo-audit --locked --version 0.22.2 --root "$ROOT" --force
+test -x "$PRIVATE" || { echo "FATAL: cargo-audit payload missing at $PRIVATE" >&2; exit 1; }
+"$PRIVATE" --version | grep -Eq '(^| )0\.22\.2($| )'
+install -d -m755 "$M/usr/bin"
+managed_frontdoor() {
+  [ -f "$FRONT" ] && [ ! -L "$FRONT" ] &&
+    grep -Fqx '# managed-by: envctl component cargo-audit' "$FRONT" &&
+    grep -Fqx "exec \"$PRIVATE\" \"\$@\"" "$FRONT"
+}
+if [ -e "$FRONT" ] || [ -L "$FRONT" ]; then
+  managed_frontdoor || { echo "REFUSE cargo-audit: foreign frontdoor at $FRONT" >&2; exit 1; }
+fi
+tmp="$M/usr/bin/.cargo-audit.$$"
+printf '%s\n' '#!/bin/sh' '# managed-by: envctl component cargo-audit' \
+  "export CARGO_HOME=\"\${CARGO_HOME:-$M/.toolchains/cargo}\"" \
+  "exec \"$PRIVATE\" \"\$@\"" >"$tmp"
+chmod 755 "$tmp"
+mv -f "$tmp" "$FRONT"
+'''
+
+[component.remove]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ROOT="$M/usr/libexec/envctl/cargo-audit"
+PRIVATE="$ROOT/bin/cargo-audit"
+FRONT="$M/usr/bin/cargo-audit"
+if [ -f "$FRONT" ] && [ ! -L "$FRONT" ] &&
+   grep -Fqx '# managed-by: envctl component cargo-audit' "$FRONT" &&
+   grep -Fqx "exec \"$PRIVATE\" \"\$@\"" "$FRONT"; then
+  rm -f "$FRONT"
+fi
+export CARGO_HOME="${CARGO_HOME:-$M/.toolchains/cargo}"
+export RUSTUP_HOME="${RUSTUP_HOME:-$M/.toolchains/rustup}"
+export PATH="$CARGO_HOME/bin:$PATH"
+if [ -x "$PRIVATE" ]; then
+  cargo uninstall cargo-audit --root "$ROOT"
+fi
+rmdir "$ROOT/bin" "$ROOT" 2>/dev/null || true
+'''
+
+[component.wiring]
+path_entries = ["$META_ROOT/usr/bin"]

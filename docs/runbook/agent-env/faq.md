@@ -25,15 +25,21 @@ See [How Sync Works](./how-sync-works.md).
 
 ## Should I Commit agent-env.lock?
 
-Yes. For project scope, commit **both** `agent-env.yaml` and `agent-env.lock`, just like you'd commit `Cargo.lock` or `package-lock.json`. The config says what you want; the lock pins exactly which versions everyone gets. The lock is deterministic and portable (relative paths, no timestamps), so it diffs cleanly. Machine-local runtime state lives in the cache dir and is never committed. See [How Sync Works → The Lockfile Contract](./how-sync-works.md).
+Yes. For project scope, commit **both** `agent-env.yaml` and the v3 `agent-env.lock`, just like
+you'd commit `Cargo.lock` or `package-lock.json`. The config says what you want; the lock pins
+versions/selectors and the relative ownership proofs created by a successful apply. Do the first
+install with plain `sync --apply`, then commit that proof-bearing lock. Machine-local runtime state
+is not committed; clean clones use the portable project proofs. See [How Sync Works → The Lockfile Contract](./how-sync-works.md).
 
 ## How Do I Update Pinned Versions?
 
-Run `envctl agent sync --update --apply` (alias `-u`) to re-resolve branch / default-HEAD sources and rewrite the pins. A plain `envctl agent sync` honors the lock and won't fetch when destinations already match. Use `envctl agent sync --update <name> --apply` to update only selected entries. See [How Sync Works → How sync Honors the Lock](./how-sync-works.md).
+Run `envctl agent sync --update --apply` (alias `-u`) to explicitly roll moving pins/selections
+forward, or `--update <name>` for selected entries. Plain sync may also resolve/materialize
+configured sources; only `--locked`/`--frozen` guarantees zero network. See [How Sync Works → How sync Honors the Lock](./how-sync-works.md).
 
 ## How Do I Uninstall Safely?
 
-- To prune installs orphaned from the config for a scope: `envctl agent clean --apply`
+- To tear down every exact output owned by a scope: `envctl agent clean --apply`
 - envctl has no agent-env-binary uninstall — the engine ships inside `envctl`. (Upstream kasetto used `self uninstall` for a full teardown of all assets + the standalone binary.)
 
 See `envctl agent clean` in [Commands](./commands.md).

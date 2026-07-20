@@ -11,7 +11,9 @@ This supplements the root `AGENTS.md` with the repo-local Codex baseline. The ro
 ## MCP Baseline
 
 Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository.
-The project baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking. Keep MCP definitions synchronized through `agent-env.yaml`/`agent-skills`, not ad-hoc edits.
+The generated project baseline currently enables only the remote Exa server. Local-launcher
+servers remain retired until their commands have Yazelix-compatible profile-owned frontdoors.
+Keep MCP definitions synchronized through `agent-env.yaml`/`agent-skills`, not ad-hoc edits.
 This repo-local baseline is not authority to expand the active home Codex
 runtime with extra plugin marketplaces, duplicate command inventories, or
 cached/not-installed plugin families. Do not infer that `superhuman`,
@@ -46,14 +48,13 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
 
 ## Runtime Gates
 
-- Legacy repo-local Codex lifecycle hook sources from the pre-clean-room
-  baseline are purged, retired, and archived evidence only. Do not restore
-  `.codex/hooks.json`, `.codex/hooks/`, hook install scripts, or regenerated
-  hook sources from this repo as active root policy.
-- Hooks remain mandatory for the control plane, but the replacement must be a
-  clean-room design owned by the root lifecycle contract. Until that rebuild
-  lands, envctl-derived Codex config must keep hook features disabled and purge
-  stale generated hook state.
+- Legacy repo-local Codex lifecycle hook sources remain archive-only. Do not
+  restore `.codex/hooks.json`, `.codex/hooks/`, hook install scripts, or
+  checkout-local hook sources as active root policy.
+- The active generated hook surface is exactly `PreToolUse` for `Bash`, running
+  `/home/flexnetos/.nix-profile/bin/rtk hook claude`. Keep
+  `features.hooks = true`; never purge generated RTK hook state or restore
+  lifecycle, ICM, or raw-store hooks.
 - Root lifecycle policy is owned by `/home/flexnetos/AGENTS.md`,
   `/home/flexnetos/.codex/RULES.md`, and the active home/runtime config
   `/home/flexnetos/.codex/config.toml`.

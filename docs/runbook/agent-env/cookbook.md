@@ -24,15 +24,14 @@ Treat `agent-env.lock` like `Cargo.lock` or `package-lock.json`: commit it next 
 
 ```
 # Maintainer: set up the config, sync, then commit both files.
-envctl agent sync --project --apply
+envctl agent sync --scope project --apply
 git add agent-env.yaml agent-env.lock
 git commit -m "chore: pin agent skills"
 ```
 
 ```
-# Teammates: clone, then sync. The lock is honored exactly —
-# no surprise upgrades, and no network fetch when nothing changed.
-envctl agent sync --apply
+# Teammates: clone, then use the committed v3 proofs with zero network.
+envctl agent sync --locked --apply
 ```
 
 ```
@@ -45,7 +44,7 @@ git commit -m "chore: bump agent skills"
 
 ```
 # CI verifies the checked-in lock without ever fetching new versions.
-envctl agent sync --locked --project --apply
+envctl agent sync --locked --scope project --apply
 ```
 
 `--locked` (alias `--frozen`) errors if the config needs something the lock can't satisfy, so a stale lock fails the build instead of silently drifting. See [CI & automation](./ci.md) and [How Sync Works → The Lockfile Contract](./how-sync-works.md).
@@ -91,10 +90,10 @@ Both honor `--locked`/`--frozen` (the follow-up sync refuses to fetch), `--json`
 
 ## Verify The Lock In CI Without Installing
 
-`envctl agent lock --check` (alias `--frozen`) re-resolves the config and compares against `agent-env.lock` — exits non-zero on drift, never writes. Cheaper than a full `sync --locked` when you only need to know "is the committed lock still accurate?":
+`envctl agent lock --check` (alias `--frozen`) re-resolves the config and compares against `agent-env.lock` — exits non-zero on drift and never writes, but may fetch remote sources. For a fail-closed, zero-network CI audit, also pass `--locked`:
 
 ```
-envctl agent lock --check
+envctl agent lock --check --locked
 ```
 
 When a single dependency needs to roll forward without re-resolving everything, target it with `-P` / `--upgrade-package` (mirrors `sync --update <name>...`):
