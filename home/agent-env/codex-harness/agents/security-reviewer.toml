@@ -1,5 +1,5 @@
 name = "security-reviewer"
-description = "hooks/rules/permissions/secrets/yolo/network audit; no edits"
+description = "rules/permissions/secrets/yolo/network audit; no edits"
 default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true

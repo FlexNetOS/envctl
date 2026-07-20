@@ -16,21 +16,30 @@ for path in \
   .codex/hooks/pre-cleanroom-hooks.zip \
   .claude.tar.xz \
   home/.codex/hooks.json \
+  home/.claude/hooks \
+  .codex/hooks \
+  .codex/hooks.json \
   home/.codex/mined-live/rules/default.rules
 do
   [ ! -e "$path" ] && [ ! -L "$path" ] \
     || fail "retired hook payload remains: $path"
 done
 
-for mirror in \
-  .agents/skills/agent-env-codex/references/source-prompt.md \
-  .codex/skills/agent-env-codex/references/source-prompt.md
-do
-  [ -f "$mirror" ] || fail "missing generated-mirror tombstone: $mirror"
-  grep -Fq 'Generated mirror blocked pending owner regeneration' "$mirror" \
-    || fail "generated mirror is not fail-closed: $mirror"
-  ! grep -Eq 'Wire hooks to|Required hooks:|SessionStart:' "$mirror" \
-    || fail "retired lifecycle instructions remain in $mirror"
-done
+source=agent-skills/agent-env-codex/references/source-prompt.md
+[ -f "$source" ] || fail "missing lifecycle owner prompt: $source"
+! grep -Eq 'rtk hook claude|codex-harness-hook|hooks\.json|\.claude/hooks|\.codex/hooks' "$source" \
+  || fail "retired lifecycle instructions remain in owner prompt"
+
+if rg -n --glob '!envctl-db-nu-plugin-migration-automation-package/**' \
+  --glob '!docs/generated/**' \
+  --glob '!*.lock' \
+  --glob '!scripts/tests/test-archived-hook-purge.sh' \
+  --glob '!scripts/tests/test-agent-env-hooks.sh' \
+  --glob '!scripts/tests/test-flexnetos-codex-runtime-gate.sh' \
+  --glob '!home/agent-env/codex-harness/src/bin/codex-harness-final-verify.rs' \
+  'rtk hook claude|codex-harness-hook|hooks\.write_text|/home/flexnetos/FlexNetOS/\.codex/hooks' \
+  agent-skills home manifest assets scripts ci; then
+  fail "retired lifecycle regeneration path remains"
+fi
 
 printf 'archived-hook purge: PASS\n'
