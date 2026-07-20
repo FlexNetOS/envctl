@@ -836,7 +836,7 @@ name = "Stub"
         }
 
         assert!(
-            classify_line("$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile").is_empty(),
+            classify_line("$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile").is_empty(),
             "the Yazelix Nix profile policy must not be classified as a per-tool install"
         );
     }

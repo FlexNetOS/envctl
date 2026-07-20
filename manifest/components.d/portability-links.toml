@@ -3,7 +3,7 @@
 # Current policy (2026-06-26): envctl lifecycle hooks execute with HOME=$META_ROOT
 # and META_ROOT exported by the runner. Host-user/global installs are not a target.
 # Yazelix owns the active Nix profile under the real home:
-#   $ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile
+#   $ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile
 # Never replace the whole real-home .local tree. Envctl may only archive known
 # per-tool user-bin shadows after their profile/META_ROOT frontdoors are present. The same guard
 # archives the known retired META_ROOT/usr/bin/git-kb staging symlink only when it is byte-identical
@@ -313,7 +313,7 @@ R="${ENVCTL_REAL_HOME:-}"
 if [ -n "$R" ] && [ "$R" != "$M" ] && [ -L "$R/.nix-profile" ]; then
   target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
   case "$target" in
-    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
+    "$R/.local/state/nix/profile") ;;
     *) exit 1 ;;
   esac
 fi

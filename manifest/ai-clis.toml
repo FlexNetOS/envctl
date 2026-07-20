@@ -221,7 +221,9 @@ kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
 args = ["detect"]
 [component.install]
-kind = "script"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
+args = ["install"]
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
@@ -351,7 +353,9 @@ kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
 args = ["verify"]
 [component.fix]
-kind = "script"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
+args = ["fix"]
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"

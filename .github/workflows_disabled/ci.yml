@@ -123,8 +123,8 @@ jobs:
               print(f"rustc is below the declared 1.89 floor: {version}", file=sys.stderr)
               sys.exit(1)
           PY
-      - name: cargo check --workspace --locked (MSRV 1.89 toolchain)
-        run: cargo check --workspace --locked
+      - name: cargo check --workspace --locked (exact MSRV 1.89 toolchain)
+        run: cargo +1.89.0 check --workspace --locked
 
   cargo-audit:
     name: cargo audit

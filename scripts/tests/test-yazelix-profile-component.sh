@@ -24,7 +24,7 @@ build_counter="$tmp/build-counter"
 add_counter="$tmp/add-counter"
 remove_counter="$tmp/remove-counter"
 
-mkdir -p "$meta/src/yazelix" "$real/.local/state/nix/profiles" \
+mkdir -p "$meta/src/yazelix" "$real/.local/state/nix" \
   "$store_root" "$fake_candidate/bin" "$fake_candidate/toolbin" \
   "$fake_candidate/nushell/config" "$foreign_store"
 printf '{ outputs = _: {}; }\n' >"$meta/src/yazelix/flake.nix"
@@ -122,8 +122,8 @@ fake_activate_profile() {
     done
   fi
   selector="profile-${number}-link"
-  ln -s "$profile_store" "$real/.local/state/nix/profiles/$selector"
-  ln -sfn "$selector" "$real/.local/state/nix/profiles/profile"
+  ln -s "$profile_store" "$real/.local/state/nix/$selector"
+  ln -sfn "$selector" "$real/.local/state/nix/profile"
 }
 
 write_foreign_only_state() {
@@ -206,24 +206,25 @@ yazelix_setup "$meta" "$real" "$store_root"
 write_empty_state
 write_exact_owned_state "$meta/src/yazelix"
 fake_activate_profile
-mv "$real/.local/state/nix/profiles/profile" "$real/.local/state/nix/profile"
-mv "$real/.local/state/nix/profiles/profile-1-link" \
-  "$real/.local/state/nix/profile-1-link"
-ln -s "$real/.local/state/nix/profile" "$real/.nix-profile"
+mkdir -p "$real/.local/state/nix/profiles"
+mv "$real/.local/state/nix/profile" "$real/.local/state/nix/profiles/profile"
+mv "$real/.local/state/nix/profile-1-link" \
+  "$real/.local/state/nix/profiles/profile-1-link"
+ln -s "$real/.local/state/nix/profiles/profile" "$real/.nix-profile"
 
 # A sole-element legacy XDG selector is adopted transactionally: the canonical
-# candidate is built before mutation, a new profiles/profile generation is
+# candidate is built before mutation, a new singular profile generation is
 # created and verified, the frontdoor switches atomically, and legacy selector
 # links are archived instead of remaining a parallel runtime owner.
 yazelix_install_core "$uid" >"$tmp/install.out"
 [ "$(<"$build_counter")" -eq 1 ]
 [ "$(<"$add_counter")" -eq 1 ]
 [ "$(<"$remove_counter")" -eq 0 ]
-[ "$(readlink "$real/.nix-profile")" = "$real/.local/state/nix/profiles/profile" ]
-[ ! -e "$real/.local/state/nix/profile" ] \
-  && [ ! -L "$real/.local/state/nix/profile" ]
-[ ! -e "$real/.local/state/nix/profile-1-link" ] \
-  && [ ! -L "$real/.local/state/nix/profile-1-link" ]
+[ "$(readlink "$real/.nix-profile")" = "$real/.local/state/nix/profile" ]
+[ ! -e "$real/.local/state/nix/profiles/profile" ] \
+  && [ ! -L "$real/.local/state/nix/profiles/profile" ]
+[ ! -e "$real/.local/state/nix/profiles/profile-1-link" ] \
+  && [ ! -L "$real/.local/state/nix/profiles/profile-1-link" ]
 find "$meta/var/lib/envctl/legacy-archives" -type l -name profile -print -quit | grep -q .
 yazelix_only_foundation_element "$(<"$state")"
 yazelix_validate_installed "$uid"
@@ -231,12 +232,12 @@ yazelix_validate_installed "$uid"
 
 # Exact incumbent keeps its generation and mutation state; it still builds the source candidate
 # so an edited path flake cannot leave stale bytes behind under the same originalUrl.
-generation_before="$(readlink "$real/.local/state/nix/profiles/profile")"
+generation_before="$(readlink "$real/.local/state/nix/profile")"
 yazelix_install_core "$uid" >"$tmp/idempotent.out"
 [ "$(<"$build_counter")" -eq 2 ]
 [ "$(<"$add_counter")" -eq 1 ]
 [ "$(<"$remove_counter")" -eq 0 ]
-[ "$(readlink "$real/.local/state/nix/profiles/profile")" = "$generation_before" ]
+[ "$(readlink "$real/.local/state/nix/profile")" = "$generation_before" ]
 
 # A source-drifted element is upgraded through remove+add only after candidate proof.
 jq '.elements.lifeos_foundation_yzx.originalUrl = "github:old/yazelix"
@@ -292,7 +293,7 @@ rm "$real/.nix-profile"
 ln -s "$tmp/foreign-profile" "$real/.nix-profile"
 expect_failure hostile-frontdoor yazelix_install_core "$uid"
 rm "$real/.nix-profile"
-ln -s "$real/.local/state/nix/profiles/profile" "$real/.nix-profile"
+ln -s "$real/.local/state/nix/profile" "$real/.nix-profile"
 ln -s "$tmp/foreign-profile" "$meta/.nix-profile"
 expect_failure meta-profile-shadow yazelix_install_core "$uid"
 rm "$meta/.nix-profile"

@@ -58,9 +58,9 @@ yazelix_setup() {
   YAZELIX_REAL_HOME="${2:?ENVCTL_REAL_HOME required}"
   YAZELIX_STORE_ROOT="${3:-/nix/store}"
   YAZELIX_SOURCE="$YAZELIX_META_ROOT/src/yazelix"
-  YAZELIX_PROFILE_DIR="$YAZELIX_REAL_HOME/.local/state/nix/profiles"
+  YAZELIX_PROFILE_DIR="$YAZELIX_REAL_HOME/.local/state/nix"
   YAZELIX_PROFILE="$YAZELIX_PROFILE_DIR/profile"
-  YAZELIX_LEGACY_PROFILE_DIR="$YAZELIX_REAL_HOME/.local/state/nix"
+  YAZELIX_LEGACY_PROFILE_DIR="$YAZELIX_REAL_HOME/.local/state/nix/profiles"
   YAZELIX_LEGACY_PROFILE="$YAZELIX_LEGACY_PROFILE_DIR/profile"
   YAZELIX_FRONTDOOR="$YAZELIX_REAL_HOME/.nix-profile"
   YAZELIX_ELEMENT=lifeos_foundation_yzx
@@ -114,17 +114,30 @@ yazelix_prepare_profile_layout() {
 }
 
 yazelix_profile_chain_ok() {
-  local uid="$1" selector generation target resolved
+  local uid="$1" selector generation target resolved hops=0
   [ -L "$YAZELIX_FRONTDOOR" ] && [ "$(/usr/bin/stat -c '%u' -- "$YAZELIX_FRONTDOOR")" = "$uid" ] \
     && [ "$(/usr/bin/readlink -- "$YAZELIX_FRONTDOOR")" = "$YAZELIX_PROFILE" ] || return 1
   [ -L "$YAZELIX_PROFILE" ] && [ "$(/usr/bin/stat -c '%u' -- "$YAZELIX_PROFILE")" = "$uid" ] || return 1
   selector="$(/usr/bin/readlink -- "$YAZELIX_PROFILE")"
-  [[ "$selector" =~ ^profile-[1-9][0-9]*-link$ ]] || return 1
+  [[ "$selector" =~ ^profile-[1-9][0-9]*-link(-[1-9][0-9]*-link)*$ ]] || return 1
   generation="$YAZELIX_PROFILE_DIR/$selector"
-  [ -L "$generation" ] && [ "$(/usr/bin/stat -c '%u' -- "$generation")" = "$uid" ] || return 1
-  target="$(/usr/bin/readlink -- "$generation")"
-  case "$target" in "$YAZELIX_STORE_ROOT"/*-profile) ;; *) return 1 ;; esac
-  [ -d "$target" ] && [ ! -L "$target" ] || return 1
+  while :; do
+    [ -L "$generation" ] && [ "$(/usr/bin/stat -c '%u' -- "$generation")" = "$uid" ] || return 1
+    target="$(/usr/bin/readlink -- "$generation")"
+    case "$target" in
+      "$YAZELIX_STORE_ROOT"/*-profile) break ;;
+      profile-[1-9][0-9]*-link|profile-[1-9][0-9]*-link-[1-9][0-9]*-link*)
+        [[ "$target" =~ ^profile-[1-9][0-9]*-link(-[1-9][0-9]*-link)*$ ]] || return 1
+        generation="$YAZELIX_PROFILE_DIR/$target"
+        hops=$((hops + 1))
+        [ "$hops" -lt 16 ] || return 1
+        continue
+        ;;
+      *) return 1 ;;
+    esac
+  done
+  [ "$(/usr/bin/dirname -- "$target")" = "$YAZELIX_STORE_ROOT" ] \
+    && [ -d "$target" ] && [ ! -L "$target" ] || return 1
   resolved="$(/usr/bin/readlink -f -- "$YAZELIX_FRONTDOOR" 2>/dev/null)"
   [ "$resolved" = "$target" ]
 }
