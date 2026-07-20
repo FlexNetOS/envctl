@@ -4,9 +4,6 @@ set -euo pipefail
 ROOT="${1:-$(git -C "$(dirname "${BASH_SOURCE[0]}")/../../.." rev-parse --show-toplevel)}"
 SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DURABLE="$ROOT/agent-skills/agent-env-codex"
-ACTIVE="${CODEX_HOME:-/home/flexnetos/.codex}/skills/agent-env-codex"
-PROJECT_CODEX="$ROOT/.codex/skills/agent-env-codex"
-PROJECT_CLAUDE="$ROOT/.claude/skills/agent-env-codex"
 ORIG="$ROOT/.codex/prompts/prompt:codex-gpt-harness.prompt.md"
 FULL="$ROOT/.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md"
 SNAPSHOT="$SKILL_ROOT/references/source-prompt.md"
@@ -25,7 +22,7 @@ for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SUBSTRATE_PROMPT" \
   "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md" \
   "$SKILL_ROOT/scripts/check-bun-command-policy.py" \
   "$SKILL_ROOT/scripts/check-yazelix-contract.py" \
-  "$SKILL_ROOT/agents/openai.yaml" "$DURABLE" "$ACTIVE" "$PROJECT_CODEX" "$PROJECT_CLAUDE"; do
+  "$SKILL_ROOT/agents/openai.yaml" "$DURABLE"; do
   [[ -e "$path" ]] || { echo "missing required path: $path" >&2; exit 2; }
 done
 
@@ -97,11 +94,14 @@ echo 'non-Markdown executable fixture enforcement: yes'
 printf '\n== Yazelix durable policy ==\n'
 python3 "$SKILL_ROOT/scripts/check-yazelix-contract.py" --root "$ROOT"
 
-printf '\n== skill source/projection identity ==\n'
-diff -qr "$DURABLE" "$PROJECT_CODEX"
-diff -qr "$DURABLE" "$PROJECT_CLAUDE"
-diff -qr "$DURABLE" "$ACTIVE"
-echo 'durable source = project Codex = project Claude = active materialization: yes'
+printf '\n== canonical owner/projection contract ==\n'
+# The catalog owns activation state.  This skill can be inactive while core-only
+# discovery is selected, so neither a home nor a project mirror is an owner or
+# a validator prerequisite.  The retired Claude root mirror must remain gone.
+[[ ! -e "$ROOT/.claude/skills/agent-env-codex" ]] \
+  || { echo 'retired Claude agent-env-codex projection returned' >&2; exit 2; }
+grep -Fq 'agent-env-codex:' "$ROOT/agent-skills/skill-catalog/catalog.yaml"
+echo 'durable source is catalogued; projections are owner-generated only: yes'
 
 printf '\n== complete prompt identity ==\n'
 sha256sum "$ORIG" "$FULL" "$SNAPSHOT"

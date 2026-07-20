@@ -1,44 +1,44 @@
 version: 3
 skills:
+  skill::v3|25:./agent-skills/icm-memory|10:icm-memory:
+    destination: .codex/skills/icm-memory
+    hash: 4b65c9e2501010c353a4a5dfeb121feac20a9684948bc59f10eb57556455f64c
+    skill: icm-memory
+    description: '>-'
+    source: ./agent-skills/icm-memory
+    source_revision: local
+    scope: project
+  skill::v3|28:./agent-skills/env-stabilize|13:env-stabilize:
+    destination: .codex/skills/env-stabilize
+    hash: f7ee01574dbf5423785295874c273adbaf3f961f4c8f035ffda3198ee0e2adeb
+    skill: env-stabilize
+    description: '"How to keep the environment reproducible and drift-free — the detect/drift, doctor-diagnostic, and content-hashed lock discipline envctl uses, plus how the built-in agent-env engine (envctl agent) provisions and locks the agent config. Use when checking environment health, diagnosing drift, regenerating or verifying a lock, or making the agent environment reproducible. Triggers: ''is the environment stable'', ''check for drift'', ''run doctor'', ''the lock is stale'', ''make this reproducible'', ''env is inconsistent'', ''sync the agents''."'
+    source: ./agent-skills/env-stabilize
+    source_revision: local
+    scope: project
   skill::v3|28:./agent-skills/skill-catalog|13:skill-catalog:
     destination: .codex/skills/skill-catalog
-    hash: f243de0927152651564484eba33078a19b7e993fc78349b6db5056c6b9238079
+    hash: 5cf2806f1136355941d1296c9cbe2d2fdf4f7212bb108ece527433b3db33299d
     skill: skill-catalog
     description: '"Discover and activate Envctl''s locked Codex capability packs without copying unmanaged skills. Use for skill search, pack selection, provenance, or task-intent activation."'
     source: ./agent-skills/skill-catalog
     source_revision: local
     scope: project
-  skill::v3|42:./agent-skills/capability-packs/icm-memory|10:icm-memory:
-    destination: .codex/skills/icm-memory
-    hash: 4b65c9e2501010c353a4a5dfeb121feac20a9684948bc59f10eb57556455f64c
-    skill: icm-memory
-    description: '>-'
-    source: ./agent-skills/capability-packs/icm-memory
-    source_revision: local
-    scope: project
-  skill::v3|45:./agent-skills/capability-packs/env-stabilize|13:env-stabilize:
-    destination: .codex/skills/env-stabilize
-    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
-    skill: env-stabilize
-    description: '"How to keep the environment reproducible and drift-free — the detect/drift, doctor-diagnostic, and content-hashed lock discipline envctl uses, plus how the built-in agent-env engine (envctl agent) provisions and locks the agent config. Use when checking environment health, diagnosing drift, regenerating or verifying a lock, or making the agent environment reproducible. Triggers: ''is the environment stable'', ''check for drift'', ''run doctor'', ''the lock is stale'', ''make this reproducible'', ''env is inconsistent'', ''sync the agents''."'
-    source: ./agent-skills/capability-packs/env-stabilize
-    source_revision: local
-    scope: project
-  skill::v3|48:./agent-skills/capability-packs/agent-env-config|16:agent-env-config:
+  skill::v3|31:./agent-skills/agent-env-config|16:agent-env-config:
     destination: .codex/skills/agent-env-config
-    hash: 62469c83a754d07428f851fdaa758371c1a861e0ae5ede39605d24712d29ec66
+    hash: 57418c97f1e0b9eb4de0267f5297d290a0b1c84873db04f8deedb8347d05af6e
     skill: agent-env-config
     description: '"The CORRECT conventions and agent-environment configuration for the envctl Rust workspace — supersedes the broken ECC-auto-generated skill/instincts that assert JavaScript conventions. Use whenever writing or reviewing envctl code, naming files/types, writing tests, composing commits, or configuring the .claude/.codex agent setup (skills, MCP servers, multi-agent roles). Triggers: ''what conventions'', ''how do I name this'', ''write a test'', ''commit message'', ''configure the agents'', ''MCP setup'', ''is camelCase right''."'
-    source: ./agent-skills/capability-packs/agent-env-config
+    source: ./agent-skills/agent-env-config
     source_revision: local
     scope: project
-  skill::v3|49:./agent-skills/capability-packs/meta-gitkb-review|17:meta-gitkb-review:
+  skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review:
     destination: .codex/skills/meta-gitkb-review
     hash: f59fc59b0ade740a4e9346a05e55ad820443b1dbc2094aa3a19900b88b4f0ddf
     skill: meta-gitkb-review
     description: Review a FlexNetOS Meta peer through the shared Meta/GitKB policy while preserving its independent repository and native assistant adapters.
-    source: ./agent-skills/capability-packs/meta-gitkb-review
-    source_revision: local
+    source: https://github.com/FlexNetOS/meta
+    source_revision: ref:fb7273a7c8d05dce0bac649ded940a86ad41e107
     scope: project
 assets:
   mcp::v3|14:./agent-skills|8:exa.json:
@@ -50,11 +50,11 @@ assets:
     source_revision: local
 source_selectors:
   mcp::v3|14:./agent-skills|8:exa.json: v2|base=26:v1|kind=mcp|selection=name|scope=project|targets=2|29:.codex/config.toml@codex-toml26:.mcp.json@mcp-servers-json
+  skill::v3|25:./agent-skills/icm-memory|10:icm-memory: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|25:.agents/skills/icm-memory24:.codex/skills/icm-memory
+  skill::v3|28:./agent-skills/env-stabilize|13:env-stabilize: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|28:.agents/skills/env-stabilize27:.codex/skills/env-stabilize
   skill::v3|28:./agent-skills/skill-catalog|13:skill-catalog: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|28:.agents/skills/skill-catalog27:.codex/skills/skill-catalog
-  skill::v3|42:./agent-skills/capability-packs/icm-memory|10:icm-memory: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|25:.agents/skills/icm-memory24:.codex/skills/icm-memory
-  skill::v3|45:./agent-skills/capability-packs/env-stabilize|13:env-stabilize: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|28:.agents/skills/env-stabilize27:.codex/skills/env-stabilize
-  skill::v3|48:./agent-skills/capability-packs/agent-env-config|16:agent-env-config: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|31:.agents/skills/agent-env-config30:.codex/skills/agent-env-config
-  skill::v3|49:./agent-skills/capability-packs/meta-gitkb-review|17:meta-gitkb-review: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|32:.agents/skills/meta-gitkb-review31:.codex/skills/meta-gitkb-review
+  skill::v3|31:./agent-skills/agent-env-config|16:agent-env-config: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|31:.agents/skills/agent-env-config30:.codex/skills/agent-env-config
+  skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review: v2|base=56:v1|kind=skill|sub-dir=16:agent-env/skills|selection=name|scope=project|targets=2|32:.agents/skills/meta-gitkb-review31:.codex/skills/meta-gitkb-review
 installed_outputs:
   36:mcp::v3|14:./agent-skills|8:exa.json|18:.codex/config.toml|10:codex-toml|3:exa:
     asset_id: mcp::v3|14:./agent-skills|8:exa.json
@@ -68,62 +68,62 @@ installed_outputs:
     format: mcp-servers-json
     unit: exa
     hash: c77701680a1f4632ca1c9eed0ed42da889d6516593f45c023cbaf79ba3fd6ae4
+  52:skill::v3|25:./agent-skills/icm-memory|10:icm-memory|24:.codex/skills/icm-memory|10:skill-tree|4:tree:
+    asset_id: skill::v3|25:./agent-skills/icm-memory|10:icm-memory
+    destination: .codex/skills/icm-memory
+    format: skill-tree
+    unit: tree
+    hash: 4b65c9e2501010c353a4a5dfeb121feac20a9684948bc59f10eb57556455f64c
+  52:skill::v3|25:./agent-skills/icm-memory|10:icm-memory|25:.agents/skills/icm-memory|10:skill-tree|4:tree:
+    asset_id: skill::v3|25:./agent-skills/icm-memory|10:icm-memory
+    destination: .agents/skills/icm-memory
+    format: skill-tree
+    unit: tree
+    hash: 4b65c9e2501010c353a4a5dfeb121feac20a9684948bc59f10eb57556455f64c
+  58:skill::v3|28:./agent-skills/env-stabilize|13:env-stabilize|27:.codex/skills/env-stabilize|10:skill-tree|4:tree:
+    asset_id: skill::v3|28:./agent-skills/env-stabilize|13:env-stabilize
+    destination: .codex/skills/env-stabilize
+    format: skill-tree
+    unit: tree
+    hash: f7ee01574dbf5423785295874c273adbaf3f961f4c8f035ffda3198ee0e2adeb
+  58:skill::v3|28:./agent-skills/env-stabilize|13:env-stabilize|28:.agents/skills/env-stabilize|10:skill-tree|4:tree:
+    asset_id: skill::v3|28:./agent-skills/env-stabilize|13:env-stabilize
+    destination: .agents/skills/env-stabilize
+    format: skill-tree
+    unit: tree
+    hash: f7ee01574dbf5423785295874c273adbaf3f961f4c8f035ffda3198ee0e2adeb
   58:skill::v3|28:./agent-skills/skill-catalog|13:skill-catalog|27:.codex/skills/skill-catalog|10:skill-tree|4:tree:
     asset_id: skill::v3|28:./agent-skills/skill-catalog|13:skill-catalog
     destination: .codex/skills/skill-catalog
     format: skill-tree
     unit: tree
-    hash: f243de0927152651564484eba33078a19b7e993fc78349b6db5056c6b9238079
+    hash: 5cf2806f1136355941d1296c9cbe2d2fdf4f7212bb108ece527433b3db33299d
   58:skill::v3|28:./agent-skills/skill-catalog|13:skill-catalog|28:.agents/skills/skill-catalog|10:skill-tree|4:tree:
     asset_id: skill::v3|28:./agent-skills/skill-catalog|13:skill-catalog
     destination: .agents/skills/skill-catalog
     format: skill-tree
     unit: tree
-    hash: f243de0927152651564484eba33078a19b7e993fc78349b6db5056c6b9238079
-  69:skill::v3|42:./agent-skills/capability-packs/icm-memory|10:icm-memory|24:.codex/skills/icm-memory|10:skill-tree|4:tree:
-    asset_id: skill::v3|42:./agent-skills/capability-packs/icm-memory|10:icm-memory
-    destination: .codex/skills/icm-memory
-    format: skill-tree
-    unit: tree
-    hash: 4b65c9e2501010c353a4a5dfeb121feac20a9684948bc59f10eb57556455f64c
-  69:skill::v3|42:./agent-skills/capability-packs/icm-memory|10:icm-memory|25:.agents/skills/icm-memory|10:skill-tree|4:tree:
-    asset_id: skill::v3|42:./agent-skills/capability-packs/icm-memory|10:icm-memory
-    destination: .agents/skills/icm-memory
-    format: skill-tree
-    unit: tree
-    hash: 4b65c9e2501010c353a4a5dfeb121feac20a9684948bc59f10eb57556455f64c
-  ? 75:skill::v3|45:./agent-skills/capability-packs/env-stabilize|13:env-stabilize|27:.codex/skills/env-stabilize|10:skill-tree|4:tree
-  : asset_id: skill::v3|45:./agent-skills/capability-packs/env-stabilize|13:env-stabilize
-    destination: .codex/skills/env-stabilize
-    format: skill-tree
-    unit: tree
-    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
-  ? 75:skill::v3|45:./agent-skills/capability-packs/env-stabilize|13:env-stabilize|28:.agents/skills/env-stabilize|10:skill-tree|4:tree
-  : asset_id: skill::v3|45:./agent-skills/capability-packs/env-stabilize|13:env-stabilize
-    destination: .agents/skills/env-stabilize
-    format: skill-tree
-    unit: tree
-    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
-  ? 81:skill::v3|48:./agent-skills/capability-packs/agent-env-config|16:agent-env-config|30:.codex/skills/agent-env-config|10:skill-tree|4:tree
-  : asset_id: skill::v3|48:./agent-skills/capability-packs/agent-env-config|16:agent-env-config
+    hash: 5cf2806f1136355941d1296c9cbe2d2fdf4f7212bb108ece527433b3db33299d
+  64:skill::v3|31:./agent-skills/agent-env-config|16:agent-env-config|30:.codex/skills/agent-env-config|10:skill-tree|4:tree:
+    asset_id: skill::v3|31:./agent-skills/agent-env-config|16:agent-env-config
     destination: .codex/skills/agent-env-config
     format: skill-tree
     unit: tree
-    hash: 62469c83a754d07428f851fdaa758371c1a861e0ae5ede39605d24712d29ec66
-  ? 81:skill::v3|48:./agent-skills/capability-packs/agent-env-config|16:agent-env-config|31:.agents/skills/agent-env-config|10:skill-tree|4:tree
-  : asset_id: skill::v3|48:./agent-skills/capability-packs/agent-env-config|16:agent-env-config
+    hash: 57418c97f1e0b9eb4de0267f5297d290a0b1c84873db04f8deedb8347d05af6e
+  64:skill::v3|31:./agent-skills/agent-env-config|16:agent-env-config|31:.agents/skills/agent-env-config|10:skill-tree|4:tree:
+    asset_id: skill::v3|31:./agent-skills/agent-env-config|16:agent-env-config
     destination: .agents/skills/agent-env-config
     format: skill-tree
     unit: tree
-    hash: 62469c83a754d07428f851fdaa758371c1a861e0ae5ede39605d24712d29ec66
-  ? 83:skill::v3|49:./agent-skills/capability-packs/meta-gitkb-review|17:meta-gitkb-review|31:.codex/skills/meta-gitkb-review|10:skill-tree|4:tree
-  : asset_id: skill::v3|49:./agent-skills/capability-packs/meta-gitkb-review|17:meta-gitkb-review
+    hash: 57418c97f1e0b9eb4de0267f5297d290a0b1c84873db04f8deedb8347d05af6e
+  67:skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review|31:.codex/skills/meta-gitkb-review|10:skill-tree|4:tree:
+    asset_id: skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review
     destination: .codex/skills/meta-gitkb-review
     format: skill-tree
     unit: tree
     hash: f59fc59b0ade740a4e9346a05e55ad820443b1dbc2094aa3a19900b88b4f0ddf
-  ? 83:skill::v3|49:./agent-skills/capability-packs/meta-gitkb-review|17:meta-gitkb-review|32:.agents/skills/meta-gitkb-review|10:skill-tree|4:tree
-  : asset_id: skill::v3|49:./agent-skills/capability-packs/meta-gitkb-review|17:meta-gitkb-review
+  67:skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review|32:.agents/skills/meta-gitkb-review|10:skill-tree|4:tree:
+    asset_id: skill::v3|33:https://github.com/FlexNetOS/meta|17:meta-gitkb-review
     destination: .agents/skills/meta-gitkb-review
     format: skill-tree
     unit: tree

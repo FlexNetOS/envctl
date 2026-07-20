@@ -86,6 +86,8 @@ packs:
 skills:
   agent-env-codex:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - codex-harness
     intents:
@@ -96,6 +98,8 @@ skills:
     - harness
   agent-env-config:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - conventions
     intents:
@@ -106,6 +110,8 @@ skills:
     - conventions
   auto-provision:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - provision
     intents:
@@ -113,11 +119,15 @@ skills:
     keywords: []
   code-intelligence:
     source: ./.kb/skills/code-intelligence
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   code-research-verify:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - verify-code
     intents:
@@ -125,6 +135,8 @@ skills:
     keywords: []
   codedb-config-tables:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - codedb-config
     intents:
@@ -132,6 +144,8 @@ skills:
     keywords: []
   codedb-ingest:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - codedb
     intents:
@@ -139,6 +153,8 @@ skills:
     keywords: []
   cross-repo-health:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - health
     intents:
@@ -146,6 +162,8 @@ skills:
     keywords: []
   cross-repo-reference:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - xref
     intents:
@@ -153,6 +171,8 @@ skills:
     keywords: []
   env-install-loop:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - install-loop
     intents:
@@ -160,6 +180,8 @@ skills:
     keywords: []
   env-stabilize:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - drift
     intents:
@@ -170,6 +192,8 @@ skills:
     - reproducibility
   env-toolchain-install:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - toolchain
     intents:
@@ -177,11 +201,15 @@ skills:
     keywords: []
   explore:
     source: ./.kb/skills/explore
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   feature-forge:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - forge
     intents:
@@ -191,6 +219,8 @@ skills:
     - feature
   forge-loop:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - feature-loop
     intents:
@@ -198,11 +228,15 @@ skills:
     keywords: []
   gitkb:
     source: ./.kb/skills/gitkb
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   handoff-sync:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - handoff
     intents:
@@ -210,6 +244,8 @@ skills:
     keywords: []
   harness-evolution:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - evolve-harness
     intents:
@@ -217,6 +253,8 @@ skills:
     keywords: []
   harness-loop-init:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - loop-init
     intents:
@@ -224,6 +262,8 @@ skills:
     keywords: []
   icm-memory:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - memory
     intents:
@@ -231,66 +271,92 @@ skills:
     keywords: []
   kb-board:
     source: ./.kb/skills/kb-board
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-close:
     source: ./.kb/skills/kb-close
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-commit:
     source: ./.kb/skills/kb-commit
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-context:
     source: ./.kb/skills/kb-context
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-create:
     source: ./.kb/skills/kb-create
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-handoff:
     source: ./.kb/skills/kb-handoff
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-progress:
     source: ./.kb/skills/kb-progress
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-review:
     source: ./.kb/skills/kb-review
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-search:
     source: ./.kb/skills/kb-search
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-start:
     source: ./.kb/skills/kb-start
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-status:
     source: ./.kb/skills/kb-status
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   kb-tasks:
     source: ./.kb/skills/kb-tasks
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   meta-gitkb-review:
-    source: null
+    source: https://github.com/FlexNetOS/meta
+    source_ref: fb7273a7c8d05dce0bac649ded940a86ad41e107
+    sub_dir: agent-env/skills
     aliases:
     - review
     intents:
@@ -300,6 +366,8 @@ skills:
     - review
   plan-autoresearch-loop:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - autoresearch-plan
     intents:
@@ -307,6 +375,8 @@ skills:
     keywords: []
   plan-cartography:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - code-map
     intents:
@@ -314,6 +384,8 @@ skills:
     keywords: []
   plan-dependency-graph:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - dependency-plan
     intents:
@@ -321,6 +393,8 @@ skills:
     keywords: []
   plan-distributed-compute:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - distributed-plan
     intents:
@@ -328,6 +402,8 @@ skills:
     keywords: []
   plan-filesystem-layout:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - layout-plan
     intents:
@@ -335,6 +411,8 @@ skills:
     keywords: []
   plan-governance-config:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - governance-plan
     intents:
@@ -342,6 +420,8 @@ skills:
     keywords: []
   plan-loop:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - planning-loop
     intents:
@@ -349,6 +429,8 @@ skills:
     keywords: []
   plan-memory-vector-intelligence:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - memory-plan
     intents:
@@ -356,6 +438,8 @@ skills:
     keywords: []
   plan-prompt-architecture:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - prompt-plan
     intents:
@@ -363,6 +447,8 @@ skills:
     keywords: []
   plan-rules-policy-org:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - policy-plan
     intents:
@@ -370,6 +456,8 @@ skills:
     keywords: []
   plan-synthesis:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - synthesis
     intents:
@@ -377,6 +465,8 @@ skills:
     keywords: []
   plan-test-strategy:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - test-plan
     intents:
@@ -384,6 +474,8 @@ skills:
     keywords: []
   plan-trend-research:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - trend-research
     intents:
@@ -393,6 +485,8 @@ skills:
     - official-sources
   planning-engineer:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - planner
     intents:
@@ -400,11 +494,15 @@ skills:
     keywords: []
   refactor-safety:
     source: ./.kb/skills/refactor-safety
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []
   rust-feature-impl:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - rust-impl
     intents:
@@ -414,6 +512,8 @@ skills:
     - implementation
   rust-port:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - port
     intents:
@@ -421,6 +521,8 @@ skills:
     keywords: []
   rust-port-inventory:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - port-inventory
     intents:
@@ -428,6 +530,8 @@ skills:
     keywords: []
   rust-port-merge:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - port-merge
     intents:
@@ -435,6 +539,8 @@ skills:
     keywords: []
   rust-port-parity:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - port-parity
     intents:
@@ -442,6 +548,8 @@ skills:
     keywords: []
   rust-port-translate:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - port-translate
     intents:
@@ -449,6 +557,8 @@ skills:
     keywords: []
   session-relay:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - relay
     intents:
@@ -456,6 +566,8 @@ skills:
     keywords: []
   session-relay-resume:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - resume-relay
     intents:
@@ -463,6 +575,8 @@ skills:
     keywords: []
   session-relay-wrap-up:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - wrapup
     intents:
@@ -470,6 +584,8 @@ skills:
     keywords: []
   skill-catalog:
     source: null
+    source_ref: null
+    sub_dir: null
     aliases:
     - skills
     intents:
@@ -478,6 +594,8 @@ skills:
     keywords: []
   understand:
     source: ./.kb/skills/understand
+    source_ref: null
+    sub_dir: null
     aliases: []
     intents: []
     keywords: []

@@ -68,14 +68,6 @@ fn session_capability_map_valid(status: &Value) -> bool {
         })
 }
 
-fn files_equal(left: &Path, right: &Path) -> bool {
-    fs::read(left)
-        .ok()
-        .zip(fs::read(right).ok())
-        .map(|(left, right)| left == right)
-        .unwrap_or(false)
-}
-
 fn session_control_commands_execute() -> bool {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     if !manifest.exists() {
@@ -547,11 +539,8 @@ fn main() -> Result<()> {
     let has_gh = which("gh").is_some();
     let session_status = session_capability_status();
     let source_skill = envctl_root.join("agent-skills/agent-env-codex/SKILL.md");
-    let active_skill = Path::new("/home/flexnetos/.codex/skills/agent-env-codex/SKILL.md");
-    let installed_skill_matches = files_equal(&source_skill, active_skill);
     let session_controls_ok = session_capability_map_valid(&session_status)
         && exists(&source_skill)
-        && installed_skill_matches
         && session_control_commands_execute();
     let hardware_proof_ok = ledger_has_event(
         &harness.join("ledger/research.jsonl"),
@@ -654,7 +643,7 @@ fn main() -> Result<()> {
         ),
         row(
             "chat-session controls",
-            "built-in /permissions authority plus thread-scoped internal status, full, restricted, and capability-toggle commands in the one /agent-env-codex skill",
+            "built-in /permissions authority plus thread-scoped internal status, full, restricted, and capability-toggle commands in the canonical /agent-env-codex skill",
             source_skill.display().to_string(),
             "/permissions; codex-harness-policy session <status|preset|set>",
             pass_fail(session_controls_ok),
