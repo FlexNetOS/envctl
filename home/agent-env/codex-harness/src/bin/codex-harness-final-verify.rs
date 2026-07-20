@@ -676,11 +676,14 @@ fn main() -> Result<()> {
             ),
         ),
         row(
-            "hooks",
-            "project hooks call Rust hook",
-            project.join(".codex/hooks.json").display().to_string(),
-            "codex-harness-audit",
-            pass_fail(exists(project.join(".codex/hooks.json"))),
+            "retired lifecycle hooks",
+            "no project hook dispatcher or lifecycle hook JSON remains",
+            project.join(".codex").display().to_string(),
+            "test-archived-hook-purge.sh",
+            pass_fail(
+                !exists(project.join(".codex/hooks.json"))
+                    && !exists(project.join(".codex/hooks")),
+            ),
         ),
         row(
             "rules",
@@ -919,7 +922,7 @@ fn main() -> Result<()> {
                     && row_pass("secrets redaction")
                     && row_pass("operator full-access launch")
                     && row_pass("chat-session controls")
-                    && row_pass("hooks")
+                    && row_pass("retired lifecycle hooks")
                     && row_pass("rules")
                     && row_pass("kill switch"),
             ),

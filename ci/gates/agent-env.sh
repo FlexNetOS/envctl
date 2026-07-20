@@ -41,7 +41,7 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "${ENVCTL_GITHUB_PROFILE_TOOLBIN:-
   meta_candidate=""
 fi
 
-if [ -n "$meta_candidate" ]; then
+if [ -n "$meta_candidate" ] && [ -x "$meta_candidate/.toolchains/cargo/bin/cargo" ]; then
   TOOLCHAIN_MODE="meta"
   [ -d "$meta_candidate" ] || fail "resolved META_ROOT is not a directory: $meta_candidate"
   [ -f "$meta_candidate/.meta.yaml" ] \
@@ -66,6 +66,33 @@ if [ -n "$meta_candidate" ]; then
   RUSTC_BIN="$CARGO_HOME/bin/rustc"
   [ "$(command -v cargo)" = "$CARGO_BIN" ] \
     || fail "Cargo did not resolve from canonical CARGO_HOME"
+elif [ "${GITHUB_ACTIONS:-}" != "true" ] \
+  && [ -x "${ENVCTL_REAL_HOME:-$HOME}/.nix-profile/toolbin/cargo" ]; then
+  # A Yazelix-managed interactive host has no second mutable META_ROOT Rust
+  # toolchain. Its active, immutable profile toolbin is the only permitted
+  # frontdoor; the agent runtime contract independently proves the selector,
+  # generation chain, and foundation manifest before any agent action runs.
+  TOOLCHAIN_MODE="host-profile"
+  profile_home="${ENVCTL_REAL_HOME:-$HOME}"
+  profile_toolbin="$profile_home/.nix-profile/toolbin"
+  store_root="${ENVCTL_NIX_STORE_ROOT:-/nix/store}"
+  toolbin_root="$(readlink -f -- "$profile_toolbin")"
+  case "$toolbin_root" in
+    "$store_root"/*/toolbin) ;;
+    *) fail "host profile toolbin is not Nix-store-owned: $toolbin_root" ;;
+  esac
+  CARGO_BIN="$profile_toolbin/cargo"
+  RUSTC_BIN="$profile_toolbin/rustc"
+  for tool in "$CARGO_BIN" "$RUSTC_BIN"; do
+    [ -x "$tool" ] || fail "host profile tool is missing or non-executable: $tool"
+    resolved="$(readlink -f -- "$tool")"
+    case "$resolved" in
+      "$store_root"/*) ;;
+      *) fail "host profile tool escapes the Nix store: $tool -> $resolved" ;;
+    esac
+  done
+  export PATH="$profile_toolbin:/usr/bin:/bin"
+  unset META_ROOT
 elif [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "${ENVCTL_GITHUB_PROFILE_TOOLBIN:-}" ]; then
   # FlexNetOS self-hosted runners consume the immutable, profile-owned Rust payload directly.
   # They intentionally do not carry a second rustup home under the isolated runner HOME.
@@ -134,7 +161,7 @@ if [ "${ENVCTL_AGENT_ENV_GATE_TOOLCHAIN_PROBE_ONLY:-0}" = 1 ]; then
   "$CARGO_BIN" --version >/dev/null
   "$RUSTC_BIN" --version >/dev/null
   printf 'TOOLCHAIN_MODE=%s\nMETA_ROOT=%s\nCARGO_HOME=%s\nRUSTUP_HOME=%s\nCARGO_BIN=%s\n' \
-    "$TOOLCHAIN_MODE" "${META_ROOT:-}" "$CARGO_HOME" "$RUSTUP_HOME" "$CARGO_BIN"
+    "$TOOLCHAIN_MODE" "${META_ROOT:-}" "${CARGO_HOME:-}" "${RUSTUP_HOME:-}" "$CARGO_BIN"
   exit 0
 fi
 

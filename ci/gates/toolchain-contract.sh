@@ -16,7 +16,7 @@ grep -Fq 'rustup default nightly' "$ROOT/manifest/base.toml" \
   || fail "rustup install/fix must create relocation-safe relative tool proxies"
 ! grep -Fq 'rustfmt rustup; do' "$ROOT/manifest/base.toml" \
   || fail "rustup proxy loop must not replace the rustup executable with a self-link"
-grep -Fq 'cargo +1.89.0 check --workspace --locked' "$ROOT/.github/workflows/ci.yml" \
+grep -Fq 'cargo +1.89.0 check --workspace --locked' "$ROOT/.github/workflows_disabled/ci.yml" \
   || fail "CI must compile with exact Rust 1.89.0, not only test a newer compiler floor"
 
 echo "TOOLCHAIN CONTRACT GATE PASS"

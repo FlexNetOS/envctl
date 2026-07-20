@@ -48,19 +48,17 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
 
 ## Runtime Gates
 
-- Legacy repo-local Codex lifecycle hook sources remain archive-only. Do not
-  restore `.codex/hooks.json`, `.codex/hooks/`, hook install scripts, or
-  checkout-local hook sources as active root policy.
-- The active generated hook surface is exactly `PreToolUse` for `Bash`, running
-  `/home/flexnetos/.nix-profile/bin/rtk hook claude`. Keep
-  `features.hooks = true`; never purge generated RTK hook state or restore
-  lifecycle, ICM, or raw-store hooks.
+- Retired Codex and Claude lifecycle hooks have no active configuration, script,
+  installer, archive, or fallback path in this repository. Do not recreate one
+  without a separately approved owner contract.
+- `core.hooksPath` controls native Git hooks only. It does not enable, disable,
+  or govern Codex or Claude lifecycle hooks.
 - Root lifecycle policy is owned by `/home/flexnetos/AGENTS.md`,
   `/home/flexnetos/.codex/RULES.md`, and the active home/runtime config
   `/home/flexnetos/.codex/config.toml`.
 - Runtime copies under `/home/flexnetos/workspace/.codex`,
   `/home/flexnetos/lifeos/.codex`, and `/home/flexnetos/FlexNetOS/.codex`
   are retired. They must not carry or grow independent hook, plugin, MCP,
-  marketplace, or instruction policy. If one reappears, archive it and route
+  marketplace, or instruction policy. If one reappears, remove it and route
   the update through envctl `agent-env.yaml`/`agent-skills` or the active
   `/home/flexnetos/.codex` runtime config.

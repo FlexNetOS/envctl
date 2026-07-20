@@ -31,7 +31,7 @@ $META_ROOT/.config/            # tracked/configured dot roots that are intention
 Yazelix owns the active Nix profile under the real user-home `.local` state tree:
 
 ```text
-$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile
+$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile
 ```
 
 Envctl must not replace that whole `.local` tree. It may archive known per-tool user-bin shadows
@@ -87,7 +87,7 @@ allowlisted target. The current canonical map is:
 
 | real-home source | canonical target | mutation rule |
 |---|---|---|
-| `$ENVCTL_REAL_HOME/.local/state/nix/profiles` | Yazelix/Nix profile state | Preserved in place because `$ENVCTL_REAL_HOME/.nix-profile` resolves through it. |
+| `$ENVCTL_REAL_HOME/.local/state/nix` | Yazelix/Nix profile state | Preserved in place because `$ENVCTL_REAL_HOME/.nix-profile` resolves through it. |
 | Known per-tool real-home user-bin shadows | Yazelix profile or `$META_ROOT/usr/bin` | Archive after the replacement frontdoor exists; never replace the whole real-home `.local` tree. |
 | Safe duplicate shell dotfiles (`.bash_logout`, `.profile`, `.zshenv`, `.zshrc`) | `$META_ROOT/<dot-entry>` | `--apply-shell-dotfiles` moves only duplicate/safe sources; differing files stay owner-supervised. |
 | History/backup dot entries | `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>` | `--apply-history-archives` is required in addition to `--apply`; stale backup-only archive mode is intentionally absent. |

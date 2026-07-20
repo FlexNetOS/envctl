@@ -503,8 +503,8 @@ is_known_real_home_bin_shadow() {
 
 profile_chain_present() {
   [ -e "$REAL_HOME/.nix-profile" ] || [ -L "$REAL_HOME/.nix-profile" ] ||
-    [ -e "$REAL_HOME/.local/state/nix/profiles/profile" ] ||
-    [ -L "$REAL_HOME/.local/state/nix/profiles/profile" ]
+    [ -e "$REAL_HOME/.local/state/nix/profile" ] ||
+    [ -L "$REAL_HOME/.local/state/nix/profile" ]
 }
 
 PROFILE_CHAIN_VALID=0
@@ -512,9 +512,9 @@ PROFILE_GENERATION_DIR=""
 
 validate_yazelix_profile_chain() {
   local frontdoor="$REAL_HOME/.nix-profile"
-  local profiles_dir="$REAL_HOME/.local/state/nix/profiles"
+  local profiles_dir="$REAL_HOME/.local/state/nix"
   local selector="$profiles_dir/profile"
-  local frontdoor_target selector_target generation_link generation_target generation_resolved
+  local frontdoor_target selector_target generation_link generation_target generation_resolved hops=0
 
   PROFILE_CHAIN_VALID=0
   PROFILE_GENERATION_DIR=""
@@ -534,24 +534,39 @@ validate_yazelix_profile_chain() {
     return 1
   fi
   selector_target="$(readlink "$selector" 2>/dev/null || true)"
-  if [[ ! "$selector_target" =~ ^profile-[1-9][0-9]*-link$ ]]; then
+  if [[ ! "$selector_target" =~ ^profile-[1-9][0-9]*-link(-[1-9][0-9]*-link)*$ ]]; then
     fail "invalid Yazelix profile chain: $selector target ${selector_target:-<missing>} is not exactly profile-N-link"
     return 1
   fi
 
   generation_link="$profiles_dir/$selector_target"
-  if [ ! -L "$generation_link" ]; then
-    fail "invalid Yazelix profile chain: numbered generation $generation_link is not a symlink"
-    return 1
-  fi
-  generation_target="$(readlink "$generation_link" 2>/dev/null || true)"
-  case "$generation_target" in
-    "$NIX_STORE_ROOT"/*-profile) ;;
-    *)
-      fail "invalid Yazelix profile chain: $generation_link target ${generation_target:-<missing>} is not a direct $NIX_STORE_ROOT/*-profile path"
+  while :; do
+    if [ ! -L "$generation_link" ]; then
+      fail "invalid Yazelix profile chain: numbered generation $generation_link is not a symlink"
       return 1
-      ;;
-  esac
+    fi
+    generation_target="$(readlink "$generation_link" 2>/dev/null || true)"
+    case "$generation_target" in
+      "$NIX_STORE_ROOT"/*-profile) break ;;
+      profile-[1-9][0-9]*-link|profile-[1-9][0-9]*-link-[1-9][0-9]*-link*)
+        if [[ ! "$generation_target" =~ ^profile-[1-9][0-9]*-link(-[1-9][0-9]*-link)*$ ]]; then
+          fail "invalid Yazelix profile chain: $generation_link target $generation_target is not a local profile-N-link generation"
+          return 1
+        fi
+        generation_link="$profiles_dir/$generation_target"
+        hops=$((hops + 1))
+        if [ "$hops" -ge 16 ]; then
+          fail "invalid Yazelix profile chain: profile generation link chain exceeds 16 entries"
+          return 1
+        fi
+        continue
+        ;;
+      *)
+        fail "invalid Yazelix profile chain: $generation_link target ${generation_target:-<missing>} is not a direct $NIX_STORE_ROOT/*-profile path"
+        return 1
+        ;;
+    esac
+  done
   if [ "$(dirname "$generation_target")" != "$NIX_STORE_ROOT" ] || [ ! -d "$generation_target" ]; then
     fail "invalid Yazelix profile chain: numbered generation target $generation_target is missing or nested outside the Nix store root"
     return 1

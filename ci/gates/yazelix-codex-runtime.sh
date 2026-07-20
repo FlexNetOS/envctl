@@ -11,7 +11,6 @@ if matches="$(rg -n '/home/flexnetos/lifeos|/home/flexnetos/meta/lifeos' \
   "$ROOT/home/.claude/settings.json" \
   "$ROOT/home/.claude/settings.json.tmpl" \
   "$ROOT/home/.claude/CLAUDE.md" \
-  "$ROOT/home/.claude/hooks" \
   "$ROOT/home/.claude/rules/laws.md" \
   "$ROOT/home/.claude/skills/harness-ops/SKILL.md" \
   "$ROOT/home/bin/harness-halt.sh")"; then

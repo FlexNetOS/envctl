@@ -138,7 +138,7 @@ args = ["fix"]
 [[component]]
 id = "yazelix"
 name = "FlexNetOS Yazelix foundation profile"
-description = "Builds $META_ROOT/src/yazelix#lifeos_foundation_yzx first, then owns it as the only element in $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile."
+description = "Builds $META_ROOT/src/yazelix#lifeos_foundation_yzx first, then owns it as the only element in $ENVCTL_REAL_HOME/.local/state/nix/profile."
 requires = ["nix", "nix-yazelix-cache"]
 [component.detect]
 kind = "command"

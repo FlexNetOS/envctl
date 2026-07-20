@@ -104,6 +104,27 @@ grep -Fq "CARGO_BIN=$profile_home/.nix-profile/toolbin/cargo" "$tmp/profile-out"
   || fail "gate did not preserve the lexical profile cargo frontdoor"
 [ ! -e "$profile_ambient_called" ] || fail "profile fallback invoked ambient Cargo/Rust"
 
+# Interactive Yazelix hosts use the same immutable profile toolbin without
+# inventing a second mutable META_ROOT cargo/rustup installation.
+: >"$profile_log"
+env -u META_ROOT -u GITHUB_ACTIONS \
+  ENVCTL_GATE_ROOT="$profile_repo" \
+  ENVCTL_AGENT_ENV_GATE_TOOLCHAIN_PROBE_ONLY=1 \
+  ENVCTL_REAL_HOME="$profile_home" \
+  ENVCTL_NIX_STORE_ROOT="$tmp/nix/store" \
+  PROFILE_TOOLCHAIN_LOG="$profile_log" \
+  AMBIENT_CALLED="$profile_ambient_called" \
+  PATH="$ambient:/usr/bin:/bin" \
+  bash "$gate" >"$tmp/host-profile-out" 2>"$tmp/host-profile-err"
+
+grep -Fqx 'cargo' "$profile_log" || fail "host profile cargo was not probed"
+grep -Fqx 'rustc' "$profile_log" || fail "host profile rustc was not probed"
+grep -Fq 'TOOLCHAIN_MODE=host-profile' "$tmp/host-profile-out" \
+  || fail "gate did not report the interactive profile toolchain"
+grep -Fq "CARGO_BIN=$profile_home/.nix-profile/toolbin/cargo" "$tmp/host-profile-out" \
+  || fail "gate did not preserve the interactive profile cargo frontdoor"
+[ ! -e "$profile_ambient_called" ] || fail "host profile fallback invoked ambient Cargo/Rust"
+
 # Hosted fork/CI_FORCE_HOSTED jobs are standalone clones without a meta owner. Their fallback is
 # explicit to GitHub Actions and must invoke rustup-selected payloads, never an earlier PATH cargo.
 hosted_repo="$tmp/hosted/envctl"
