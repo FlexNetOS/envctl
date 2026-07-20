@@ -197,14 +197,12 @@ Then **clear the marker and set `last_wrapup_total = cycles_total`** so the next
 from here. The boundary is *in-session* — it is NOT a hand-off; after it, continue picking items if
 still under `cycle_budget`.
 
-**Why a marker + hook (don't rely on remembering):** the boundary is an agentic step, and skipping it
-is precisely what let 46 worktrees pile up. The Stop/PreCompact hook (`.Codex/hooks/hf-checkpoint.sh`)
-drops `.handoff/loop/WRAP-UP-OWED` the moment a boundary comes due, and `session-relay-resume` is
-**fail-closed** on that marker (it runs the owed wrap-up before any new work). So even a session that
-forgets the boundary cannot silently skip it — the next resume catches it, bounded to one inter-session
-gap. The hook itself does only cheap file I/O (it does **not** run the reaper from a per-turn hook — git
-fetch + worktree removal interleaving with the agent mid-cycle is unsafe; the reaper runs at the
-agentic boundary and at resume, the settled points where merge status is known).
+**Why a durable marker (don't rely on remembering):** the boundary is an agentic step, and skipping it
+is precisely what let 46 worktrees pile up. The active loop writes
+`.handoff/loop/WRAP-UP-OWED` when a boundary comes due, and `session-relay-resume` is
+**fail-closed** on that marker (it runs the owed wrap-up before any new work). The retired
+Stop/PreCompact hook is not an activation path. The reaper runs only at the agentic boundary and at
+resume, the settled points where merge status is known.
 
 `wrap_every` (in-session continuity cadence) and `cycle_budget` (when to hand off to a fresh session)
 are independent: with `wrap_every=5, cycle_budget=8` a session does up to 8 cycles with a wrap-up at
