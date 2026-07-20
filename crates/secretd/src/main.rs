@@ -190,11 +190,21 @@ async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
     // downgraded config). For a VPS, FS-S23 (gate not Unproven) is satisfied AFTER the authorizer
     // link delivers a token; we spawn the link below, then re-assert FS-S23 once it has primed —
     // but FS-S21/S22/S24 are config-level and checked here unconditionally.
-    if let Err(refusal) = engine.assert_profile_b_startup(
-        profile.operator_authorizer_url.as_deref(),
-        allow_passphrase_only,
-        profile.vtpm_gating_requested,
-    ) {
+    // The guard reads store state through a synchronous boundary. Keep that work off the Tokio
+    // reactor so a store implementation that owns its own runtime cannot nest `block_on`.
+    let startup_engine = engine.clone();
+    let startup_auth_url = profile.operator_authorizer_url.clone();
+    let startup_vtpm = profile.vtpm_gating_requested;
+    let startup_check = tokio::task::spawn_blocking(move || {
+        startup_engine.assert_profile_b_startup(
+            startup_auth_url.as_deref(),
+            allow_passphrase_only,
+            startup_vtpm,
+        )
+    })
+    .await
+    .context("running the profile startup guard")?;
+    if let Err(refusal) = startup_check {
         // FS-S23 (VpsGateUnprovenAtStartup) is the ONLY refusal a VPS legitimately hits before the
         // authorizer link primes the gate — it is re-checked after spawn (below). Every other
         // refusal is a config error and is fatal here.
