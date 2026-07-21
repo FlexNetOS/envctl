@@ -4,10 +4,9 @@
 //! resolve through a single registry/layout surface and land under `$META_ROOT`
 //! in a standard FHS-shaped tree (`usr/bin`, `usr/libexec`, `usr/lib`,
 //! `usr/share`, `etc`, `var/lib`, `var/cache`, `var/log`, `run`, `tmp`, `opt`)
-//! plus meta-home XDG surfaces (`.config`, `.local/share`, `.local/state`,
-//! `.cache`) for tools that require HOME semantics.  The real user home is
-//! compatibility-only; `.local/bin` and `.toolchains/` are legacy bridge
-//! prefixes while existing component manifests are migrated.
+//! plus a meta-home config surface (`.config`). Data, state, and cache remain
+//! in the canonical `var` tree. The real user home is never an install target;
+//! the active Yazelix profile owns every executable frontdoor.
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
@@ -103,11 +102,11 @@ impl MetaLayout {
         }
     }
 
-    /// Meta-home local prefix. This remains available for XDG data/state and
-    /// compatibility bridges, but envctl frontdoors and component prefixes do
-    /// not canonically install here.
+    /// Deprecated compatibility accessor retained for internal callers while
+    /// they migrate to `var()`. It resolves to the canonical variable-data
+    /// root and never creates a second home-style prefix.
     pub fn local(&self) -> PathBuf {
-        self.meta_root.join(".local")
+        self.var()
     }
 
     pub fn usr(&self) -> PathBuf {
@@ -260,35 +259,35 @@ impl MetaLayout {
     }
 
     pub fn xdg_data_home(&self) -> PathBuf {
-        self.local().join("share")
+        self.var_lib()
     }
 
     pub fn xdg_state_home(&self) -> PathBuf {
-        self.local().join("state")
+        self.var_lib()
     }
 
     pub fn xdg_cache_home(&self) -> PathBuf {
-        self.meta_root.join(".cache")
+        self.var_cache()
     }
 
     pub fn local_bin(&self) -> PathBuf {
-        self.local().join("bin")
+        self.bin()
     }
 
     pub fn local_lib(&self) -> PathBuf {
-        self.local().join("lib")
+        self.lib()
     }
 
     pub fn local_cache(&self) -> PathBuf {
-        self.local().join("cache")
+        self.cache()
     }
 
     pub fn local_tmp(&self) -> PathBuf {
-        self.local().join("tmp")
+        self.tmp()
     }
 
     pub fn local_opt(&self) -> PathBuf {
-        self.local().join("opt")
+        self.opt()
     }
 
     /// Canonical executable frontdoor tree.
@@ -370,10 +369,8 @@ impl MetaLayout {
     /// The central path registry for envctl-owned installs and state.
     ///
     /// Callers should consume this registry instead of re-deriving path lists by
-    /// hand.  `.local/bin`, `.local/lib`, `.local/cache`, `.local/tmp`,
-    /// `.local/opt`, and `.toolchains` are intentionally labeled
-    /// compatibility-only: envctl can still expose them to older manifests, but
-    /// new materialization happens through the canonical FHS/XDG tree.
+    /// hand. Manager-specific tool trees remain compatibility-only while their
+    /// packages move into the profile; no home-style install prefix is exposed.
     pub fn entries(&self) -> Vec<LayoutEntry> {
         vec![
             LayoutEntry {
@@ -629,42 +626,6 @@ impl MetaLayout {
                 purpose: "0700 source/build repo store for envctl add-repo",
             },
             LayoutEntry {
-                key: "local",
-                path: self.local(),
-                kind: LayoutKind::LegacyCompatibility,
-                purpose: "compatibility root for XDG data/state parent and host bridge",
-            },
-            LayoutEntry {
-                key: "local_bin",
-                path: self.local_bin(),
-                kind: LayoutKind::LegacyCompatibility,
-                purpose: "compatibility executable bridge for older PATH consumers",
-            },
-            LayoutEntry {
-                key: "local_lib",
-                path: self.local_lib(),
-                kind: LayoutKind::LegacyCompatibility,
-                purpose: "compatibility library prefix for old manifests",
-            },
-            LayoutEntry {
-                key: "local_cache",
-                path: self.local_cache(),
-                kind: LayoutKind::LegacyCompatibility,
-                purpose: "compatibility cache prefix for old manifests",
-            },
-            LayoutEntry {
-                key: "local_tmp",
-                path: self.local_tmp(),
-                kind: LayoutKind::LegacyCompatibility,
-                purpose: "compatibility temporary prefix for old manifests",
-            },
-            LayoutEntry {
-                key: "local_opt",
-                path: self.local_opt(),
-                kind: LayoutKind::LegacyCompatibility,
-                purpose: "compatibility component prefix for old manifests",
-            },
-            LayoutEntry {
                 key: "legacy_toolchains",
                 path: self.legacy_toolchains(),
                 kind: LayoutKind::LegacyCompatibility,
@@ -690,9 +651,8 @@ impl MetaLayout {
 
     /// Create the canonical meta-owned directory tree.
     ///
-    /// This deliberately skips compatibility-only paths such as `.local/bin`
-    /// and `.toolchains`: those may continue to exist on old machines, but
-    /// envctl no longer treats them as the target organization for new installs.
+    /// This deliberately skips manager-specific compatibility paths. Those may
+    /// exist only as migration inputs and are never new install targets.
     pub fn ensure_dirs(&self) -> io::Result<()> {
         for dir in self.canonical_dirs() {
             std::fs::create_dir_all(dir)?;
@@ -718,8 +678,6 @@ impl MetaLayout {
     pub fn env_exports(&self) -> Vec<(&'static str, PathBuf)> {
         vec![
             ("ENVCTL_META_ROOT", self.meta_root.clone()),
-            ("ENVCTL_LOCAL", self.local()),
-            ("ENVCTL_LOCAL_BIN", self.local_bin()),
             ("ENVCTL_USR", self.usr()),
             ("ENVCTL_USR_BIN", self.usr_bin()),
             ("ENVCTL_USR_LIB", self.usr_lib()),
@@ -762,7 +720,6 @@ impl MetaLayout {
             ("ENVCTL_XDG_DATA_HOME", self.xdg_data_home()),
             ("ENVCTL_XDG_STATE_HOME", self.xdg_state_home()),
             ("ENVCTL_XDG_CACHE_HOME", self.xdg_cache_home()),
-            ("ENVCTL_LEGACY_TOOLCHAINS", self.legacy_toolchains()),
         ]
     }
 }
@@ -797,7 +754,7 @@ mod tests {
     #[test]
     fn resolves_standard_tree_inside_meta() {
         let l = MetaLayout::from_meta_root("/m");
-        assert_eq!(l.local(), Path::new("/m/.local"));
+        assert_eq!(l.local(), Path::new("/m/var"));
         assert_eq!(l.bin(), Path::new("/m/usr/bin"));
         assert_eq!(l.lib(), Path::new("/m/usr/lib"));
         assert_eq!(l.share(), Path::new("/m/usr/share"));
@@ -807,9 +764,9 @@ mod tests {
         assert_eq!(l.opt(), Path::new("/m/opt"));
         assert_eq!(l.xdg_config_home(), Path::new("/m/.config"));
         assert_eq!(l.systemd_user_dir(), Path::new("/m/.config/systemd/user"));
-        assert_eq!(l.xdg_data_home(), Path::new("/m/.local/share"));
-        assert_eq!(l.xdg_state_home(), Path::new("/m/.local/state"));
-        assert_eq!(l.xdg_cache_home(), Path::new("/m/.cache"));
+        assert_eq!(l.xdg_data_home(), Path::new("/m/var/lib"));
+        assert_eq!(l.xdg_state_home(), Path::new("/m/var/lib"));
+        assert_eq!(l.xdg_cache_home(), Path::new("/m/var/cache"));
         assert_eq!(l.repo_store(), Path::new("/m/var/lib/envctl/repos"));
         assert_eq!(l.ollama_models(), Path::new("/m/var/lib/ollama/models"));
         assert_eq!(l.envctl_lib(), Path::new("/m/usr/lib/envctl"));
@@ -822,7 +779,7 @@ mod tests {
             Path::new("/m/usr/share/envctl/secrets/ca/cognitum-ca.crt")
         );
         assert_eq!(l.component_prefix("ripgrep"), Path::new("/m/opt/ripgrep"));
-        assert_eq!(l.local_bin(), Path::new("/m/.local/bin"));
+        assert_eq!(l.local_bin(), Path::new("/m/usr/bin"));
         assert_eq!(l.legacy_toolchains(), Path::new("/m/.toolchains"));
         assert_eq!(
             l.legacy_secrets_bin(),
@@ -887,9 +844,7 @@ mod tests {
         assert!(exports
             .iter()
             .any(|(k, v)| *k == "ENVCTL_BIN_DIR" && v == Path::new("/meta/usr/bin")));
-        assert!(exports
-            .iter()
-            .any(|(k, v)| *k == "ENVCTL_LOCAL_BIN" && v == Path::new("/meta/.local/bin")));
+        assert!(!exports.iter().any(|(key, _)| *key == "ENVCTL_LOCAL_BIN"));
         assert!(exports.iter().any(
             |(k, v)| *k == "ENVCTL_REPO_STORE" && v == Path::new("/meta/var/lib/envctl/repos")
         ));
@@ -916,12 +871,7 @@ mod tests {
         assert_eq!(legacy.kind, LayoutKind::LegacyCompatibility);
         assert!(!legacy.is_canonical());
 
-        let local_bin = entries
-            .iter()
-            .find(|entry| entry.key == "local_bin")
-            .expect("local bin entry");
-        assert_eq!(local_bin.path, Path::new("/meta/.local/bin"));
-        assert_eq!(local_bin.kind, LayoutKind::LegacyCompatibility);
+        assert!(entries.iter().all(|entry| entry.key != "local_bin"));
 
         let repo_store = entries
             .iter()
@@ -949,10 +899,7 @@ mod tests {
                 0o700
             );
         }
-        assert!(
-            !l.local_bin().exists(),
-            "compatibility .local/bin must not be materialized as canonical layout"
-        );
+        assert!(l.local_bin().is_dir(), "canonical binary tree must exist");
         assert!(
             !l.legacy_toolchains().exists(),
             "compatibility .toolchains must not be materialized as canonical layout"
@@ -990,11 +937,8 @@ mod tests {
             l.expand_meta_path("$HOME/.config/env-ctl"),
             "/meta/.config/env-ctl"
         );
-        let tilde_local = ["~", ".local/share/env-ctl"].join("/");
-        assert_eq!(
-            l.expand_meta_path(&tilde_local),
-            "/meta/.local/share/env-ctl"
-        );
+        let tilde_local = ["~", "var/lib/env-ctl"].join("/");
+        assert_eq!(l.expand_meta_path(&tilde_local), "/meta/var/lib/env-ctl");
         assert_eq!(
             l.expand_meta_path("/etc/systemd/system/demo.service"),
             "/etc/systemd/system/demo.service"

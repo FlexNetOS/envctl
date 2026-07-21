@@ -376,8 +376,8 @@ fn reverse_dependents_transitive() {
         "direct: {rdeps:?}"
     );
     assert!(
-        rdeps.contains(&"group-ai-clis".to_string()),
-        "transitive (via codex-cli/gemini-cli -> bun): {rdeps:?}"
+        rdeps.contains(&"vite".to_string()),
+        "transitive (via vite -> node-via-bun -> bun): {rdeps:?}"
     );
 }
 

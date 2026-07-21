@@ -17,7 +17,7 @@ Use the profile frontdoor, not repo scripts or generated runtime:
 /home/flexnetos/.nix-profile/bin/yzx
   -> /nix/store/...-lifeos-foundation-yzx/bin/yzx
 editable input:  /home/flexnetos/.config/yazelix/
-generated proof: /home/flexnetos/.local/share/yazelix/
+generated proof: /home/flexnetos/var/lib/yazelix/
 ```
 
 Discover the current command set before acting:

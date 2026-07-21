@@ -1,220 +1,38 @@
-# AI coding CLIs (yazelix-setup.sh section 2, lines 89-94).
-# Native installers (claude/kimi/devin) are Node-independent; Codex is the envctl-managed Rust release/toolchain, while Gemini runs via Bun.
-# Post-install auth (`/login`) is interactive and NOT automatable.
+# AI coding CLIs are installed only by the merged Yazelix/Nix profile. Envctl
+# validates the installed contract and never creates wrappers, home-state trees,
+# or alternate package-manager installations.
 
 [[component]]
 id = "claude-code-cli"
-name = "Claude Code CLI (meta toolchain; versioned binary, meta-owned state wrapper)"
-# Claude Code upstream stages versioned ELF binaries in the active Claude version store.
-# envctl mirrors the latest upstream version into $META_ROOT/.toolchains/claude/<version>/bin,
-# exposes only regular envctl wrappers at $META_ROOT/usr/bin and $META_ROOT/.local/bin, and
-# archives/removes the old executable version path after the new toolchain route works. Claude
-# config/state stays under $META_ROOT/.local/share/claude with ~/.claude pointing there.
+name = "Claude Code CLI (profile-owned)"
+description = "Validates profile bin/toolbin identity, immutable store provenance, reviewed profile configuration inputs, and volatile Claude materialization."
+requires = ["yazelix"]
 [component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", """
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-R="${ENVCTL_REAL_HOME:-$HOME}"
-cur="$M/.toolchains/claude/current/bin/claude"
-link="$M/usr/bin/claude"
-meta_compat="$M/.local/bin/claude"
-real_compat="$R/.local/bin/claude"
-[ -x "$cur" ]
-[ -x "$link" ] && [ ! -L "$link" ] && grep -q "envctl claude wrapper" "$link"
-[ -x "$meta_compat" ] && grep -q "envctl claude wrapper" "$meta_compat"
-[ -x "$real_compat" ] && grep -q "envctl claude wrapper" "$real_compat"
-[ "$(readlink -f "$R/.claude" 2>/dev/null)" = "$(readlink -f "$M/.local/share/claude" 2>/dev/null)" ]
-timeout --kill-after=2s 8s "$link" --version >/dev/null
-CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$ROOT/assets/scripts/envctl-claude-cleanup.sh}"
-[ -x "$CLEANUP" ] || { echo "missing executable Claude cleanup helper: $CLEANUP" >&2; exit 1; }
-"$CLEANUP" verify
-"""]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-claude-cleanup.sh"
+args = ["detect"]
 [component.install]
-kind = "script"
-script = """
-set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-R="${ENVCTL_REAL_HOME:-$HOME}"
-BASE="$M/.toolchains/claude"
-STATE="$M/.local/share/claude"
-LINK="$M/usr/bin/claude"
-META_COMPAT="$M/.local/bin/claude"
-REAL_COMPAT="$R/.local/bin/claude"
-
-write_wrapper() {
-  dst="$1"
-  install -d -m 755 "$(dirname "$dst")"
-  cat > "$dst" <<'WRAPPER'
-#!/usr/bin/env bash
-# envctl claude wrapper
-set -euo pipefail
-self="${BASH_SOURCE[0]}"
-while [ -L "$self" ]; do
-  dir="$(cd -P "$(dirname "$self")" && pwd)"
-  target="$(readlink "$self")"
-  case "$target" in
-    /*) self="$target" ;;
-    *) self="$dir/$target" ;;
-  esac
-done
-bindir="$(cd -P "$(dirname "$self")" && pwd)"
-META_ROOT="$(cd "$bindir/../.." && pwd)"
-export META_ROOT
-exec "$META_ROOT/.toolchains/claude/current/bin/claude" "$@"
-WRAPPER
-  chmod 755 "$dst"
-}
-
-latest_claude_source() {
-  for dir in "$STATE/versions" "$R/.local/share/claude/versions"; do
-    [ -d "$dir" ] || continue
-    find "$dir" -maxdepth 1 -mindepth 1 -type f -perm -111 -printf '%f\t%p\n' 2>/dev/null | sort -V | tail -1 | cut -f2-
-  done | tail -1
-}
-
-install -d -m 700 "$STATE"
-if [ -e "$R/.claude" ] && [ "$(readlink -f "$R/.claude" 2>/dev/null)" != "$(readlink -f "$STATE" 2>/dev/null)" ]; then
-  ARCH="$M/var/lib/envctl/legacy-archives/claude-home-$(date -u +%Y%m%d-%H%M%S)"
-  install -d -m 700 "$ARCH"
-  mv "$R/.claude" "$ARCH/.claude"
-  echo "archived previous real-home .claude: $ARCH/.claude"
-fi
-[ -L "$R/.claude" ] || ln -sfn "$STATE" "$R/.claude"
-
-# Run the official updater with the old self-recursing wrappers hidden from PATH. It should leave
-# a versioned ELF under $STATE/versions; if the network/updater is unavailable but an existing
-# versioned ELF is present, we still repair the envctl toolchain from that local version.
-PATH_CLEAN="$M/.toolchains/node/bin:$M/.toolchains/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-PATH="$PATH_CLEAN" curl -fsSL https://claude.ai/install.sh | PATH="$PATH_CLEAN" bash || true
-src="$(latest_claude_source)"
-[ -n "$src" ] && [ -x "$src" ] || { echo "FATAL: no Claude Code versioned ELF found under $STATE/versions" >&2; exit 1; }
-ver="$(basename "$src")"
-case "$ver" in
-  *[!0-9.]*|"" ) ver="local-$(sha256sum "$src" | awk '{print substr($1,1,12)}')" ;;
-esac
-VDIR="$BASE/$ver"
-install -d -m 755 "$VDIR/bin"
-install -m 755 "$src" "$VDIR/bin/claude"
-ln -sfn "$ver" "$BASE/current"
-
-if timeout --kill-after=2s 8s "$VDIR/bin/claude" --version >/dev/null; then
-  for old in "$LINK" "$META_COMPAT" "$REAL_COMPAT"; do
-    if [ -e "$old" ] && { [ -L "$old" ] || ! grep -q "envctl claude wrapper" "$old" 2>/dev/null; }; then
-      ARCH="$M/var/lib/envctl/legacy-archives/claude-bin-$(date -u +%Y%m%d-%H%M%S)/$(dirname "${old#/}")"
-      install -d -m 755 "$ARCH"
-      mv "$old" "$ARCH/claude"
-      echo "archived previous Claude front door: $ARCH/claude"
-    fi
-  done
-  write_wrapper "$LINK"
-  write_wrapper "$META_COMPAT"
-  write_wrapper "$REAL_COMPAT"
-  timeout --kill-after=2s 8s "$LINK" --version >/dev/null
-  CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$ROOT/assets/scripts/envctl-claude-cleanup.sh}"
-  [ -x "$CLEANUP" ] || { echo "missing executable Claude cleanup helper: $CLEANUP" >&2; exit 1; }
-  "$CLEANUP" clean
-  "$CLEANUP" verify
-else
-  echo "FATAL: envctl Claude binary failed verification; legacy front doors left in place" >&2
-  exit 1
-fi
-"""
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-claude-cleanup.sh"
+args = ["install"]
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", """
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-R="${ENVCTL_REAL_HOME:-$HOME}"
-cur="$M/.toolchains/claude/current/bin/claude"
-link="$M/usr/bin/claude"
-meta_compat="$M/.local/bin/claude"
-real_compat="$R/.local/bin/claude"
-[ -x "$cur" ]
-[ -x "$link" ] && [ ! -L "$link" ] && grep -q "envctl claude wrapper" "$link"
-[ -x "$meta_compat" ] && grep -q "envctl claude wrapper" "$meta_compat"
-[ -x "$real_compat" ] && grep -q "envctl claude wrapper" "$real_compat"
-[ "$(readlink -f "$R/.claude" 2>/dev/null)" = "$(readlink -f "$M/.local/share/claude" 2>/dev/null)" ]
-timeout --kill-after=2s 8s "$link" --version >/dev/null
-CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$ROOT/assets/scripts/envctl-claude-cleanup.sh}"
-[ -x "$CLEANUP" ] || { echo "missing executable Claude cleanup helper: $CLEANUP" >&2; exit 1; }
-"$CLEANUP" verify
-"""]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-claude-cleanup.sh"
+args = ["verify"]
 [component.fix]
-kind = "script"
-script = """
-set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-R="${ENVCTL_REAL_HOME:-$HOME}"
-BASE="$M/.toolchains/claude"
-STATE="$M/.local/share/claude"
-LINK="$M/usr/bin/claude"
-META_COMPAT="$M/.local/bin/claude"
-REAL_COMPAT="$R/.local/bin/claude"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-claude-cleanup.sh"
+args = ["fix"]
+[component.remove]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-claude-cleanup.sh"
+args = ["remove"]
 
-write_wrapper() {
-  dst="$1"
-  install -d -m 755 "$(dirname "$dst")"
-  cat > "$dst" <<'WRAPPER'
-#!/usr/bin/env bash
-# envctl claude wrapper
-set -euo pipefail
-self="${BASH_SOURCE[0]}"
-while [ -L "$self" ]; do
-  dir="$(cd -P "$(dirname "$self")" && pwd)"
-  target="$(readlink "$self")"
-  case "$target" in
-    /*) self="$target" ;;
-    *) self="$dir/$target" ;;
-  esac
-done
-bindir="$(cd -P "$(dirname "$self")" && pwd)"
-META_ROOT="$(cd "$bindir/../.." && pwd)"
-export META_ROOT
-exec "$META_ROOT/.toolchains/claude/current/bin/claude" "$@"
-WRAPPER
-  chmod 755 "$dst"
-}
-latest_claude_source() {
-  for dir in "$STATE/versions" "$R/.local/share/claude/versions" "$BASE"/*/bin; do
-    [ -d "$dir" ] || continue
-    find "$dir" -maxdepth 1 -mindepth 1 -type f -name claude -perm -111 -printf '%f\t%p\n' 2>/dev/null
-    find "$dir" -maxdepth 1 -mindepth 1 -type f -perm -111 -printf '%f\t%p\n' 2>/dev/null
-  done | sort -V | tail -1 | cut -f2-
-}
-install -d -m 700 "$STATE"
-[ -L "$R/.claude" ] || ln -sfn "$STATE" "$R/.claude"
-src="$(latest_claude_source)"
-[ -n "$src" ] && [ -x "$src" ] || { echo "FATAL: no local Claude Code ELF found; run envctl install claude-code-cli" >&2; exit 1; }
-ver="$(basename "$src")"
-case "$src" in */bin/claude) ver="$(basename "$(dirname "$(dirname "$src")")")" ;; esac
-case "$ver" in *[!0-9.]*|""|claude ) ver="local-$(sha256sum "$src" | awk '{print substr($1,1,12)}')" ;; esac
-VDIR="$BASE/$ver"
-install -d -m 755 "$VDIR/bin"
-if [ "$(readlink -f "$src")" != "$(readlink -f "$VDIR/bin/claude" 2>/dev/null || true)" ]; then
-  install -m 755 "$src" "$VDIR/bin/claude"
-fi
-ln -sfn "$ver" "$BASE/current"
-write_wrapper "$LINK"
-write_wrapper "$META_COMPAT"
-write_wrapper "$REAL_COMPAT"
-timeout --kill-after=2s 8s "$LINK" --version >/dev/null
-CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$ROOT/assets/scripts/envctl-claude-cleanup.sh}"
-[ -x "$CLEANUP" ] || { echo "missing executable Claude cleanup helper: $CLEANUP" >&2; exit 1; }
-"$CLEANUP" clean
-"$CLEANUP" verify
-"""
 [[component]]
 id = "codex-cli"
-name = "Codex CLI (single Yazelix-profile-owned runtime contract)"
-description = "Delegates install/repair to the canonical Yazelix profile owner, verifies both profile frontdoors resolve to one Nix-store Codex package, and archives every parallel META_ROOT or real-home Codex shadow."
+name = "Codex CLI (profile-owned)"
+description = "Validates matching profile bin/toolbin frontdoors, immutable store provenance, reviewed profile configuration inputs, and volatile Codex materialization."
 requires = ["yazelix"]
-# The Yazelix package source is the sole version/hash authority. This component
-# delegates every lifecycle phase to one audited, repository-owned implementation.
 [component.detect]
 kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
@@ -235,10 +53,11 @@ args = ["fix"]
 kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
 args = ["remove"]
+
 [[component]]
 id = "codex-cli-alpha"
-name = "Codex alpha compatibility target (candidate promoted to Yazelix profile)"
-description = "Retains the historical component target without exposing a second Codex binary. Prerelease evaluation and promotion now happen in the Yazelix package source; lifecycle state remains the same single profile-owned runtime."
+name = "Codex alpha compatibility target"
+description = "Retains the historical component ID without exposing a second Codex binary; candidate promotion belongs to the Yazelix package source."
 requires = ["codex-cli"]
 [component.detect]
 kind = "shipped_script"
@@ -263,102 +82,96 @@ args = ["remove"]
 
 [[component]]
 id = "gemini-cli"
-name = "Gemini CLI (via bun)"
-requires = ["bun"]
+name = "Gemini CLI (profile-owned)"
+description = "Validates Gemini through the sole Yazelix/Nix profile."
+requires = ["yazelix"]
 [component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ -x \"$META_ROOT/usr/bin/gemini\" ] && [ ! -L \"$META_ROOT/usr/bin/gemini\" ] && grep -Fqx \"exec \\\"$M/.toolchains/.bun/bin/gemini\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/gemini\""]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["gemini", "detect"]
 [component.install]
-kind = "script"
-script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
-set -e
-M="${META_ROOT:?META_ROOT required}"
-export BUN_INSTALL="$M/.toolchains/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-bun install -g @google/gemini-cli
-mkdir -p "$META_ROOT/usr/bin"
-envctl_frontdoor "$BUN_INSTALL/bin/gemini" "$META_ROOT/usr/bin/gemini"
-'''
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["gemini", "install"]
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$META_ROOT/usr/bin:$BUN_INSTALL/bin:$PATH\"; gemini --version"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["gemini", "verify"]
 [component.fix]
-kind = "script"
-script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
-set -e
-M="${META_ROOT:?META_ROOT required}"
-export BUN_INSTALL="$M/.toolchains/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-bun install -g @google/gemini-cli
-mkdir -p "$META_ROOT/usr/bin"
-envctl_frontdoor "$BUN_INSTALL/bin/gemini" "$META_ROOT/usr/bin/gemini"
-
-'''
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["gemini", "fix"]
 [component.remove]
-kind = "command"
-command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g @google/gemini-cli; [ -L \"$META_ROOT/usr/bin/gemini\" ] && rm \"$META_ROOT/usr/bin/gemini\" || true"]
-
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["gemini", "remove"]
 
 [[component]]
 id = "kimi-cli"
-name = "Kimi CLI"
+name = "Kimi CLI (profile-owned)"
+description = "Validates Kimi through the sole Yazelix/Nix profile."
+requires = ["yazelix"]
 [component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "command -v kimi || [ -x \"$META_ROOT/usr/bin/kimi\" ]"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["kimi", "detect"]
 [component.install]
-kind = "script"
-script = "curl -LsSf https://code.kimi.com/install.sh | bash"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["kimi", "install"]
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/usr/bin:$PATH\"; kimi --version"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["kimi", "verify"]
 [component.fix]
-kind = "script"
-script = "curl -LsSf https://code.kimi.com/install.sh | bash"
-
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["kimi", "fix"]
+[component.remove]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["kimi", "remove"]
 
 [[component]]
 id = "devin-cli"
-name = "Devin CLI"
+name = "Devin CLI (profile-owned)"
+description = "Validates Devin through the sole Yazelix/Nix profile."
+requires = ["yazelix"]
 [component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "command -v devin || [ -x \"$META_ROOT/usr/bin/devin\" ]"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["devin", "detect"]
 [component.install]
-kind = "script"
-script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["devin", "install"]
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/usr/bin:$PATH\"; devin --version"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["devin", "verify"]
 [component.fix]
-kind = "script"
-script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["devin", "fix"]
+[component.remove]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-profile-command-lifecycle.sh"
+args = ["devin", "remove"]
 
-
-# Group/meta: install the whole AI-CLI set in one target. No hooks of its own —
-# its `requires` closure installs the members in dependency order; detect aggregates.
 [[component]]
 id = "group-ai-clis"
-name = "All AI CLIs"
-description = "Meta: claude + gemini + kimi + devin, with Codex verified through the single Yazelix profile owner."
+name = "All profile-owned AI CLIs"
+description = "Compatibility group over Claude, Codex, Gemini, Kimi, and Devin profile validators."
 requires = ["claude-code-cli", "codex-cli", "gemini-cli", "kimi-cli", "devin-cli"]
 [component.detect]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
 set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+ROOT="${ENVCTL_SOURCE_ROOT:-${META_ROOT:?META_ROOT required}/src/envctl}"
+"$ROOT/assets/scripts/envctl-claude-cleanup.sh" detect
 "$ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh" detect
-export PATH="$M/usr/bin:$M/.toolchains/.bun/bin:$PATH"
-for command_name in claude gemini kimi devin; do
-  command -v "$command_name" >/dev/null
+for command_name in gemini kimi devin; do
+  "$ROOT/assets/scripts/envctl-profile-command-lifecycle.sh" "$command_name" detect
 done
 ''']

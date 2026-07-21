@@ -84,8 +84,8 @@ verify). Build the **existing** kernel; do not regenerate it.
    rather than clobbering, so a bad build is reversible.
 3. **Install onto PATH (symlink into meta).** Symlink the freshly-built
    `$META_ROOT/handoff/target/release/hf` to the meta-owned bin dir on PATH (the same place the
-   other meta tools are exposed by bare name — do **not** hardcode `~/.local`; follow how meta
-   exposes its binaries). Symlink, don't copy, so rebuilds propagate.
+   other meta tools are exposed by bare name—use the declared profile frontdoor and do not invent
+   a user-bin path). Symlink, don't copy, so rebuilds propagate.
 4. **Verify install:** `hf --help` (or bare `hf` prints the usage line) resolves to the new binary;
    `command -v hf` points at the meta-owned symlink.
 

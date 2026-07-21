@@ -228,7 +228,7 @@ def check_live(yzx: Path) -> None:
 
     runtime_yazi = runtime_dir / "configs/yazi/plugins"
     generated_yazi = Path(
-        "/home/flexnetos/.local/share/yazelix/configs/yazi/plugins"
+        "/home/flexnetos/var/lib/yazelix/configs/yazi/plugins"
     )
     for root in [runtime_yazi, generated_yazi]:
         missing = sorted(name for name in YAZI_PLUGINS if not (root / name).is_dir())
@@ -237,7 +237,7 @@ def check_live(yzx: Path) -> None:
 
     runtime_zellij = runtime_dir / "configs/zellij/plugins"
     generated_zellij = Path(
-        "/home/flexnetos/.local/share/yazelix/configs/zellij/plugins"
+        "/home/flexnetos/var/lib/yazelix/configs/zellij/plugins"
     )
     for root in [runtime_zellij, generated_zellij]:
         missing = sorted(name for name in ZELLIJ_PLUGINS if not (root / name).is_file())
@@ -247,7 +247,7 @@ def check_live(yzx: Path) -> None:
     steel_root = runtime_dir / "configs/helix/steel_plugins"
     if not (steel_root / "manifest.toml").is_file():
         fail(f"packaged Helix Steel plugin manifest is missing: {steel_root}")
-    generated_helix = Path("/home/flexnetos/.local/share/yazelix/configs/helix")
+    generated_helix = Path("/home/flexnetos/var/lib/yazelix/configs/helix")
     for name in ["helix.scm", "init.scm", "cogs"]:
         if not (generated_helix / name).exists():
             fail(f"generated Helix Steel surface is missing: {generated_helix / name}")

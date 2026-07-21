@@ -38,7 +38,7 @@ TEMP_HOME="$(mktemp -d)"
 TEMP_PLUGIN_CONFIG="$TEMP_HOME/plugins.msgpackz"
 HOME="$TEMP_HOME" \
 XDG_CONFIG_HOME="$TEMP_HOME/.config" \
-XDG_DATA_HOME="$TEMP_HOME/.local/share" \
+XDG_DATA_HOME="$TEMP_HOME/var/lib" \
 XDG_CACHE_HOME="$TEMP_HOME/.cache" \
 nu --no-config-file \
   --plugin-config "$TEMP_PLUGIN_CONFIG" \
@@ -60,7 +60,7 @@ NU_CODEDB=(
   env
   HOME="$TEMP_HOME"
   XDG_CONFIG_HOME="$TEMP_HOME/.config"
-  XDG_DATA_HOME="$TEMP_HOME/.local/share"
+  XDG_DATA_HOME="$TEMP_HOME/var/lib"
   XDG_CACHE_HOME="$TEMP_HOME/.cache"
   nu
   --no-config-file
@@ -104,7 +104,7 @@ The import command returns `envctl_yazelix_file_import` rows. Content rows inclu
 Yazelix integration should be generated state, not a tracked config edit:
 
 ```bash
-GENERATED_DIR="$HOME/.local/share/yazelix/initializers/nushell"
+GENERATED_DIR="$HOME/var/lib/yazelix/initializers/nushell"
 "$CODEDB_BIN" generate-yazelix-bridge --out-dir "$GENERATED_DIR" --format json
 ```
 

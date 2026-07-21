@@ -1,3924 +1,517 @@
 # Current envctl Database-Bound File Inventory
 
-This inventory is generated from the live `envctl catalog render` snapshot.
-Repo root: `/home/flexnetos/FlexNetOS/src/envctl`
-Manifest dir: `/home/flexnetos/FlexNetOS/src/envctl/manifest`
+Generated from `envctl catalog render`; manual edits are not authoritative.
 
-## Summary
+- snapshot SHA-256: `c3b6317394878147c86e987c84b201a022902cc4e46f350aa6ab610323e70a4c`
+- repository: `git@github.com:FlexNetOS/envctl.git`
+- manifest directory: `manifest/`
+- CodeDB file imports: `0`
+- catalog config files: `392`
+- environment-variable rows: `104`
 
-- `codedb_file_imports`: `3549` current target files
-- direct catalog scan set from `discover_control_plane_files()`: `344` current files
-- `env_vars`: `106` current rows in the catalog
-
-## `codedb_file_imports`
-
-Source inventory manifests:
+## CodeDB file imports
 
 ```text
-home/flexnetos/FlexNetOS/src/yazelix/docs/generated/yazelix_file_target_inventory.json
 ```
 
-Current imported target files:
+## Catalog config files
 
-```text
-/home/flexnetos/.config/yazelix/helix/steel_plugins/README.md
-/home/flexnetos/.config/yazelix/settings.jsonc
-/home/flexnetos/.config/yazelix/shell_bash.sh
-/home/flexnetos/.config/yazelix/shell_nu.nu
-/home/flexnetos/.config/yazelix_cursors/settings.jsonc
-/home/flexnetos/.local/share/applications/com.flexnetos.Yazelix.Agent.desktop
-/home/flexnetos/.local/share/applications/com.yazelix.Yazelix.Mars.desktop
-/home/flexnetos/.local/share/icons/hicolor/128x128/apps/yazelix.png
-/home/flexnetos/.local/share/icons/hicolor/256x256/apps/yazelix.png
-/home/flexnetos/.local/share/icons/hicolor/48x48/apps/yazelix.png
-/home/flexnetos/.local/share/icons/hicolor/64x64/apps/yazelix.png
-/home/flexnetos/.local/share/yazelix/agent_usage/codex_usage_cache_v2.json
-/home/flexnetos/.local/share/yazelix/config_overrides/session_179230_1782918360794/settings.jsonc
-/home/flexnetos/.local/share/yazelix/configs/helix/cogs/themes/spacemacs.scm
-/home/flexnetos/.local/share/yazelix/configs/helix/config.toml
-/home/flexnetos/.local/share/yazelix/configs/helix/helix.scm
-/home/flexnetos/.local/share/yazelix/configs/helix/init.scm
-/home/flexnetos/.local/share/yazelix/configs/helix/splash.scm
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/ashen.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/ayu-dark.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/bluloco-dark.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/bluloco-light.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/catppuccin-frappe.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/catppuccin-latte.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/catppuccin-macchiato.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/catppuccin-mocha.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/dracula.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/everforest-medium.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/flexoki-dark.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/flexoki-light.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/gruvbox-dark.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/kanagawa-dragon.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/kanagawa-lotus.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/kanagawa.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/monokai.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/neon.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/nord.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/rose-pine-dawn.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/rose-pine-moon.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/rose-pine.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/synthwave84.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/flavors/tokyo-night.yazi/flavor.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/init.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/keymap.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/auto-layout.yazi/LICENSE
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/auto-layout.yazi/README.md
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/auto-layout.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/git.yazi/LICENSE
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/git.yazi/README.md
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/git.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/lazygit.yazi/LICENSE
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/lazygit.yazi/README.md
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/lazygit.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/sidebar-state.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/sidebar-status.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/starship.yazi/LICENSE
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/starship.yazi/README.md
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/starship.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/plugins/zoxide-editor.yazi/main.lua
-/home/flexnetos/.local/share/yazelix/configs/yazi/theme.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/yazelix_starship.toml
-/home/flexnetos/.local/share/yazelix/configs/yazi/yazi.toml
-/home/flexnetos/.local/share/yazelix/configs/zellij/.yazelix_generation.json
-/home/flexnetos/.local/share/yazelix/configs/zellij/config.kdl
-/home/flexnetos/.local/share/yazelix/configs/zellij/layouts/flexnetos_agent_workspace.kdl
-/home/flexnetos/.local/share/yazelix/configs/zellij/layouts/yzx_side.kdl
-/home/flexnetos/.local/share/yazelix/configs/zellij/layouts/yzx_side.swap.kdl
-/home/flexnetos/.local/share/yazelix/configs/zellij/plugins/yazelix_pane_orchestrator.wasm
-/home/flexnetos/.local/share/yazelix/configs/zellij/plugins/yzpp.wasm
-/home/flexnetos/.local/share/yazelix/configs/zellij/plugins/zjstatus.wasm
-/home/flexnetos/.local/share/yazelix/generated/nushell/config.nu
-/home/flexnetos/.local/share/yazelix/initializers/bash/carapace_init.sh
-/home/flexnetos/.local/share/yazelix/initializers/bash/starship_init.sh
-/home/flexnetos/.local/share/yazelix/initializers/bash/yazelix_init.sh
-/home/flexnetos/.local/share/yazelix/initializers/bash/zoxide_init.sh
-/home/flexnetos/.local/share/yazelix/initializers/nushell/carapace_init.nu
-/home/flexnetos/.local/share/yazelix/initializers/nushell/starship_init.nu
-/home/flexnetos/.local/share/yazelix/initializers/nushell/yazelix_extern.fingerprint.json
-/home/flexnetos/.local/share/yazelix/initializers/nushell/yazelix_extern.nu
-/home/flexnetos/.local/share/yazelix/initializers/nushell/yazelix_init.nu
-/home/flexnetos/.local/share/yazelix/initializers/nushell/zoxide_init.nu
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782918355.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782918360.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782920075.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782920211.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782927820.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782927913.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782928860.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782936268.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782938006.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782938461.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782940681.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782942438.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782943050.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782943293.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782952569.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/handoff_1782955477.json
-/home/flexnetos/.local/share/yazelix/logs/startup_handoff/latest.json
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782920068517.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782920203492.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782921213468.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782935800207.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782935922213.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782936161920.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782936194153.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782936261369.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782937020327.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782937995617.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782938423065.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782940639130.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782942308691.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782942583360.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782942786758.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782942949066.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782943166266.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782943292931.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782952568795.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782955477363.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782959840713.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782960077852.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782960341159.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782960525523.log
-/home/flexnetos/.local/share/yazelix/logs/terminal_launch/mars_1782962399578.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782918360.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782943050.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782943293.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782952569.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782955477.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782959841.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782960078.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782960341.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782960525.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782961844.log
-/home/flexnetos/.local/share/yazelix/logs/welcome_1782962399.log
-/home/flexnetos/.local/share/yazelix/profiles/startup/startup_profile_20260701_150512_593.jsonl
-/home/flexnetos/.local/share/yazelix/sessions/1782918355529502711/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782918355529502711/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782918360972308819/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782918360972308819/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782920075301492567/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782920075301492567/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782920211124639292/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782920211124639292/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782927820923405312/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782927820923405312/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782927913579228892/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782927913579228892/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782928860932639405/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782928860932639405/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782936268614431933/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782936268614431933/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782938006797600437/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782938006797600437/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782938461829249744/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782938461829249744/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782940681409024875/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782940681409024875/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782942438897178367/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782942438897178367/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782943050514342275/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782943050514342275/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782943293324097437/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782943293324097437/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782952569373747218/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782952569373747218/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782955477737994188/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782955477737994188/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782959841105922178/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782959841105922178/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782960078238301275/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782960078238301275/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782960341553684894/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782960341553684894/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782960525907993465/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782960525907993465/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782961844203089157/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782961844203089157/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sessions/1782962399975790907/config_snapshot.json
-/home/flexnetos/.local/share/yazelix/sessions/1782962399975790907/status_bar_cache.json
-/home/flexnetos/.local/share/yazelix/sidebar_bootstrap/enter/cwd_1140791_1782937025848.tmp
-/home/flexnetos/.local/share/yazelix/sidebar_bootstrap/enter/cwd_1637345_1782942314239.tmp
-/home/flexnetos/.local/share/yazelix/sidebar_bootstrap/enter/cwd_1638714_1782942394322.tmp
-/home/flexnetos/.local/share/yazelix/sidebar_bootstrap/enter/cwd_1646841_1782942588897.tmp
-/home/flexnetos/.local/share/yazelix/sidebar_bootstrap/enter/cwd_2925789_1782854761117.tmp
-/home/flexnetos/.local/share/yazelix/state/rebuild_hash
-/home/flexnetos/.local/share/yazelix/state/upgrade_summary/last_seen_version.txt
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1046106-1782935800193056028-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1055070-1782935922199942324-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1070718-1782936161906090003-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1076088-1782936194139452282-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1082252-1782936261355823054-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1088782-1782961844007437439-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1140522-1782937020313062099-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1175380-1782962399563894428-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1176813-1782937995603551633-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1215729-1782938423051336130-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/12273-1782952568776751031-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1468685-1782940639116143721-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1637026-1782942308677172584-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1646614-1782942583347653127-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1656247-1782942786744355789-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1668826-1782942949051758312-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1684391-1782943166252283928-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/1693442-1782943292916826894-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/177531-1782918318979808657-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/179230-1782918360798473176-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/252007-1782920058633906606-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/252144-1782920068504259965-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/256336-1782920099770303422-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/258141-1782920173810096427-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/258510-1782920203478449874-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/298314-1782921213454794952-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/343650-1782955477349922744-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/521230-1782927814993610085-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/534474-1782927907554937712-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/568629-1782928852545859655-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/809588-1782959840699013707-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/844783-1782960077838082217-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/865487-1782960341145599780-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_smear.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_blaze.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_common.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_cosmic.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_dusk.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_eclipse.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_forest.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ice.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_magma.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_midnight.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_ocean.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_orchid.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_reef.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_snow.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/cursor_trail_sunset.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/rectangle_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/ripple_rectangle.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sonic_boom.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/generated_effects/warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/README.md
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_sweep.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_tail.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/cursor_warp.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/rectangle_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/ripple_rectangle_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/ghostty/shaders/upstream_effects/sonic_boom_cursor.glsl
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/mars/config.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/mars/themes/yazelix-dark.toml
-/home/flexnetos/.local/share/yazelix/terminal_launches/895671-1782960525509232449-0/configs/terminal_emulators/mars/themes/yazelix-light.toml
-/home/flexnetos/FlexNetOS/src/envctl/.agents/rusty-idd-adapter.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/agent-env-config/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/auto-provision/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/auto-provision/scripts/ralph-provision.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/code-research-verify/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/cross-repo-health/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/cross-repo-reference/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/env-install-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/env-stabilize/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/env-toolchain-install/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/feature-forge/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/forge-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/handoff-sync/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/harness-evolution/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/harness-loop-init/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/harness-loop-init/scripts/init-handoff-loop.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/icm-memory/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-autoresearch-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-cartography/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-cartography/references/graph-schema.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-dependency-graph/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-distributed-compute/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-filesystem-layout/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-governance-config/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-memory-vector-intelligence/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-prompt-architecture/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-rules-policy-org/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-synthesis/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-synthesis/references/diagram-and-adr.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-test-strategy/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/plan-trend-research/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/references/eject.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/references/state-contract.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/differential-drive.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/loop_state.template.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/plan-artifact-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/plan-weave-dispatch.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/ralph-plan.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/tests/test-plan-artifact-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/tests/test-plan-contract.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/tests/test-plan-eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/tests/test-plan-evals.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/tests/test-plan-loop-state.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/planning-engineer/scripts/tests/test-plan-weave-dispatch.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-feature-impl/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-feature-impl/references/kasetto-absorption.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-feature-impl/references/verification.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port-inventory/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port-merge/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port-parity/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port-translate/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/references/eject.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/references/merge-ledger.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/references/parity-ledger.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/references/runtime-constructs.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/references/symbol-map.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/scripts/eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/scripts/loop_state.template.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/rust-port/scripts/ralph-rust-port.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/session-relay-resume/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/session-relay-resume/scripts/verify-on-resume.template.sh
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/session-relay-wrap-up/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.agents/skills/session-relay/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/build-health-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/continuity-steward.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/evolution-steward.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/feature-architect.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/handoff-kernel-engineer.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/invariant-guardian.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-analyst.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-architect.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-autoresearch-loop-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-cartographer.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-dependency-graph-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-distributed-compute-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-filesystem-layout-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-governance-config-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-memory-vector-intelligence-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-prompt-architecture-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-rules-policy-org-auditor.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-test-strategist.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-trend-researcher.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/plan-verifier.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-implementer.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-architect.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-cartographer.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-cross-repo-referencer.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-merge-integrator.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-parity-verifier.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-porter.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/agents/rust-port-researcher.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/commands/goal.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/commands/plan-engineering-loop.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/commands/plan-loop.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/commands/planning-engineer.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/ecc-tools.json
-/home/flexnetos/FlexNetOS/src/envctl/.claude/hooks/hf-checkpoint.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/identity.json
-/home/flexnetos/FlexNetOS/src/envctl/.claude/rules/code-intelligence.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/rules/how-to-communicate-with-claude.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/rules/knowledge-management.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/rules/refactoring-safety.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/rusty-idd-adapter.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/settings.json
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/agent-env-config/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/auto-provision/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/auto-provision/scripts/ralph-provision.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/code-research-verify/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/cross-repo-health/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/cross-repo-reference/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/env-install-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/env-stabilize/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/env-toolchain-install/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/feature-forge/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/forge-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/handoff-sync/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/harness-evolution/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/harness-loop-init/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/harness-loop-init/scripts/init-handoff-loop.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/icm-memory/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-autoresearch-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-cartography/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-cartography/references/graph-schema.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-dependency-graph/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-distributed-compute/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-filesystem-layout/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-governance-config/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-loop/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-memory-vector-intelligence/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-prompt-architecture/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-rules-policy-org/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-synthesis/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-synthesis/references/diagram-and-adr.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-test-strategy/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/plan-trend-research/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/references/eject.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/references/state-contract.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/differential-drive.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/loop_state.template.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/plan-artifact-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/plan-weave-dispatch.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/ralph-plan.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/tests/test-plan-artifact-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/tests/test-plan-contract.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/tests/test-plan-eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/tests/test-plan-evals.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/tests/test-plan-loop-state.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/planning-engineer/scripts/tests/test-plan-weave-dispatch.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-feature-impl/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-feature-impl/references/kasetto-absorption.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-feature-impl/references/verification.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port-inventory/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port-merge/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port-parity/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port-translate/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/references/eject.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/references/merge-ledger.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/references/parity-ledger.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/references/runtime-constructs.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/references/symbol-map.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/scripts/eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/scripts/loop_state.template.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/rust-port/scripts/ralph-rust-port.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/session-relay-resume/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/session-relay-resume/scripts/verify-on-resume.template.sh
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/session-relay-wrap-up/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.claude/skills/session-relay/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/AGENTS.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/build-health-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/continuity-steward.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/docs-researcher.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/explorer.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/feature-architect.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/handoff-kernel-engineer.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/invariant-guardian.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-analyst.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-architect.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-autoresearch-loop-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-cartographer.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-dependency-graph-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-distributed-compute-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-filesystem-layout-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-governance-config-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-memory-vector-intelligence-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-opus-bg-code-graph.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-opus-bg-governance.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-opus-bg-rusty-idd-north-star.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-opus-bg-settings-config.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-opus-bg-web-trends.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-prompt-architecture-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-rules-policy-org-auditor.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-test-strategist.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-trend-researcher.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/plan-verifier.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/reviewer.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/rust-implementer.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/rust-port-architect.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/rust-port-merge-integrator.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/rust-port-parity-verifier.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/rust-port-porter.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/agents/rust-port-researcher.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/config.toml
-/home/flexnetos/FlexNetOS/src/envctl/.codex/hooks.json
-/home/flexnetos/FlexNetOS/src/envctl/.codex/hooks/flexnetos-runtime-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/.codex/hooks/hf-checkpoint.sh
-/home/flexnetos/FlexNetOS/src/envctl/.codex/hooks/install-flexnetos-runtime-hooks.sh
-/home/flexnetos/FlexNetOS/src/envctl/.codex/hooks/tests/runtime-gate-policy-tests.sh
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/feature-forge.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/forge-loop.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/goal.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/plan-engineering-loop.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/plan-loop.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/planning-engineer.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/prompt:forge-loop.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/prompt:session-relay-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/prompt:session-relay-wrap-up.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/session-relay-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/session-relay-resume.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/session-relay-wrap-up.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/prompts/session-relay.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/rusty-idd-adapter.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/skills/agent-env-config/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/skills/env-stabilize/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.codex/skills/env-toolchain-install/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.gitattributes
-/home/flexnetos/FlexNetOS/src/envctl/.github/actionlint.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.github/workflows/ci.yml
-/home/flexnetos/FlexNetOS/src/envctl/.github/workflows/sync-master.yml
-/home/flexnetos/FlexNetOS/src/envctl/.gitignore
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/README.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/active.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/context/capsule.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/decisions/ADR-0001-kasetto-handoff-portability-unification.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/decisions/ADR-0002-migration-adoption-engine-v2.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/decisions/ADR-0003-catalog-first-control-plane.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/decisions/FINDING-0002-hf-ledger-residency-vs-repo-tier-a.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/decisions/TASK-0016-agent-lock-boundary.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/deliveries/envctl-agenticos-consolidation.delivery.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/hooks/hooks.toml
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/ledger.events.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/HANDOFF.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/AGENT-WEB-ACCESS-PLAN.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/dashboard-forge-loop.2026-06-05.STOP
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/dashboard-forge-loop.2026-06-05.backlog.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/dashboard-forge-loop.2026-06-05.loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/g2-native-mint.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/g2-native-mint.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/g2-native-mint.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/n8n-live-smoke-runbook.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/prev-loop.2026-06-17.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/prev-loop.2026-06-17.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/prev-loop.2026-06-17.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/prev-loop.2026-06-17.cycle-01-task-0001.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/prev-loop.2026-06-17.cycle-02-task-0002.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/secretd-provisioning-runbook.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0012.2026-06-14.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0012.2026-06-14.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0012.2026-06-14.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0019.2026-06-17.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0019.2026-06-17.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0019.2026-06-17.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0019.2026-06-17.combined-pr110-guardian.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0020.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0020.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0020.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0021.2026-06-23.01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0021.2026-06-23.02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/_done/task-0021.2026-06-23.03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/backlog.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cli-tdd-backlog.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/01_architect_plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/02_implementer_log.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/03_guardian_report.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/_done/01_architect_plan-task0033-20260627.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/_done/01_architect_plan-task0078-next-inventory-20260627-pre-sensitive-hints.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/_done/02_implementer_log-task0033-20260627.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/_done/02_implementer_log-task0078-next-inventory-20260627-pre-sensitive-hints.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/_done/03_guardian_report-task0033-20260627.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/cycle/_done/03_guardian_report-task0078-next-inventory-20260627-pre-sensitive-hints.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/eval/README.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/eval/model-lane-comparison-codex-vs-opus.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/evaluation.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/HANDOFF.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/LESSONS.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/agent-backend-matrix.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/agent-interop.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/dimensions.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/evaluation.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/.gitkeep
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/architecture-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/architecture-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/architecture-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/architecture-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/architecture-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/autoresearch-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/autoresearch-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/autoresearch-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/autoresearch-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/autoresearch-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/autoresearch-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/convergence-analysis-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/distributed-compute-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/distributed-compute-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/distributed-compute-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/distributed-compute-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/distributed-compute-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/distributed-compute-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/filesystem-layout-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/filesystem-layout-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/filesystem-layout-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/filesystem-layout-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/filesystem-layout-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/filesystem-layout-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/fleet-north-star-map.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/governance-config-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/governance-config-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/governance-config-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/governance-config-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/governance-config-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/governance-config-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/memory-vector-intelligence-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/memory-vector-intelligence-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/memory-vector-intelligence-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/memory-vector-intelligence-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/memory-vector-intelligence-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/memory-vector-intelligence-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/prompt-architecture-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/prompt-architecture-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/prompt-architecture-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/prompt-architecture-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/prompt-architecture-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/prompt-architecture-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/resolved-decisions.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/rules-policy-org-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/rules-policy-org-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/rules-policy-org-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/rules-policy-org-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/rules-policy-org-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/rules-policy-org-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/test-strategy-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/test-strategy-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/test-strategy-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/test-strategy-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/test-strategy-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/test-strategy-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/union-handoff-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/findings/verdicts.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/.gitkeep
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/grit.callgraph.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/grit.diff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/grit.graph.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/grit.metrics.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/grit.symbols.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/handoff.callgraph.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/handoff.diff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/handoff.graph.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/handoff.metrics.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/handoff.symbols.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/icm.callgraph.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/icm.diff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/icm.graph.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/icm.metrics.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/icm.symbols.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/prompt-hub.callgraph.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/prompt-hub.cross-repo.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/prompt-hub.diff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/prompt-hub.graph.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/prompt-hub.metrics.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/prompt-hub.symbols.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.callgraph.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.diff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.graph.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.metrics.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/rusty-idd.symbols.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/target-dag.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/target-dag.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/weave.callgraph.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/weave.diff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/weave.graph.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/weave.metrics.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/graph/weave.symbols.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/LESSONS.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/agent-backend-matrix.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/agent-interop.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/dimensions.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/evaluation.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/findings/verdicts.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/graph/target-dag.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/graph/target-dag.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/proposed-upgrades.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/risk-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/targets.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/fleet-convergence-first-run/README.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/agent-backend-matrix.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/agent-interop.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/dimensions.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/evaluation.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/findings/verdicts.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/graph/target-dag.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/graph/target-dag.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/risk-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/plan/targets.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/.handoff/loop/proposed-upgrades.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/grit/README.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/HANDOFF.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/LESSONS.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/agent-backend-matrix.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/agent-interop.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/dimensions.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/evaluation.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/findings/verdicts.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/graph/target-dag.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/graph/target-dag.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/risk-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/.handoff/loop/plan/targets.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/icm/README.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/LESSONS.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/agent-backend-matrix.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/agent-interop.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/dimensions.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/evaluation.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/findings/verdicts.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/graph/target-dag.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/graph/target-dag.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/risk-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/targets.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/instances/prompt-hub/README.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/proposed-upgrades.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/.gitkeep
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ADR-DRAFT-handoff-rusty-idd-union.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ADR-DRAFT-rusty-idd-convergence-boundary.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ADR-DRAFT-weave-a2a-interop.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ADR-DRAFT-weave-cross-vendor-model-lane.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ROADMAP-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ROADMAP-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ROADMAP-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ROADMAP-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/ROADMAP-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/TASK-0078-migration-adoption-engine-v2-design.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/adr-draft-grit-reconciler.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/adr-draft-prompt-hub-goal-artifact.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/agent-run-ledger-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/agent-run-ledger-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/agent-run-ledger-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/agent-run-ledger-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/agent-run-ledger-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/agent-run-ledger-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/codemap-grit.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/codemap-handoff.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/codemap-icm.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/codemap-prompt-hub.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/codemap-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/codemap-weave.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/grit-plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/handoff-plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/icm-plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/north-star-DRAFT.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/prompt-hub-plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/rusty-idd-plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/union-plan-handoff-rusty-idd.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/reports/weave-plan.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/.gitkeep
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/agentic-planning-trends-2026-06.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/grit.trends.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/handoff.trends.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/icm.trends.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/plan-architecture-loop-distributed-compute-2026-06.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/prompt-hub.trends.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/rusty-idd.trends.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/sources-grit.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/sources-handoff.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/sources-icm.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/sources-prompt-hub.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/sources-rusty-idd.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/sources-weave.jsonl
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/research/weave.trends.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/risk-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/plan/targets.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/proposed-upgrades.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/HANDOFF.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/baseline.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/loop_state.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/merge-ledger.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/parity-ledger.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/reports/inventory.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/reports/research.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/loop/rust-port/target-architecture.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/maps/task-dag.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/packets/.gitkeep
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/packets/latest.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/policies/rules.toml
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/skills/session-resume.skill.md
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/.gitkeep
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0001.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0002.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0003.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0004.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0005.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0006.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0007.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0008.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0009.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0010.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0011.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0012.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0013.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0014.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0015.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0016.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0017.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0018.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0019.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0020.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0021.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0022.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0023.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0024.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0025.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0026.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0027.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0028.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0029.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0030.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0031-PR2.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0031-PR2C.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0031.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0032.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0033.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0034.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0035.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0036.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0037.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0038.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0039.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0041.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0042.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0043.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0044.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0045.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0046.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0047.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0048.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0049.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0050.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0051.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0052.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0053.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/tasks/TASK-0078.task.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/workers/_snapshot-pre.json
-/home/flexnetos/FlexNetOS/src/envctl/.handoff/workers/_snapshot-pre.txt
-/home/flexnetos/FlexNetOS/src/envctl/.idd/workflow/active-change
-/home/flexnetos/FlexNetOS/src/envctl/.kb/AGENTS.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/config.toml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/code-intelligence
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/code-intelligence/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/code-intelligence/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/explore
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/explore/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/explore/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/gitkb
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/gitkb/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/gitkb/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-board
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-board/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-board/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-close
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-close/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-close/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-commit
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-commit/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-commit/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-context
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-context/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-context/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-create
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-create/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-create/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-handoff
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-handoff/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-handoff/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-progress
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-progress/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-progress/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-review
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-review/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-review/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-search
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-search/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-search/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-start
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-start/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-start/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-status
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-status/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-status/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-tasks
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-tasks/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/kb-tasks/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/refactor-safety
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/refactor-safety/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/refactor-safety/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/understand
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/understand/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/skills/understand/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/commits/019f0078-ad4d-7513-acd0-6b51e28f4507.json
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/commits/019f007a-0b18-72d2-9945-148f8fa776d1.json
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/commits/019f007d-bf0e-75a0-9b05-de909bdc9694.json
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/extensible/product.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/extensible/tech.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/immutable/architecture.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/immutable/patterns.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/immutable/project-brief.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/overridable/active.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/context/overridable/progress.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/reference/meta-kb-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/documents/reference/meta-org-policy.md
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/manifest.json
-/home/flexnetos/FlexNetOS/src/envctl/.kb/store/refs/document-tips.json
-/home/flexnetos/FlexNetOS/src/envctl/.mcp.json
-/home/flexnetos/FlexNetOS/src/envctl/AGENTS.md
-/home/flexnetos/FlexNetOS/src/envctl/CLAUDE.md
-/home/flexnetos/FlexNetOS/src/envctl/CONFLICTS.md
-/home/flexnetos/FlexNetOS/src/envctl/Cargo.lock
-/home/flexnetos/FlexNetOS/src/envctl/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/HANDOFF.md
-/home/flexnetos/FlexNetOS/src/envctl/LESSONS.md
-/home/flexnetos/FlexNetOS/src/envctl/README.md
-/home/flexnetos/FlexNetOS/src/envctl/agent-env.lock
-/home/flexnetos/FlexNetOS/src/envctl/agent-env.yaml
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/agent-env-config/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/env-stabilize/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/env-toolchain-install/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/context7.json
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/exa.json
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/github.json
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/memory.json
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/n8n-mcp.json
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/playwright.json
-/home/flexnetos/FlexNetOS/src/envctl/agent-skills/mcps/sequential-thinking.json
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/HANDOFF.md
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/README.md
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/autoinstall.yaml
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/envctl-claude-cleanup.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/envctl-codex-cleanup.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/envctl-dashboard-pane
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/envctl-gh-fetch.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/envctl-mcp-memory-server
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/envctl-open-claude
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/meta-session-env.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/ubuntu-boot-repair.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/yazelix-config.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/yazelix-gpu-verify-install.sh
-/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/yazelix-setup.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/add-repo-policy.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/agent-env.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/cargo-audit.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/enable.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/harness-scripts.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/kdf-feature-off.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/loop-state.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/meta-local-policy.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/meta-substrates.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/no-c.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/p7.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/runner-routing.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/gates/shape.sh
-/home/flexnetos/FlexNetOS/src/envctl/ci/setup-meta-deps.sh
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/agent.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/command.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/config.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/config_edit.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/config_path.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/dirs.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/driver.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/extend.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/fsops.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/hash.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/lib.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/lock.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/mcp.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/profile.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/report.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/runtime.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/source.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/sync.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/src/util.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/tests/no_downgrade.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/agent-env/tests/parity_vs_kasetto.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/src/bin/meta-env.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/src/main.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/src/self_update.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/tests/agent.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/tests/cli_contract.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/tests/dashboard.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/cli/tests/env.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/addrepo.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/clean.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/doctor.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/edit.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/init.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/list.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/lock.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/mod.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/report.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/agent/sync.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/catalog.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/command.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/component.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/dashboard.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/detect.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/detect_build.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/drift.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/error.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/event.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/executor.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/graph.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/guard.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/hub_registry.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/install.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/layout.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/lib.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/lock.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/migration.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/model.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/peer.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/register.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/runner.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/runtime.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/secrets.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/self_uninstall.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/self_update.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/telemetry.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/update_notifier.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/src/wiring.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/agent_command_parity.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/agent_sync.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/agent_sync_parity.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/engine.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/fixtures/agent/cmdpack/commands/foo.md
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/fixtures/agent/cmdpack/commands/git/commit.md
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/fixtures/agent/pack/alpha/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/fixtures/agent/pack/beta/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/fixtures/agent/pack/mcps/servers.json
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/golden/mission-control.kdl
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/hub_registry.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/engine/tests/runner_parity.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/gui/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/gui/src/main.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/gui/src/theme.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretctl/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretctl/src/authorizer.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretctl/src/cli.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretctl/src/main.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretctl/src/render.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/audit.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/config.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/conv.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/edge/authorizer.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/edge/dpop.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/edge/listener.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/edge/mod.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/edge/stream.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/edge/tls.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/grpc.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/lib.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/main.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/peercred.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/proxy.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/server.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/src/transport.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/edge_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/edge_hardening_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/edge_stream_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/grpc_surface_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/libsql_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/mitm_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/native_mint_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/profile_b_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/proxy_swap_e2e.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secretd/tests/self_check.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/examples/seed_factor_probe.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/adapter.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/admission.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/authorizer.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/decide.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/gate.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/jti.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/mod.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/nonce.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/policy.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/broker/token.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/ca.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/error.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/event.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/guard.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/inject.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/keyslot.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/lib.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/mint_github.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/paths.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/seam.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/startup.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/vault/aad.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/vault/audit.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/vault/crypto.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/vault/mod.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/src/vault/store.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/tests/inject.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/tests/phase0.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/tests/relay.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-engine/tests/vault.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-proto/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-proto/build.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-proto/proto/control.proto
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-proto/src/lib.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/.gitignore
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/Cargo.toml
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/README.md
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/error.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/health.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/lib.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/schema.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/serial.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/store.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/sync.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/src/tests.rs
-/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/tests/integration_remote.rs
-/home/flexnetos/FlexNetOS/src/envctl/docs/ADD-REPO.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/ARCHITECTURE.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/CODEX-AGENTIC-CONFIG.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/DESIGN-NOTES.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/HANDOFF-kasetto-env-and-phase8.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/KASETTO-FEATURES.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/MIGRATION-ADOPTION.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/PRD.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/ROADMAP.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/THREAT-MODEL.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/adr-install-locations-and-local-state.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/adr-meta-tool-location-and-portability.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/adr-seed-usb-possession-factor.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/env-table-schema.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/kb-sync-runbook.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/odysseus-adoption.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/ops/02-envctl-component.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/ops/08-secretd-store-config.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/ops/github-runner-routing.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/AGENTIC-STORY.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/DIAGRAMS.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/README.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/USER-STORY.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/agents.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/authentication.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/ci.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/commands.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/configuration.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/cookbook.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/faq.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/how-sync-works.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/installation.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/introduction.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/security.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/slash-commands.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/sync-flow.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/agent-env/writing-skills.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ARCHITECTURE.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/AUTO-INJECT-STATUS.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/CHARTER.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/DESIGN-NOTES.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/OI-SM-1-jti-replay-store.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/OI-SM-2-operator-authorizer.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/README.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ROADMAP.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/SCAFFOLD-SPEC.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/SERVER-MODE.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/THREAT-MODEL.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/api/control-plane.proto
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/audits/AUDIT-phase1.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/audits/AUDIT-server-mode.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/db/schema.sql
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/01-systemd-hardening.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/02-envctl-component.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/03-usb-ceremony.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/04-backup-rotation.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/05-audit-signing-monitoring.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/06-run-inject-ux.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/07-ci-supplychain.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/ops/08-secretd-store-config.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/01-aead-at-rest.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/02-argon2id-keyslots.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/03-libsql-server.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/04-usb-partuuid-detect.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/05-process-hardening.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/06-grpc-uds-peercred.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/07-rustls-mitm-ca.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/08-anthropic-proxy.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/09-github-subtokens.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/10-openai-subtokens.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/11-ca-trust-wiring.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/12-remote-token-binding.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/13-tamper-evident-audit.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/14-secrets-prior-art.md
-/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/research/15-vps-secrets-posture.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/.gitignore
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/CLAUDE.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/RTK.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/commands/recall.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/commands/remember.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/commands/speak.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/hooks/block-cherry-pick.sh
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/rules/context7.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/settings.json
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/settings.json.tmpl
-/home/flexnetos/FlexNetOS/src/envctl/home/.claude/skills/context7-mcp/SKILL.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/ghostty/config.ghostty
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/kasetto/kasetto.yaml
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/nushell/config.nu
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/nushell/meta-usr-path.nu
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/nushell/rtk-wrappers.nu
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/rtk/config.toml
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/rtk/filters.toml
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/systemd/user/env-ctl.service
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/systemd/user/repowire.service
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/systemd/user/sqld.service
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/configs/zellij/layouts/mission-control.kdl
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/helix/steel_plugins/README.md
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/settings.jsonc
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/shell_bash.sh
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/shell_nu.nu
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/terminal_ghostty.conf
-/home/flexnetos/FlexNetOS/src/envctl/home/.config/yazelix/tombi.toml
-/home/flexnetos/FlexNetOS/src/envctl/home/.gitconfig
-/home/flexnetos/FlexNetOS/src/envctl/home/README.md
-/home/flexnetos/FlexNetOS/src/envctl/home/bin/n8n-open
-/home/flexnetos/FlexNetOS/src/envctl/home/bin/yazelix-gpu-verify-launch.sh
-/home/flexnetos/FlexNetOS/src/envctl/home/bin/yazelix-gpu-verify.sh
-/home/flexnetos/FlexNetOS/src/envctl/manifest/agent-env.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/ai-clis.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/apt-base.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/base.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/boot-repair.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/cognitum-seed-autounlock.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/cognitum-seed-net.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/cognitum-seed-trust.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/cache-agent-env.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/cache-jna.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/cache-starship.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/cache-wasm-pack.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/codex-global-baseline.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/epic-h-toolchains.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/handoff-hf.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/just.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/meta-core-clis.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/meta-env-plugin.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/meta-session-env.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/ohmyzsh.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/portability-links.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/secretd.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/zsh-migration-launcher.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/components.d/zsh.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/dashboard.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/desktop-app.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/dev-tools.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/env-ctl.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/envctl.lock
-/home/flexnetos/FlexNetOS/src/envctl/manifest/gpu.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/grit.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/n8n-mcp.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/nix-yazelix.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/odysseus.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/prompt_hub.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/rusty-idd.toml
-/home/flexnetos/FlexNetOS/src/envctl/manifest/sqld.toml
-/home/flexnetos/FlexNetOS/src/envctl/mcp_hub/entries/n8n-mcp.md
-/home/flexnetos/FlexNetOS/src/envctl/mcp_hub/entries/playwright-mcp.md
-/home/flexnetos/FlexNetOS/src/envctl/mcp_hub/registry.json
-/home/flexnetos/FlexNetOS/src/envctl/packaging/envctl-gui.desktop
-/home/flexnetos/FlexNetOS/src/envctl/packaging/envctl-gui.svg
-/home/flexnetos/FlexNetOS/src/envctl/packaging/install-desktop.sh
-/home/flexnetos/FlexNetOS/src/envctl/rust-toolchain.toml
-/home/flexnetos/FlexNetOS/src/envctl/scripts/audit-meta-local-paths.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/classify-secrets.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/env-files-table.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/env-precedence.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/env-table-persistence.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/generate-bootstrap.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/handoff-merge-guard.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/install-handoff-merge-driver.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/meta-fleet-sync.py
-/home/flexnetos/FlexNetOS/src/envctl/scripts/parse-env-vars.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/parse-nushell-env-config.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/parse-tool-manager-files.nu
-/home/flexnetos/FlexNetOS/src/envctl/scripts/plan-artifact-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/plan-weave-dispatch.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/reap-worktrees.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-codex-cli-release-lanes.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-flexnetos-codex-runtime-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-loop-state-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-mcp-memory-meta-root.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-merge-driver.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-meta-fleet-sync.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-meta-local-path-audit.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-odysseus-install-idempotence.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-plan-artifact-gate.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-plan-contract.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-plan-eject.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-plan-evals.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-plan-loop-state.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-plan-weave-dispatch.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-reaper.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/tests/test-skill-contract.sh
-/home/flexnetos/FlexNetOS/src/envctl/scripts/validate-env-tables.nu
-/home/flexnetos/FlexNetOS/src/envctl/tests/fixtures/env-vars/edge.env
-/home/flexnetos/FlexNetOS/src/envctl/tests/fixtures/nushell/env-config.nu
-/home/flexnetos/FlexNetOS/src/envctl/tests/fixtures/nushell/shared.nu
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_151758_339571239.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_151758_339571239.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_151819_509666019.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_151819_509666019.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_153713_938763600.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_153713_938763600.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182048_096641501.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182048_096641501.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182051_367141370.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182051_367141370.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182637_709084014.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182637_709084014.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182903_951218615.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182903_951218615.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182908_214995161.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_182908_214995161.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_183051_224341535.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_183051_224341535.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_184308_187186781.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_184308_187186781.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_184312_949323223.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_184312_949323223.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_184700_564427310.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_184700_564427310.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_185610_199112452.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_185610_199112452.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_185617_850707605.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_185617_850707605.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_194346_449352837.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_194346_449352837.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_194950_175590472.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_194950_175590472.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_194958_519401447.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_194958_519401447.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_195529_616426603.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_195529_616426603.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_200122_660399817.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_200122_660399817.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_200942_552733191.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_200942_552733191.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_201811_805214690.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_201811_805214690.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_203735_735903887.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_203735_735903887.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_203739_588312878.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_203739_588312878.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_204406_335430903.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_204406_335430903.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_205212_281904588.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_205212_281904588.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_205433_054272524.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_205433_054272524.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_213625_037823376.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_213625_037823376.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_220323_510198106.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_220323_510198106.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_220418_236810149.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260701_220418_236810149.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_004413_420368080.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_004413_420368080.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_004749_110516215.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_004749_110516215.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_005524_470974454.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_005524_470974454.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_005859_551003364.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_005859_551003364.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_005909_510539981.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_005909_510539981.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_010150_127544595.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_010150_127544595.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_010222_318565673.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_010222_318565673.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_012849_298545729.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_012849_298545729.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_012856_915461833.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_012856_915461833.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_014204_011918815.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_014204_011918815.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_014212_885408491.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_014212_885408491.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_020452_693432936.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_020452_693432936.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_020501_714939274.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_020501_714939274.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_020535_033991810.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_020535_033991810.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_021659_558280561.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_021659_558280561.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_021708_086277834.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_021708_086277834.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_023059_113183557.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_023059_113183557.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_030936_663853489.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_030936_663853489.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_032041_247051102.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.br_history/issues.20260702_032041_247051102.jsonl.meta.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.gitignore
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.local_version
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.sync.lock
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/.write.lock
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/backup/LOCK
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/backup/backup_state.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/backup/fblj6j42h0u62v3b0u06kk54cjon1q6u.darc
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/backup/manifest
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/beads.db
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/beads.db-wal
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/config.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/.lock
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/config.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/noms/LOCK
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/noms/journal.idx
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/noms/manifest
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/noms/vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/repo_state.json
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/embeddeddolt/beads/.dolt/temptf/dolt_embedded_metrics
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/issues.jsonl
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/last-touched
-/home/flexnetos/FlexNetOS/src/yazelix/.beads/metadata.json
-/home/flexnetos/FlexNetOS/src/yazelix/.claude/rules/code-intelligence.md
-/home/flexnetos/FlexNetOS/src/yazelix/.claude/rules/knowledge-management.md
-/home/flexnetos/FlexNetOS/src/yazelix/.claude/rules/refactoring-safety.md
-/home/flexnetos/FlexNetOS/src/yazelix/.claude/settings.json
-/home/flexnetos/FlexNetOS/src/yazelix/.codex/instructions/codex-rules.md
-/home/flexnetos/FlexNetOS/src/yazelix/.codex/instructions/gitkb-process.md
-/home/flexnetos/FlexNetOS/src/yazelix/.cursor/mcp.json
-/home/flexnetos/FlexNetOS/src/yazelix/.github/FUNDING.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/ISSUE_TEMPLATE/01_work_item.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/ISSUE_TEMPLATE/config.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/actions/setup_nix_ubuntu/action.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/actions/use_validation_helpers/action.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/workflows/auto_assign_issues.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/workflows/ci.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/workflows/publish_nix_cache.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.github/workflows/validate_bead_issue_contract.yml
-/home/flexnetos/FlexNetOS/src/yazelix/.gitignore
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/.cache/daemon.log
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/.cache/gitkb.db
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/.cache/gitkb.db-shm
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/.cache/gitkb.db-wal
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/AGENTS.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/config.toml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/rules/code-intelligence.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/rules/knowledge-management.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/rules/refactoring-safety.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/code-intelligence
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/code-intelligence/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/code-intelligence/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/explore
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/explore/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/explore/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/gitkb
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/gitkb/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/gitkb/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-board
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-board/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-board/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-close
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-close/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-close/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-commit
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-commit/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-commit/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-context
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-context/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-context/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-create
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-create/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-create/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-handoff
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-handoff/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-handoff/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-progress
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-progress/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-progress/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-review
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-review/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-review/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-search
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-search/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-search/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-start
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-start/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-start/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-status
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-status/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-status/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-tasks
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-tasks/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/kb-tasks/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/refactor-safety
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/refactor-safety/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/refactor-safety/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/understand
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/understand/SKILL.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/skills/understand/agents/openai.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20cb-a571-7f72-b751-9fb1b3ac0f17.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20cb-d3a1-7ff0-9fad-1051be83914f.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20d0-969f-77e2-9bb3-e4e828b569a1.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20d0-bc8d-7611-9c5d-ba282bd9c975.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20d7-3dde-7e62-b41e-f0f91b39c7f6.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20d7-824b-72b2-8360-5057f73e6a39.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20db-4c57-7332-b4a5-ce34ddacf364.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20db-67f3-7643-bdb8-0068967e13f3.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20dd-dbb1-7551-ac26-25befc474cf2.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20e1-997f-7502-9837-ea9c859c80be.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20e5-e69e-7903-beb5-ef8d81a1f9ff.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f20f8-dfd6-7af2-bacd-1a6f909dd643.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2135-e34b-7741-9eca-03b1be2e5716.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2139-05a9-7e32-a83a-4d5824cbfddc.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f213f-526f-78f1-9049-17f7e3c553a4.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2141-b0d5-7291-81cc-0d973924e343.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2144-523e-7b80-9455-b13903b3088c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2147-71d8-7842-a791-f640050fd62c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f214b-198d-7853-a60d-6a5052f7d036.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f214e-70f5-75b0-af80-cba1eb6e9091.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2151-c63a-7c92-ac1d-e0160ed31670.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2155-4695-7480-8e90-37eb28e57e64.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2157-b242-7c72-ace5-c1dba80c4d20.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f215a-7d5f-7d81-862c-0c5722b8319c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f215f-a5d2-7662-bbc6-54ac98f30533.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2163-fb08-71e3-b4e2-c05e96d1c480.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2169-a1b5-7210-8bac-0ee8c75e61b9.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f216a-fda4-7fc3-9363-beae98e5425d.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f216d-adaa-7d83-bfbb-a8319b1f8e9f.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f216f-413e-7fd1-8e6b-7aefd92e18ac.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2172-5ab7-7e81-915b-13c8eedadbe7.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2173-db87-7fa3-9b5b-cb2e556222e7.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2176-60bb-7210-bcad-557b3f63f453.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2177-e110-77d3-95db-ab27b201f003.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f217a-4a9b-7e13-889a-e74cb1992684.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2180-38fb-7e60-9c70-ed7567dd2136.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2188-2b73-7862-97e7-662104517177.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f218a-1a51-7303-9ff5-9a524ceb8391.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f218d-3650-7853-8455-5bdf5cc7898e.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f218e-392d-7860-9d35-a4a472ac3530.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2190-ac98-7de1-9510-cc404ff8431d.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2191-b812-7211-88a2-47c491945de7.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2193-04aa-75e2-b22d-53313653f99e.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2194-159f-7171-a0a9-2325f2501fc2.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2196-9923-7b60-a948-2234bb386a8f.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2197-a1cf-7090-bb2a-0e1f7c4846f6.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2199-0ea8-7360-9582-18f0517e52bf.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f219a-34e6-7872-8db6-0dccf8995844.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f219b-3f11-74e3-a79f-807d16d6a1c1.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f219c-62bd-7912-b570-09d8465b0670.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21a1-11be-7590-9b49-a80198c782f6.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21a5-1671-7821-a7e6-1e1bbf6df9bc.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21a8-2bfa-71e3-aeac-e3e82cef62ad.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21aa-46f5-7273-b4e3-333c932dcada.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21ac-09a0-7b03-9c9e-ce49f3d6a5c0.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21b0-5c4e-7793-8ea5-83f99d1868a8.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21b3-7fd8-7c51-8887-7401153badbc.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21b5-f0b2-7cf0-9510-9ebd74ed2b7c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21ba-0d81-7720-9213-85409be7b660.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21c4-67e6-7b81-8686-b1068ead5ada.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21c6-791f-7641-a492-4111eb72444c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21c9-0d49-7870-bdc5-0dc7e148f662.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21cc-78e6-72c2-a969-5f88f21a6ea3.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21d1-7ab4-7a53-9765-40d3605cdb0d.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21d3-b5e2-7632-9b75-15a86a9a03ee.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21d6-4528-7051-874a-4ee09e5173bc.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21d8-40c8-79b0-9c87-d215101f1cc0.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21db-613b-77f3-a75e-cdef5e178eaf.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21dd-a285-7742-b476-0fb83ce6628d.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21e0-b8ff-7613-8ad4-c5cb028c8c0b.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21e4-6d5a-75a0-bdf2-6fefa181ea70.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21e8-b672-7ff2-a92a-be7b1f920e6b.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21ec-e68a-7a62-8ca4-6c7d3a2e8e9c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21f0-06e1-7e12-83b9-d635740bfe45.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21f1-ef54-7343-abc6-236b9b2255ba.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21f3-fcd5-7d03-bcaf-5f8b0042d62b.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21f8-65a6-70f3-b0bb-34f6b1ff13e3.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21fa-bf40-7d33-af5b-fc16c512b8b9.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f21fe-a0c5-7f72-9ffd-a1cdfdc6601a.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2212-7ebe-7ab0-89a3-c92380f9c94a.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f221f-f9a7-7b13-8b80-1223f4a1b523.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2226-733b-7832-acaf-32dae5fb9d4a.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2228-7f6f-7db2-a72c-366af36d47b4.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f222f-b701-7ff2-b736-a16d44ebe812.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2236-6e1b-7103-b16f-4ba5793693e4.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2239-0a00-78f3-b33f-03cc9ad4ba4c.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2247-db75-7432-8e8c-8cabbc9542f1.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2249-bce7-7373-90ef-a6037e467723.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f228a-88d7-7771-9222-4133bcb60b7b.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/commits/019f2295-671d-73f0-84f3-0222f973c5a6.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/codedb-envctl-frontdoor-missing.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/codedb-envctl-jsonc-settings-parser.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/codedb-envctl-nu-kdl-config-parsers.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/codedb-envctl-remaining-config-format-metadata.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/codedb-envctl-yazelix-config-ingest.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/envctl-pr409-cargo-audit-advisories.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/envctl-pr409-loop-lib-api-drift.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/envctl-pr409-meta-local-policy-fixture-paths.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-build-capture-logs.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-build-script-static.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-build.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-cargo-metadata.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-cargo-sources.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-checklist-evidence-map.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-cli-scan-export-schema.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-codex-bounded-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-codex-bridge-sample.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-context-rows.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-controlled-task-graph.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-core-schemas.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-csv-source-of-truth-repair.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-deterministic-scan-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-doctor-checks.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-envctl-export.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-envctl-runtime.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-extraction-proof.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-filesystem-scanner.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-final-package-validation.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-fixture-matrix.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-full-local-validation.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-handoff-backlog.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-init-provenance.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-macro-rules.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-mcp-server.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-meta-repo-selection.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-native-link-static.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-no-mutation-proof.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-no-mutation-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-no-real-home-registration.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-nu-commands.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-nu-protocol-compat.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-nu-syntax-gate.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-plugin-secret-guard.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-proc-macro-static.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-redb-backup-restore.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-redb-lifecycle.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-redb-store-init.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-release-manifest.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-runner-proof-contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-runtime-tool-package.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-rust-items.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-rust-workspace-skeleton.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-security-no-leak-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-source-metadata-policy.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-static-include-edges.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-temp-home-plugin-registry.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-tooling-boundary-docs.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-transient-nu-plugin-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-unsafe-build-gate.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-unsafe-capture-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-yazelix-disabled-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-yazelix-enabled-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-yazelix-init-bridge.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-yazelix-nushell-runtime-bridge.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-codedb-yazelix-placement-docs.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/nu-plugin-envctl-exhaustive-file-content-import.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/rtk-tokenkill-yazelix-integration.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/yazelix-ci-beads-rust-absolute-path.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/documents/tasks/yazelix-exhaustive-file-target-inventory.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/manifest.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/store/refs/document-tips.json
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/codedb-envctl-frontdoor-missing.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/codedb-envctl-jsonc-settings-parser.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/codedb-envctl-nu-kdl-config-parsers.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/codedb-envctl-remaining-config-format-metadata.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/codedb-envctl-yazelix-config-ingest.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/envctl-pr409-cargo-audit-advisories.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/envctl-pr409-loop-lib-api-drift.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/envctl-pr409-meta-local-policy-fixture-paths.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-build-capture-logs.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-build-script-static.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-build.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-cargo-metadata.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-cargo-sources.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-checklist-evidence-map.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-cli-scan-export-schema.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-codex-bounded-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-codex-bridge-sample.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-context-rows.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-controlled-task-graph.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-core-schemas.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-csv-source-of-truth-repair.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-deterministic-scan-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-doctor-checks.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-envctl-export.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-envctl-runtime.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-extraction-proof.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-filesystem-scanner.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-final-package-validation.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-fixture-matrix.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-full-local-validation.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-handoff-backlog.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-init-provenance.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-macro-rules.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-mcp-server.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-meta-repo-selection.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-native-link-static.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-no-mutation-proof.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-no-mutation-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-no-real-home-registration.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-nu-commands.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-nu-protocol-compat.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-nu-syntax-gate.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-plugin-secret-guard.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-proc-macro-static.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-redb-backup-restore.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-redb-lifecycle.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-redb-store-init.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-release-manifest.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-runner-proof-contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-runtime-tool-package.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-rust-items.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-rust-workspace-skeleton.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-security-no-leak-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-source-metadata-policy.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-static-include-edges.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-temp-home-plugin-registry.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-tooling-boundary-docs.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-transient-nu-plugin-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-unsafe-build-gate.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-unsafe-capture-tests.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-yazelix-disabled-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-yazelix-enabled-smoke.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-yazelix-init-bridge.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-yazelix-nushell-runtime-bridge.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-codedb-yazelix-placement-docs.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/nu-plugin-envctl-exhaustive-file-content-import.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/rtk-tokenkill-yazelix-integration.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/yazelix-ci-beads-rust-absolute-path.md
-/home/flexnetos/FlexNetOS/src/yazelix/.kb/workspaces/main/tasks/yazelix-exhaustive-file-target-inventory.md
-/home/flexnetos/FlexNetOS/src/yazelix/.mcp.json
-/home/flexnetos/FlexNetOS/src/yazelix/.nu-lint.toml
-/home/flexnetos/FlexNetOS/src/yazelix/.pre-commit-config.yaml
-/home/flexnetos/FlexNetOS/src/yazelix/AGENTS.md
-/home/flexnetos/FlexNetOS/src/yazelix/CHANGELOG.md
-/home/flexnetos/FlexNetOS/src/yazelix/CLAUDE.md
-/home/flexnetos/FlexNetOS/src/yazelix/CODE_OF_CONDUCT.md
-/home/flexnetos/FlexNetOS/src/yazelix/LICENSE
-/home/flexnetos/FlexNetOS/src/yazelix/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/assets/icons/128x128/yazelix.png
-/home/flexnetos/FlexNetOS/src/yazelix/assets/icons/256x256/yazelix.png
-/home/flexnetos/FlexNetOS/src/yazelix/assets/icons/48x48/yazelix.png
-/home/flexnetos/FlexNetOS/src/yazelix/assets/icons/64x64/yazelix.png
-/home/flexnetos/FlexNetOS/src/yazelix/assets/logo.png
-/home/flexnetos/FlexNetOS/src/yazelix/assets/screenshots/yazelix_current_example.png
-/home/flexnetos/FlexNetOS/src/yazelix/config_metadata/config_ui_metadata.toml
-/home/flexnetos/FlexNetOS/src/yazelix/config_metadata/main_config_contract.toml
-/home/flexnetos/FlexNetOS/src/yazelix/config_metadata/rust_ownership_budget.toml
-/home/flexnetos/FlexNetOS/src/yazelix/config_metadata/yazelix_settings.schema.json
-/home/flexnetos/FlexNetOS/src/yazelix/configs/helix/yazelix_config.toml
-/home/flexnetos/FlexNetOS/src/yazelix/configs/lazygit/yazelix_config.yml
-/home/flexnetos/FlexNetOS/src/yazelix/configs/terminal_emulators/ghostty/config
-/home/flexnetos/FlexNetOS/src/yazelix/configs/terminal_emulators/kitty/kitty.conf
-/home/flexnetos/FlexNetOS/src/yazelix/configs/terminal_emulators/wezterm/.wezterm.lua
-/home/flexnetos/FlexNetOS/src/yazelix/configs/yazi/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/configs/yazi/plugins/sidebar-state.yazi/main.lua
-/home/flexnetos/FlexNetOS/src/yazelix/configs/yazi/plugins/sidebar-status.yazi/main.lua
-/home/flexnetos/FlexNetOS/src/yazelix/configs/yazi/plugins/zoxide-editor.yazi/main.lua
-/home/flexnetos/FlexNetOS/src/yazelix/configs/zellij/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/configs/zellij/layouts/flexnetos_agent_workspace.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/configs/zellij/user/user_config.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/configs/zellij/yazelix_overrides.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/docs/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/architecture_map.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/backlog_publication_policy.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/child_repo_beads_ownership_policy.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/child_repo_ownership_boundaries.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/child_repo_simplification_audit.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/compatibility_matrix.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contract_driven_development.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contract_traceability_quarantine.toml
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/active_runtime_identity.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/artifact_first_child_integration.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/backend_free_workspace_slice.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/canonical_contract_item_schema.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/config_runtime_control_plane_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/contracts_inventory.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/cross_language_runtime_ownership.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/desktop_launch_visible_feedback.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/first_party_zellij_plugin_wasm_ownership.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/first_run_upgrade_summary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/floating_tui_panes.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/fork_child_repo_maintenance.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/helix_action_bridge_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/helix_managed_config_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/keybinding_action_ownership.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/macos_support_floor.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/native_config_integration_status.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/nix_control_plane_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/nix_customization_surfaces.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/nixpkgs_package_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/nonpersistent_window_session_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/pane_orchestrator_component.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/pane_orchestrator_tab_local_session_state_seam.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/ratconfig_extraction.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/runtime_applied_settings.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/runtime_dependency_preflight_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/runtime_distribution_capability_tiers.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/runtime_root_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/runtime_self_description.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/runtime_shell_floor_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/rust_nextest_harness_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/rust_nushell_bridge_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/shell_opened_editors.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/stale_config_diagnostics.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/standalone_cursor_distribution.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/standalone_yazelix_screen_distribution.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/standalone_yazelix_zellij_bar_distribution.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/startup_profile_scenarios.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/status_bar_ownership.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/status_doctor_machine_readable_reports.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/supply_chain_hardening.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/terminal_config_pack_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/terminal_control_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/terminal_launch_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/terminal_override_layers.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/terminal_support_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/test_suite_governance.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/upgrade_notes_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/v15_trimmed_runtime_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/welcome_screen_style_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/workspace_session_contract.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/yazelix_workspace_extraction.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/yazelix_zellij_pane_orchestrator_extraction.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/yazi_integration_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/yzx_command_palette_categories.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/zellij_bar_public_surface.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/zellij_bar_rename_compatibility.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/zellij_config_pack_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contracts/zellij_plugin_naming.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/contributing.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/customization.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/desktop_icon_setup.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/directional_placement_keymap_decision.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/documentation_architecture.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/editor_configuration.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/editor_terminal_integration.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/examples/helix_steel_plugins/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/examples/helix_steel_plugins/hello_yazelix.scm
-/home/flexnetos/FlexNetOS/src/yazelix/docs/generated/yazelix_file_target_inventory.json
-/home/flexnetos/FlexNetOS/src/yazelix/docs/helix_keybindings.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/history.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/initializer_scripts.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/installation.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/keybindings.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/layouts.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/loc_extraction_scorecard.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/neovim_keybindings.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/package_sizes.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/posix_xdg.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/preview_assets.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/role_based_pane_placement_decision.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/rust_code_inventory.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/rust_maintainer_tooling_boundary.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/startup_performance.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/streamlining_audit_2026_04.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/styling.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/subsystem_canonicalization_audit_template.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/subsystem_code_inventory.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/terminal_emulators.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/the_start.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/troubleshooting.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/upgrade_notes.toml
-/home/flexnetos/FlexNetOS/src/yazelix/docs/yazelix_collection.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/yazelix_zellij_bar.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/yazi-configuration.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/yzx_cli.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/zed_architecture_lessons.md
-/home/flexnetos/FlexNetOS/src/yazelix/docs/zellij-configuration.md
-/home/flexnetos/FlexNetOS/src/yazelix/flake.lock
-/home/flexnetos/FlexNetOS/src/yazelix/flake.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/examples/example.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/examples/minimal_flake/flake.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/examples/minimal_flake/home.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/module.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/options.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/runtime_integration.nix
-/home/flexnetos/FlexNetOS/src/yazelix/home_manager/settings_contract.nix
-/home/flexnetos/FlexNetOS/src/yazelix/logs/test_run_1782915763010.log
-/home/flexnetos/FlexNetOS/src/yazelix/logs/test_run_1782916440474.log
-/home/flexnetos/FlexNetOS/src/yazelix/logs/test_run_1782916558986.log
-/home/flexnetos/FlexNetOS/src/yazelix/logs/test_run_1782916672132.log
-/home/flexnetos/FlexNetOS/src/yazelix/logs/test_run_1782918588526.log
-/home/flexnetos/FlexNetOS/src/yazelix/maintainer_shell.nix
-/home/flexnetos/FlexNetOS/src/yazelix/nushell/config/config.nu
-/home/flexnetos/FlexNetOS/src/yazelix/nushell/config/stack_prompt_guard.nu
-/home/flexnetos/FlexNetOS/src/yazelix/nushell/scripts/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/nushell/scripts/dev/fixtures/yzx_run_argv_log.sh
-/home/flexnetos/FlexNetOS/src/yazelix/nushell/scripts/maintainer/test_suite_inventory.toml
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/beads_rust.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/cargo_crap.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/flake_outputs.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/install_check.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/kgp_package_contracts.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/kgp_packages.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/mk_runtime_tree.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/mk_yazelix_package.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/nixpkgs/default.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/nixpkgs/submission_notes.md
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/nixpkgs/yazelix_package.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/repo_source.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/runtime_component_registry.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/runtime_deps.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/runtime_release_contracts.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/runtime_tool_registry.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/rust_core_helper.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/tokenusage.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/yazelix_kgp_zellij.nix
-/home/flexnetos/FlexNetOS/src/yazelix/packaging/yazelix_zellij_config_pack.nix
-/home/flexnetos/FlexNetOS/src/yazelix/release_metadata.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/.config/nextest.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/Cargo.lock
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/Cargo.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/Cargo.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/assets/ascii_art_data.json
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/action_registry.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/active_config_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/agent_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/appearance_mode.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/atomic_fs.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/backup_timestamp.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/bin/yzx.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/bin/yzx_control.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/bin/yzx_core.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/bridge.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/cli_render.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/command_metadata.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_apply.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_normalize.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_state.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/app.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/apply_adapter.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/custom_popups.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/details.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/keybindings.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/model_builder.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/config_ui/tests.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/control_plane.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/cursor_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/desktop_exec.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/doctor_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/doctor_config_report.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/doctor_helix_report.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/doctor_runtime_report.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/doctor_zellij_plugin_health.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/edit_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/front_door_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/front_door_render.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/ghostty_cursor_registry.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_bridge_client.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_external.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_materialization/helix_config.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_materialization/import_notice.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_materialization/steel.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_materialization/tests.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/helix_steel_plugins.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/home_manager_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/import_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/initializer_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/install_ownership_env.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/install_ownership_report.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/keys_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/config_override.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/desktop.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/enter.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/launch.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/process.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/restart.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_commands/terminal.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/launch_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/lib.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/managed_user_config_stubs.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/menu_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/native_config_status.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/onboard_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/pane_orchestrator_client.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/popup_runtime_command.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/popup_session_facts.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/profile_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/public_command_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/reset_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/runtime_apply_mode.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/runtime_components.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/runtime_contract.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/runtime_env.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/runtime_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/runtime_ownership_graph.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/session_config_snapshot.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/session_facts.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/settings_contract.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/settings_jsonc_patch.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/settings_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/sidebar_bootstrap.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/startup_facts.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/startup_handoff.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/status_report.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/support_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/terminal_control.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/terminal_cursor_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/terminal_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/terminal_variant.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/tutor_document.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/update_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/upgrade_summary.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/user_config_paths.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/workspace_asset_contract.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/workspace_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/workspace_commands/popup.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/workspace_commands/yazi_sidebar.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/workspace_session.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/yazi_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/yazi_materialization/writer.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/pipe.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status/agent_usage.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status/cache.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status/tests/cache.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status/tests/mod.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status/tests/widgets.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/status/widgets.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_commands/workspace.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_materialization_io.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/src/zellij_plugin_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/support/commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/support/envelopes.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/support/fixtures.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/support/mod.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_control_helix_bridge.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_control_public_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_control_runtime_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_control_workspace_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_core_config_edit.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_core_config_ui.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_core_runtime_env.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_core_settings_jsonc_patch.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_core/tests/yzx_core_yazi_materialization.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/Cargo.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/bin/yzx_repo_maintainer.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/bin/yzx_repo_validator.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/lib.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_canary_session.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_child_release.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/config_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/helpers.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/installed_runtime.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/nix_interface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/nix_package.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/readme_surface.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_contract_validation/upgrade_contract.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_docs_validation.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_issue_sync.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_nu_lint.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_release_workflow.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_rust_budget.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_rust_commands.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_sweep_runner.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_test_runner.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_update_workflow.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_validation.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_version_bump.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/repo_yazelix_file_inventory.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/src/workspace_session_contract.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/tests/repo_upgrade_contract.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_maintainer/tests/yazelix_file_target_inventory.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/Cargo.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/LICENSE
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/README.md
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/config_metadata/zellij_layout_families.toml
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/layouts/fragments/swap_agent_closed.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/layouts/fragments/swap_agent_open.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/layouts/fragments/swap_sidebar_closed.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/layouts/fragments/swap_sidebar_open.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/layouts/yzx_side.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/layouts/yzx_side.swap.kdl
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/src/bin/yazelix_zellij_config_pack.rs
-/home/flexnetos/FlexNetOS/src/yazelix/rust_core/yazelix_zellij_config_pack/src/lib.rs
-/home/flexnetos/FlexNetOS/src/yazelix/settings_default.jsonc
-/home/flexnetos/FlexNetOS/src/yazelix/shells/bash/start_yazelix.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/bash/yazelix_bash_config.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/fish/yazelix_fish_config.fish
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/ci_changed_surfaces.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/desktop_deferred_launch_probe.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/detached_launch_probe.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/install_check.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/runtime_env.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/start_yazelix.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/sweep_validate_runtime_tools.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/sweep_verify.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/yazelix_hx.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/yazelix_loc_scorecard.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/yazelix_nu.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/yazelix_runtime_size_report.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/posix/yzx_cli.sh
-/home/flexnetos/FlexNetOS/src/yazelix/shells/zsh/yazelix_zsh_config.zsh
-/home/flexnetos/FlexNetOS/src/yazelix/yazelix_cursors_default.toml
-/home/flexnetos/FlexNetOS/src/yazelix/yazelix_package.nix
-/home/flexnetos/FlexNetOS/src/yazelix/yazelix_runtime_package.nix
-/nix/store/03x27r1ylbdway3z1ifilvxfrkc7ip96-yazelix-runtime-release-contracts
-/nix/store/07xq44ak3r71sycsc70c7br4ypa742gd-yazelix-core-0.1.0
-/nix/store/0aanqld8d96mpahzkh4n131c3i0q1b74-yzx.drv
-/nix/store/0gccq4z4ik2zn853vcmq6918ml018p0j-yazelix-runtime.drv
-/nix/store/0hzzk6za4s1n3qrxm1wpbgyk2w2cmjzv-yazelix-runtime-release-contracts
-/nix/store/0mcrx7bxrdjndjyr5l1y1kyk1p2zcr46-yazelix-core-0.1.0.drv
-/nix/store/0r27lydayjd4qwvdqsl89xsdbnpi397b-yazelix-runtime
-/nix/store/0ralas458g47m1ykqkq7fmckk8qxpfvm-yazelix-zellij-popup-0.1.0.drv
-/nix/store/0xsv47ii61g9pk9rl0k6nai2v58mk3mx-yzx
-/nix/store/15z8xpqxk3fy2pwv396vr6pgys5xpp3i-yzx.drv
-/nix/store/16xp6y8mh7kkwmrf7yvqcchldx491bnx-yazelix-core-0.1.0.drv
-/nix/store/17hn3klllllxrs3axlmabn5v54p294wg-yzx
-/nix/store/1cxn0j0ax1qfmvpjgl8gzdh3y6qv7hmz-yazelix-runtime
-/nix/store/1fkkhldzf7d0y2xc0dcd74axq07m6dc5-yazelix-core-0.1.0.drv
-/nix/store/1j8nf8diqfavvqg9y5qcrzrl4s1ipll2-yzx
-/nix/store/1nsb6s6gpxz81gi7wj8jpa1l7ha5jwh8-yazelix-core-0.1.0.drv
-/nix/store/1q375sbl1yyivl3lhhi6w0vm6q53wbw9-yazelix-core-0.1.0
-/nix/store/1rvmrraiwn7yb3q696ffywi0kbh6swic-yazelix-core-0.1.0.drv
-/nix/store/1sml5pbacn2figrnnr6h41fqq91ikg9b-yazelix-core-0.1.0.drv
-/nix/store/1v1mg9rgcl28960kwy8xw6vqlcbw82ri-yazelix.drv
-/nix/store/1yzx64fbbgn3slprk3biq4zwjs23x7yi-Glob-0.10.2.tar.gz.drv
-/nix/store/202qhvbmazcvffl19xkrn9y9sf5g51r4-yazelix-core-0.1.0.drv
-/nix/store/247rlvqaizfi6jdvq4cv62wjlrrj4hbs-yazelix-core-0.1.0
-/nix/store/27f7kd4w88xl525gx67jpfr32lf7nahg-yazelix-runtime
-/nix/store/283s0abvn212qhdpvj5m76b7i1snl9hn-yazelix-helix-25.7.1
-/nix/store/2ap005gv70gmmxx2cjy0948dl1lc0sx8-yazelix-package-source
-/nix/store/2b0jxqhb58wph27ix86hhdimb4isaxvy-yazelix-runtime
-/nix/store/2fhrs93782sizj8qhj5467x3yiyv647k-yazelix-runtime
-/nix/store/2qa7irnhc1xdi77yhdv0a0gy2bii7g4p-yazelix-package-source
-/nix/store/2wg1qd1q8kaic3nz252w4vddvncs5slh-yzx.drv
-/nix/store/2y3vib6nm7y7da7vmmx69p81v509dmv2-yazelix-runtime.drv
-/nix/store/2z6s2p95glwv204fjyqd4c61czrh066m-yazelix-runtime-release-contracts
-/nix/store/2zp6hfp9fs4ms98j9v7jviqifga95773-yazelix-core-0.1.0.drv
-/nix/store/33gj16j3wrdxfzp6pv08mj5sx9x9c6vx-yazelix.drv
-/nix/store/34fy0s65zxb0771kg1im75594ij4130z-yazelix-core-0.1.0.drv
-/nix/store/35lhra7hy9rn4991zklfv047f6sqvmc4-yazelix-core-0.1.0.drv
-/nix/store/36fifkgyadm5rk4kqmcw3x8w4cy8kz88-yzx
-/nix/store/3iwv9bz1i4p7bigxxbr8kj394hvj3lv9-yazelix-kgp-package-contracts
-/nix/store/3kij26lf47y5b4lc22fwpajiqyr6n1ik-yazelix-core-0.1.0.drv
-/nix/store/3qhsakkqdinrpqj00fl6vkw62nla2riv-yazelix-core-0.1.0.drv
-/nix/store/3x713lncshym5j185azqkb6jk1pvncaa-yzx.drv
-/nix/store/3x86inzgnn2087q3ja4jhhan8xqgzis7-yazelix-helix-25.7.1.drv
-/nix/store/44c5xz1kjn7kjc3z3d9bvg6jzbrq0ny4-yazelix-zellij-pane-orchestrator-0.1.0
-/nix/store/48mldwb2x29nlq3qqzf55hgqkl3bjjq4-yazelix
-/nix/store/4dgcfp9j2059r8733b290g1yq05pyllq-yazelix-core-0.1.0
-/nix/store/4dvlvkil2jj8b6q7g2qsd8kxwj1s2qn5-yazelix-runtime.drv
-/nix/store/4gdrwyn4ll5albw3r83zdwlz70rsjjd4-yazelix-runtime.drv
-/nix/store/4hbbphhhji7b0qzpy4gx8snigc8kyzxm-crate-munge_macro-0.4.7.tar.gz.drv
-/nix/store/4l2mqn6qxg911xadvyfyv9msy9h35nyh-yazelix-core-0.1.0
-/nix/store/4m2j04p463rkpzy3cn59wg8pgjjbgfb4-yazelix-runtime.drv
-/nix/store/4xad76rrsx45js3ga1ibm0f4wp6y0mq4-yazelix-package-source
-/nix/store/56dmrmq28m142af3rl1l0w7xfsnkvp3c-yazelix-runtime.drv
-/nix/store/5b4v60fh58wqc85fis9gri6mbbdkgc9a-yzx
-/nix/store/5dali2krp6pfbbhrg0bzsjrzvsxcacxh-yzx
-/nix/store/5k5nb8i9ccr5c0k6q396sbyzxvhlczi0-crate-ryu-1.0.20.tar.gz.drv
-/nix/store/5ndxjy5r3gjcxiw8qgw4lac7mnyh5biz-yazelix_zellij_bar-0.1.0.drv
-/nix/store/5wxvz2pj0qa5zhhgpspsdfk4zy4bx4vw-yazelix.drv
-/nix/store/63l7a91iprf777i0yk2f4c59256z7w34-yzx
-/nix/store/63wmj5ay1a94acllavh1mwl5lhpr2shw-yazelix-core-0.1.0
-/nix/store/64avnkrkiw9sm92kzmdmlhpnc3czanfb-yazelix-core-0.1.0.drv
-/nix/store/6549gy7dw9nc8b9zvzivyni9hfkb9xll-yazelix-cursors-0.1.0
-/nix/store/65vi6r5brsxmdv38hnsmbl198bn883yc-yazelix-runtime
-/nix/store/67957ghd0v09pmjqhjvcjl2m21schigj-yazelix-runtime.drv
-/nix/store/67ccqyvg3vmxs608r76rpl6x8msii3bj-yzx
-/nix/store/67dl5ayk18fr02fqi0k3c4cv8wi3xdq9-yazelix-core-0.1.0.drv
-/nix/store/68z2sirwwnh2yg2la76l1yvkh05ya3g9-yzx.drv
-/nix/store/6cma40gdhj1dlmdbsak5x7a94d99fs8l-yazelix-core-0.1.0
-/nix/store/6fqsd285q53nzsf8zmf2k6wldy6jjd93-yazelix-core-0.1.0.drv
-/nix/store/6i0w8d5p0j5f2km3xiqd40jrpji1iw2l-yazelix-core-0.1.0.drv
-/nix/store/6l1rzvbmy6v6468f9g76fchb7p5d8k51-yazelix-core-0.1.0
-/nix/store/6nq1qgndd2yp6v435zgjmwhwiqs4426c-yazelix-runtime.drv
-/nix/store/6r1yvldclwaiqp9l7r423bwvlqvh9mfq-yzx
-/nix/store/6vxkq286r99dg69mpvi2ssc9qr8id2d4-yazelix-package-source
-/nix/store/6yyzf6svcnynng4dpyci8r4d2wrxzaci-yazelix-zellij-pane-orchestrator-0.1.0.drv
-/nix/store/712hg3pcnigca8acfij7d8qgszc8qs81-yazelix-core-0.1.0.drv
-/nix/store/73b344k6rryv921nrgllf01jmcj2zi94-yazelix-core-0.1.0
-/nix/store/77cjyq6yanfsdv4msr2xgzj4gpmhjpn9-yazelix-rust-core-source
-/nix/store/7ac9pmrq6lcfqna4sc06p3qyl9m3k2h8-yazelix
-/nix/store/7bsvmxdw620jk3dabnpa69q2pryzxd43-docbook-xsl-nons-1.79.2.tar.bz2.drv
-/nix/store/7cjmzaik61fb0pzp3h0nx2f88l20yxdn-yazelix-core-0.1.0
-/nix/store/7djmy1dyny3di29zwsscqyyvy4gylzhd-yazelix-runtime
-/nix/store/7jf9j6anhprwjablhpwlcdwv4dfbjvcl-yazelix-runtime
-/nix/store/7lnf05n5xcdy090wxhbz3la0k9wn0rd6-yazelix-helix-25.7.1.drv
-/nix/store/7p5m0pgssiwwyxzp25s5wbnlc0s1kqwq-yazelix.drv
-/nix/store/7qfqxhf210ki5fqr55fqvrr9bgjb31lk-yazelix-package-source
-/nix/store/7x64g38x65h4qcv6m2apb9dgxinpd9sh-yazelix-core-0.1.0.drv
-/nix/store/7y5l85v4zi1d1aiip471i4jgbjlxsg9s-yazelix-core-0.1.0
-/nix/store/8315fskl6ypfs5lsma7wwhs9x95gy9hg-yazelix-zellij-bar-assets
-/nix/store/83dfhjd9l6b0vb09m62kwb3v4plpcyk1-yazelix-runtime.drv
-/nix/store/840fn2mz5fi2wdwgiwg80kcvxr1rzjqs-yazelix-core-0.1.0.drv
-/nix/store/86cs3qzvjpqchpf91qxinxr254cxzs5g-yzx
-/nix/store/88fhkzjap6pg64zwl92gb8xhfirlfnc1-yazelix-runtime
-/nix/store/896fmibv1xy202zgzqav6v8zgh96qypf-yazelix-core-0.1.0
-/nix/store/8awz7x4icjwpcvanrhk77158k64f6yrg-yazelix-runtime
-/nix/store/8azlf5jnj0936fbnd6sf349sga640mg0-yazelix-core-0.1.0
-/nix/store/8brxli9c6ln1jfqgl88gybkar3z80s06-yazelix-core-0.1.0.drv
-/nix/store/8d4731rrdnxmj7nlvhsz8hrfkp59c78k-yazelix-helix-25.7.1.drv
-/nix/store/8f6jp9mnl3qmps0z91j2csds6d3dcb8j-yazelix_screen-0.1.0
-/nix/store/8k1jnwal910br7dp26cgirzvv4hnrbvm-yzx
-/nix/store/8x7bidafx5map8jdxjhyzx93rbm4y2r2-textwrap-0.16.2.drv
-/nix/store/8zrs8knz4pb9q3fcvybx026q7bdnh4x3-yazelix-core-0.1.0.drv
-/nix/store/8zw0q4i8a3d8dwb9n439nn67wrj8qknj-yzx
-/nix/store/91vim48pbp7pj4brw5pzl2db6jlls7si-yazelix-core-0.1.0.drv
-/nix/store/95ydl615bk2hf1nlwqwqbkbpybfwq9kv-yazelix-core-0.1.0.drv
-/nix/store/980fscfyw32mw7cql73jjrrpbxcdxfap-yazelix-core-0.1.0
-/nix/store/9bidwzjb7yvls151qlj18zzfshhyzv05-yazelix-core-0.1.0.drv
-/nix/store/9d27y24jahhdn1gpz8c78bvj3siplfp7-yazelix-helix-25.7.1.drv
-/nix/store/9h8bcrnspvxzzakf3c1drq21ld936h4c-yazelix-package-source
-/nix/store/9hklffnwz1vyc1ikh3gfizq55a8jgfcn-yazelix-core-0.1.0
-/nix/store/9mzihvnlwbd22kxyjwz4p0qjh6mi9wr1-yazelix-rust-core-source
-/nix/store/9pwigjynp65pb5m21fjxqivn1vs1zpfi-yzx
-/nix/store/9s9rvr4msflbpgwx2m77gk1zwkjcfy4h-yazelix-rust-core-source
-/nix/store/9v4n4zqqbngxdfcdzlgval7d371yf3s2-yazelix-core-0.1.0
-/nix/store/9vyd5s285k4656grwagg4fplsfraasv3-yazelix-core-0.1.0
-/nix/store/9xzm9gmraha3df310hj2xdh2vkaj32a0-yazelix-runtime
-/nix/store/a2xjkjid1cq1qxia53a9d0r4pyfbdbkf-yazelix-cursors-0.1.0.drv
-/nix/store/a6qbn4n42rd1wyxbz54hl6sf8abn5yzx-libxfont_2-2.0.7.drv
-/nix/store/a7gdh9p3kgrawws2w1946bdba9p7myqd-yazelix-runtime.drv
-/nix/store/a8p3g37l62nw2rhx2sc11gi1kcqfj7v4-yazelix-core-0.1.0.drv
-/nix/store/aax4vjpym40kacf7qnxcx8ylgnmxr39k-yazelix-rust-core-source
-/nix/store/achw4cqmmmnbhpr6536ybw0wi1fbh55k-yazelix-helix-25.7.1.drv
-/nix/store/ahr7zqms4mrqcx8xwc626ajmbx6r84i1-yazelix-core-0.1.0.drv
-/nix/store/aprwmzmag3xvyrkkcv129b31sy1gpdjg-yazelix-rust-core-source
-/nix/store/as0hvyscffj2rb781sbvszdchskf9adc-yazelix-core-0.1.0.drv
-/nix/store/avlcijz4v5ay3gsjci1zhpiwjk2dhcpq-yazelix-core-0.1.0
-/nix/store/awk53pghp7hvaikxqzvrswrgy53cnz2z-yazelix-core-0.1.0.drv
-/nix/store/b5yissg46sfdbsk92d3np0jgah7a40g7-yazelix_cursors-0.1.0.drv
-/nix/store/bgw9cik568f7ljfa3yrkg6pqpdsn3qaw-yazelix-core-0.1.0.drv
-/nix/store/bj090nm7ggjzny5xmwaim09dvad3msi9-yazelix-core-0.1.0
-/nix/store/bn9jx9298m1h5b54r4kzmm0xpxzqic17-yazelix-rust-core-source
-/nix/store/bpdyiylayymawp5idn8lxgj386y46r1y-yazelix-core-0.1.0
-/nix/store/bpzq0y3hcmxxhg8d6lgjksfvay4k1bik-yazelix-runtime-release-contracts.drv
-/nix/store/br8pj9j2zkl2s5fwdqraj338kcbba39j-yazelix-runtime
-/nix/store/bw8jk128kfc8nvxw8ls95vyhpvd6q3d1-yazelix-core-0.1.0.drv
-/nix/store/bwv2n2a8lqphkwkqxai0y2zbm2pg2j1h-yazelix_yazi_assets-0.1.0
-/nix/store/bxarm7ci7a13vcdcpxw1ahhryizcrh0g-yazelix-core-0.1.0
-/nix/store/c1dcjank76wfa14hkgbsz51jpip7i92s-yazelix.drv
-/nix/store/c4qsp7ch1lkp25rrhjjkqnmrih25w2jc-yzx
-/nix/store/c52apmsbs0n3zcwj8h81dm4mfwdmkpha-yazelix-core-0.1.0.drv
-/nix/store/c6hkksy5mbj0brm93l2ks511fy4ld5l8-yazelix-runtime
-/nix/store/ca2yi9nw6ynrpay56nxp6wgz5w4yi8zm-yzx.drv
-/nix/store/ca8z75sdvjry645f14drccn9qi0hax1g-yazelix-core-0.1.0.drv
-/nix/store/ca9nnmzpwa35xrqib9mqj6myd202cjfi-yzx.drv
-/nix/store/cai61mkpidrw0rdkk9brspc0dnfn85vy-yazelix-runtime.drv
-/nix/store/cg7xmfy4b812a70lw68ym6mawawp8kps-yazelix-core-0.1.0
-/nix/store/cmzw9kd2hmn7q3cbdayshxg8kdhnchvh-yzx
-/nix/store/cqrz2wvqd3k128qwmw8gjvhv2am61xxy-yazelix-core-0.1.0
-/nix/store/cxnls7rhazsnax2ayakgmiq716pq6z6i-yazelix.drv
-/nix/store/czid0ghi1sbnz7x5g251m79hlsp3vshv-yazelix-runtime.drv
-/nix/store/d0a4jcw6i8ms0kpidf8f5i028v48cqn7-yazelix-runtime.drv
-/nix/store/d2shxfy1f0hqa63nds9vf732z2j6964w-yzx
-/nix/store/d7s8yzxx4lkp4pnyj35i12v5kdg6hwiv-python3.13-wcwidth-0.6.0.drv
-/nix/store/d8jv1hn8d6bkccfbr9x47j38lin9vg4x-yazelix-core-0.1.0.drv
-/nix/store/d9bmhsva5cm7879qz6mg4zs8h5jgx1j9-yazelix-runtime.drv
-/nix/store/da1k4991mvhkm5jvklwa52mrrfdnm2cy-yazelix-core-0.1.0
-/nix/store/dalp6jj108n8dq14cjqd5xxampvzh5kq-yazelix-core-0.1.0.drv
-/nix/store/dmw7nrwz8lg6rlj5p550di6fx5wsqcki-yazelix-core-0.1.0
-/nix/store/dpnb2g5d4xvl28h447jj32w2l8i4lwlb-yazelix-runtime
-/nix/store/dqp5v3yw6pqi08n2ivjd1fqsjwy59iy8-yazelix-core-0.1.0.drv
-/nix/store/dxfq94flwny6xhkwvihvk31qzgm3xmz9-yzx.drv
-/nix/store/f2j7vk7pbxca4hj9371yalp5b47kbh9s-yazelix-core-0.1.0.drv
-/nix/store/f2jsbqpjk14cpfc21df3lvyp99nwjkf6-yazelix-core-0.1.0
-/nix/store/f3arq12p0laiy0i44pi10csqs0zk8bf0-yazelix_yazi_assets-0.1.0.drv
-/nix/store/f5zp3xra1f11mslk986ds0vaviy6l0cy-yazelix
-/nix/store/ffg20pvjgjvfxz20grmgnybmgy5ir7c7-yazelix-core-0.1.0.drv
-/nix/store/fgkz89q3czrp5p9iik1nfscgnqmln8an-yazelix.drv
-/nix/store/fhcs1c9f1ksrks1y56jgsr6g772fxk1h-yzx
-/nix/store/fmflhp52g862wh13zj02w7rq8hf8qfn4-yazelix-core-0.1.0.drv
-/nix/store/fmkbp695jblj1yzx8sh85nlg6g3phk6p-source.drv
-/nix/store/frp1inf0zwj7v4jykjg3hwg7ylghgjz9-yazelix
-/nix/store/fxxwmsajgm85wz2khmwi2aj0ggs188r8-yazelix-screen-9dc52f7.drv
-/nix/store/g2f3l3pfwfgf9iv2myzxmmqxw4j3xqg5-source.drv
-/nix/store/g3lylm0mvax5gkjp4n4y8chp41wcfxg0-yazelix-core-0.1.0
-/nix/store/g65zywhp44h2fxwhk13nnclrb9khr5kv-yazelix-kgp-package-contracts.drv
-/nix/store/gas80z260j54bvjhknaj461fc9phfia3-yazelix
-/nix/store/gazlkgssv4hjg0zb8ilx9w66cdfjargg-yzx.drv
-/nix/store/gcrywhvrym473acnz0nxz7wp9x9j26h2-yazelix-rust-core-source
-/nix/store/gczbfnryyg2wps78ds1xq5xng8wsjb06-yazelix-runtime.drv
-/nix/store/gg1lq1x0ib0i2wg81lw2k98lclh62psv-beads_rust-0.2.16
-/nix/store/ggdkkjvirkl4r3ymshkvkkjrr0ykxmj7-yzx
-/nix/store/gjpds0cyn98k9j6m1h4xxk6nv13rh2nn-yazelix-runtime.drv
-/nix/store/gka60vxd9qgvpz7n3y9lhsbnpyvpjsj5-yazelix-core-0.1.0.drv
-/nix/store/gmfyzxz6qrvkfa3dcp5jncc08xxah59v-0008-Provide-mach-compatibility-headers-based-on-LLVM-s-h.patch
-/nix/store/gmhk0vywy1sj5mnr3ks6l3ip9dbffs54-yazelix-core-0.1.0
-/nix/store/grhi21s6f8japiy32y0q6bxqqvlz71wz-yazelix.drv
-/nix/store/gs7nh103xhs2xh5647yxwpbgkbwij0k6-yazelix
-/nix/store/gwl7c83iby74f15hddi7xd4xgqwijd2b-yazelix-cursors-98ddd8b.drv
-/nix/store/h1mflz4dvkny32i0jn8hw003g1600z64-yazelix-core-0.1.0.drv
-/nix/store/h8d06npb9bbqcscdshv2wpvhj1jkdfwn-yazelix-core-0.1.0.drv
-/nix/store/hcnw419i2h7lnk22idh0j13y14i6a1p2-yazelix-core-0.1.0
-/nix/store/hd0hwv5bw4fb49acgcz8dk1bkcsf123m-yazelix.drv
-/nix/store/hgxb6r9s01j2fv1picy9lgi1nmm5j3aj-yazelix-core-0.1.0.drv
-/nix/store/hgyhrs9sa39lxfz7l2m6pi7wgvj3fjn3-yazelix-core-0.1.0.drv
-/nix/store/hi99gm0447n0x3nmpbr7r1wsa0fijg3k-yazelix-runtime-release-contracts
-/nix/store/hk4m00bfnqddhlymfy8s6afrr8fd93kk-yazelix
-/nix/store/hwflz3l71m3b53ylslwi00k5qdkq635c-yazelix-core-0.1.0.drv
-/nix/store/i79q5n25rfkysa1nfmqp03nfnm1jdsa8-yazelix-runtime
-/nix/store/i7q7nf6blv32y48zc8mncckh7fpaa6sb-yzx
-/nix/store/icq8v6fb52brn90qmpawil1wgif98g6y-yazelix-dark.toml.drv
-/nix/store/id44kjf198bq0sd7bb52fgc8xgari1ac-yazelix-core-0.1.0
-/nix/store/idi61hx65jadw4zr0afc1gig5n0bj6x9-yazelix-core-0.1.0
-/nix/store/idqmyg21bmzr0ib13hjfbl72zlgdjrvg-yazelix-core-0.1.0.drv
-/nix/store/igi162gp0190am52imdmdlqb6s6k2mdx-yazelix.drv
-/nix/store/ihpr0n6hd9kjmb56fsra35b93x7cyyi3-yazelix
-/nix/store/ihw971vw3jqgpbg2gfh17dhr1dv9dsn6-yazelix-runtime
-/nix/store/iikfn8cpspsqln8yqrgaj8mxzmbx020s-yazelix-rust-core-source
-/nix/store/iiwvfsk6k37rmg7p6rax7xzy477yzxsh-cargo-src-zerovec-derive-0.11.3.drv
-/nix/store/irj27gry9a5a4nlks66cgpdb796l7w15-yazelix
-/nix/store/ivkrnyg9f8xgb83mivd6qyg3yh28yqry-yazelix
-/nix/store/iwyzri2ixpv8vv74v9ja97fm7965lz3w-yazelix-runtime
-/nix/store/iy4nsvf8yp7hvki5ldf141p87g1vinv5-yazelix.drv
-/nix/store/j101js2d63qh0hm5jxms5k7x7d63rack-yzx
-/nix/store/j2x4x72skbdzik18bh0qx8366ja41x6f-yazelix-core-0.1.0
-/nix/store/j3rfw1yzx0b7y93ccdscim5kzn9rq2vd-quickcheck-instances-0.3.33.drv
-/nix/store/j4l5i8zb4l0ls0r1kvkln9kvz94h094h-yazelix-core-0.1.0.drv
-/nix/store/j78ii2lsd1af8245ic98vf3bndphbk3p-yzx.drv
-/nix/store/jacs0vqlyalq5dnha4yzrsrb23n3m967-yazelix-runtime.drv
-/nix/store/jajkhnap76g6pa65y5q37q42qgxncp0l-yazelix-runtime.drv
-/nix/store/jd4g3p9grc0ccz9k7nwcql1pvn029c68-yazelix-runtime-release-contracts
-/nix/store/jkyw23cdk75g7iwbwrwy6s83sm53myzx-libc-0.2.178.drv
-/nix/store/jnf3rn723b4f081xcvxybwjx0gqcx5yb-yazelix.drv
-/nix/store/jpkiynq35lgl524wwc078azp0xpjrk3a-yazelix
-/nix/store/jpq7q7bilyxcc7bchq9i47qkmw1hpxp7-yazelix-runtime
-/nix/store/jxcxab0iqpj0aisqwjrii02i66yxl0a1-yazelix-core-0.1.0
-/nix/store/jz1qriq2kcbz98nlfnahw9n27hhzsj25-yazelix-helix-25.7.1
-/nix/store/k0b4d2zg19gkwlmpgfr4hlnnijb65gd9-yazelix-core-0.1.0.drv
-/nix/store/kic1i908l4xzi2bkmv4x29mggh4xk44r-yazelix-rust-core-source
-/nix/store/kmmwvdpri9n3skpkrqmxkah6i2c78h41-yazelix.drv
-/nix/store/knjw0nsjk1pm8b2nhripvx6z9q50lhd8-yzx
-/nix/store/kw9w3n4w2fhp3xwgz6icdq4vw5gw9n66-yazelix-runtime
-/nix/store/l119g9bisvgrchnpnkabb5hps8qmvl4d-yzx.drv
-/nix/store/l410zv1xb5cfhjf26iknv4v62bbpzbhs-yzx.drv
-/nix/store/l471v51sv3gg729iagjzz5ib491ls673-yazelix-runtime.drv
-/nix/store/l5xy223hvzhgyqz8nmg3iyhd5ryvmp1m-yazelix-runtime.drv
-/nix/store/lcikp367kzi3s8cplcij6in2347hxvbb-yazelix-runtime
-/nix/store/lhqywzyys15m2q7z48bhi3gha74fjkfp-yzx.drv
-/nix/store/li9n767mpnbc9rcivbq9ysxl9h0m7c51-yazelix-runtime
-/nix/store/lm01z5vsdky3q5az4b53h1qmxgj5kyhr-yazelix-rust-core-source
-/nix/store/lprwb26crdizhcj5122kq722skslp8vb-yazelix-core-0.1.0
-/nix/store/lqmwi3h40kb970k4yrf2szkx03p9qhcw-yazelix-core-0.1.0
-/nix/store/lv4qmj5gjkn27mbn3pmnib6idfwgl0af-yzx.drv
-/nix/store/lwfyx0pp2hmw5z41g0c2kw3lsc81kdl4-yazelix-runtime
-/nix/store/m4qgr0a9f9v44n7drik6pd6l0mi369kz-yzx.drv
-/nix/store/m71qb122axf2a4xcsabd3bg4azyzxsll-contravariant-1.5.6.tar.gz.drv
-/nix/store/m96h8x4dxsxdyi6fjimnmz2yv644hll6-yazelix-core-0.1.0
-/nix/store/mdjsqsadzvcynnb0is2wwrv6xbmzxmsm-yazelix-rust-core-source
-/nix/store/mdv6m0z2s8b73l89sbs083r97db7m4ib-yazelix-runtime.drv
-/nix/store/mhrz04q5x3wla17s0rrlwc71ra2ywxbz-yazelix-runtime-release-contracts.drv
-/nix/store/mi12fcr97xk6h5lrx8b3ff98ra4rvp3m-yazelix-core-0.1.0
-/nix/store/mj7xq29k1kaidk91c09s5zywssrhbm0l-yazelix-core-0.1.0.drv
-/nix/store/mk2y654kzwwvvld1m6v7iq1y504p9k16-yazelix_cursors-0.1.0
-/nix/store/mkbvcwk465ykahhzblz0yzzlr760qaq1-yazelix-core-0.1.0
-/nix/store/mlrc5bi8sg1sp81bnjnd26z4wmv3sb09-yazelix-runtime.drv
-/nix/store/mlwq1i3assys5lhv0caj6a9fdrwr0bxp-yazelix.drv
-/nix/store/mp6gqcp8k3zvmanib0vzkdl22d9hf8aj-yazelix.drv
-/nix/store/mpnlqf6k38glp9h3pw3mg4c7ihlcsd5j-yazelix-core-0.1.0.drv
-/nix/store/mqw8vjiayywbak4394w5iwnhlp1rnq98-yzx.drv
-/nix/store/mvrfq0hqiandy1wdbfsxxkzv40n9gpjq-yazelix-install-check-0.drv
-/nix/store/n94wy3ybyklxr28zn0zgd56kpf5njqlk-yazelix-runtime.drv
-/nix/store/nbcp9d10aqcn38hw9w8808r26n1dwvzz-yazelix-rust-core-source
-/nix/store/ncsrnp48xribl61gwhvyjbk0b1pqk47k-yazelix
-/nix/store/nf5gslikap20kq6mwhrhvwk3iahp2sri-yazelix-cursors-source
-/nix/store/nk36gm7ppg3knkqyb00zl9jb6fhvrkma-yazelix-runtime
-/nix/store/nm8kryi2cpqwf7v6469bdjrvv5dmjd15-yzx.drv
-/nix/store/nmd7hrb9sx01gfad8gh5xj94a869jncm-yzx.drv
-/nix/store/nwi5misl6jyx4zsc2243pacwld5akhpd-yazelix.drv
-/nix/store/nydq5j3mmhyz2nps2b7msjf8m2r48hd8-yzx
-/nix/store/p45lnz6nsvjzvhjlbaifqncmb21vgwdy-yazelix
-/nix/store/p5h2b61x535hr98c0hkzbxv4scgqrs0l-yazelix
-/nix/store/p6dzh0bjzy8panc7xni7n1fdizjv77x9-yazelix-runtime
-/nix/store/pjsrlvpa3rgvja12xskbk8czbfr9sj62-yazelix-runtime.drv
-/nix/store/prbjddm3004f4xmms36j3mnf097izrxi-yazelix-zellij-bar-source
-/nix/store/pvbrn7ikyar4m58f28zminqr99xrrnpd-yazelix
-/nix/store/pw27gxmhg1kpxy41rkkbh2f2m94gz6f8-yzx.drv
-/nix/store/pxfrkpikc7p8hbrq6gv0zk1dzc32z5lg-yazelix-core-0.1.0
-/nix/store/q0j6qq35hnnj3s9zwirc0794rzqmzbxm-yazelix.drv
-/nix/store/q11y5in8g47a80vhynfs8rm4wpbbwwxy-yazelix-core-0.1.0
-/nix/store/q3m7z5nky63y6p59ym4dk81a90y18f2g-yazelix_screen-0.1.0.drv
-/nix/store/q9gzlpxvx7bnwndd8bcm4wbrk78qz5pa-yazelix-runtime-release-contracts.drv
-/nix/store/qa8cjnjm211j4a7cyjshmzw27ljj461z-yzx
-/nix/store/qcwz0ib2znyglw3bm90nyls105ss1h4m-yzx.drv
-/nix/store/qf3l8rbxr1gjwwgrx64fddd8ghgyzyxb-yazelix-core-0.1.0
-/nix/store/qia8p5ccnh1hih7air912zr496nq20h1-yazelix-core-0.1.0
-/nix/store/qnhdvgw4ailkrzzfsr861y58zrybvkj8-yazelix-runtime
-/nix/store/qs8vkxfva7fjin4rdf7984m5hfxwwzlq-yazelix-core-0.1.0.drv
-/nix/store/qv2i62yn4fyz3qb1y4x7q47qjvndnfg5-yzx
-/nix/store/qw97jm3044fk3xly7w8p33278j8vfz28-yazelix-package-source
-/nix/store/qyl7bjmbqn3p9qmgzsxz84r285dw3i2a-yzx.drv
-/nix/store/r00bigyvbjlkv4msw9kh8imlh77zrb6a-yazelix_yazi_assets-0.1.0.drv
-/nix/store/r2zwc8m1py4ds8yvhkf3jplirjrsiffh-yazelix-runtime
-/nix/store/r36cabmrw4lcw1impyaj8armys2lb0d4-yzx.drv
-/nix/store/r8az73rjkgnmzdfjldqx2cwx5amy6zca-yazelix-core-0.1.0
-/nix/store/ri6a5idmf83wsqr7vx62haycgiri1zy8-yzx.drv
-/nix/store/rkqzrzp07s90p9wgnhl52fxbz2xr72fs-yazelix-runtime.drv
-/nix/store/rli7zs8n455fp5ffgmpawjplc750vl0p-yzx
-/nix/store/rmxrvlr5v9pnjk3z8q31x8328dgcf2bp-yazelix.drv
-/nix/store/rssf6plj39an36s2yww357gvbs97aj6z-yazelix
-/nix/store/rvg33wclzwvrkycccfxya5hv3q22bm3p-yazelix-core-0.1.0.drv
-/nix/store/rw41pca9j2bqmww8nb8zpszkw94pds8z-yazelix-yazi-assets-e9a936a.drv
-/nix/store/rx8bz1x2y87njpwp6acs8fcrliglq2c3-yazelix
-/nix/store/rydkcrx3yrcxkvval4wapgcbj5hiymlr-yzx.drv
-/nix/store/rynfsa12agwi7wvg8pjpjayy4xh6w9rn-yzx
-/nix/store/s0idvs3f1xncmi7rg6mviyklkahkw74f-yazelix-core-0.1.0.drv
-/nix/store/s0qcrjdl15zg8jr5qm78ij2ywp1vmjiz-yazelix-rust-core-source
-/nix/store/s43did42mx51sw0magm7f16n4gy9xg43-yzx
-/nix/store/s8v0yqhk2vjp4gspm65qhn4gs23hsfh2-yazelix-runtime-release-contracts
-/nix/store/sm87nrpjl89i9l8n7724am8lxmxcbar0-yazelix
-/nix/store/smgkvfkyn9hb99vqf5k0kcr3zy5w48x8-yazelix-package-source
-/nix/store/snjbgkf7yslaia8prs3p5pzsiigp5cy2-yazelix-light.toml.drv
-/nix/store/sq6zkgarcmj4z13555n17pkfm3d263mm-yazelix_zellij_bar-0.1.0
-/nix/store/sr4mq2m6da38qwswynh9wqshhfzzd1fc-yazelix-core-0.1.0
-/nix/store/sz4xbfci2i6jjhwbcmnwfg1m2lw6y8fm-yazelix
-/nix/store/v080m4w24q1v29ka43bn47qq1rqjac9v-yazelix-core-0.1.0
-/nix/store/v0s5xh687qmv5j53vilz92rl4a5bi1p5-yazelix-runtime-release-contracts.drv
-/nix/store/v4icrk1n00iics1prj8b10chrw5cp3h5-yazelix_zellij_bar_tools-0.1.0.drv
-/nix/store/v5wlpb7n8mwnzg468cdagkwjgs893zrm-yzx
-/nix/store/v654gb5kxkyzxvl85fs7h1518yh7lp37-parking_lot_core-0.9.12
-/nix/store/vbx939b91rfn60mlcjkhwsx7ssfapm7z-yazelix-rust-core-source
-/nix/store/vfd172nza7f14z79ymvhl9fqf5h363pl-yazelix-rust-core-source
-/nix/store/vfgsw0jqx7dhfdjsbwgnby8idn196qig-yazelix-runtime.drv
-/nix/store/vfnxhgx2g0vpxj3h2kgviss3rxsp1dw2-yazelix-core-0.1.0
-/nix/store/vigb48b5nc6k8ccgb6qzzaczypapscmg-yazelix-runtime-release-contracts.drv
-/nix/store/vjjymwb7crddn8344g3b3v6zipz2wsys-yazelix-core-0.1.0.drv
-/nix/store/vnnr6h3vvf17dwilp3bvrksc735wan9z-yzx.drv
-/nix/store/vr4pi9jbv804yjih0vsm0r81ijlkimk2-yazelix.drv
-/nix/store/w4d20i85sfqxnbnii7pr9w5dcy40ys7n-yazelix-rust-core-source
-/nix/store/w4ny193vrz5b144w7w83xzpj29jc0ki8-yazelix-core-0.1.0
-/nix/store/w9dy1m3f7azkwv2bsa68p4k5kpa13xym-yazelix-runtime
-/nix/store/w9jk0ralya607byak2j0652qnwqi2b86-yazelix
-/nix/store/wfsy9v5vw886v7yzxf7xjyb5i3cj5h3w-sphinxcontrib_qthelp-2.0.0.tar.gz.drv
-/nix/store/wfzmjlbqd4fazv5fryqsw3arbqkvm6d1-yazelix-core-0.1.0
-/nix/store/whaj2niz1wd3grgrhsn0vxpqbhrwz6m0-yazelix-core-0.1.0
-/nix/store/whid870sjs02lna7c5wjzkabzqsj6509-yazelix
-/nix/store/wl0rv6v2gh0x4cq311wl0cxnwi6qbkn9-yzx.drv
-/nix/store/wl49kffz26r3siwn1mxs9s4dmk6rw8gp-yazelix-core-0.1.0
-/nix/store/wlvmyf4z5blhp2cjv5vpkxd2jq7xdd32-yazelix-core-0.1.0
-/nix/store/wm5haawkk3l4y4mczraljadcx59dyz6r-yazelix.drv
-/nix/store/wqsifiawzkhgc3kdzkk7ll5v9g7pia19-yzx.drv
-/nix/store/wvyw1wl0brvf5ql95my06mdjaafw3djy-yazelix-core-0.1.0
-/nix/store/wx53ghr67rx5mszw4wqvq3l4l1a67gkn-yazelix-core-0.1.0
-/nix/store/wxil0nyk2w32az8m1q8kipi6y3gd7x71-yazelix-runtime
-/nix/store/x11r84jw66kb2g78hqy1q7rrsqa2avc8-yazelix.drv
-/nix/store/x49a7rk2g6p163x9vyaqjc0xd8vwlg5s-yazelix-core-0.1.0
-/nix/store/x4hwn0qmp5cgig334ijj8hdvxdivq0pm-yazelix-core-0.1.0.drv
-/nix/store/x74dymzhmrr0vc4v82zflyf9kpdsnb1r-yazelix-rust-core-source
-/nix/store/x7r33wi0ng47mvvd2nm72z0ljrbmv33s-yazelix-core-0.1.0
-/nix/store/xdwcllf2sj4x4d9855s7nqp73af7bn0d-yzx.drv
-/nix/store/xg63vwv5cp2f67y0pffz6r4na0qxdxr3-yazelix.drv
-/nix/store/xlm3mniz9s0wanmbvdnzvqc89z9q2pfr-yazelix-runtime-release-contracts.drv
-/nix/store/xn5ihvqz969akg1vpw6q0lhnamhilrlr-yazelix-core-0.1.0.drv
-/nix/store/xqjqnwbcjwpyf47d7xphn6295cjzykv7-yazelix.drv
-/nix/store/xrqqzzm9w5hzggl293k5shjgim1f6lv7-yazelix-runtime.drv
-/nix/store/y1bi19rs2na61jl8821kg9f1plfl1bfb-yazelix-zellij-popup-0.1.0
-/nix/store/y4348qn4afprxic8m6rxais40qnh00cl-yazelix_yazi_assets-0.1.0
-/nix/store/yaz2aqbwf5d0pr50blh3kg4qkyzjj71x-yzx.drv
-/nix/store/ydfw36nlq4slzk5pmgkarcmn6iifsj7y-yzx
-/nix/store/ygsh6fsxz69vhv3fnsha7c0ycrskllhx-yzx
-/nix/store/yz2223sp1d1wz2a483im1128nmbqwxh6-yazelix-core-0.1.0
-/nix/store/yzfak6xm72jamqvm6ca1ayzxqv8l43jw-either-1.16.0.drv
-/nix/store/yzx1bykapxdvq1g81ygk5n7vp95gxhqd-crate-ignore-0.4.25.tar.gz.drv
-/nix/store/z5182rdkv3j5418wxad8kr3fvhm8sk2d-yazelix-helix-25.7.1
-/nix/store/zidmq37id2yrvijpys0k9qzrklsijgmk-yzx.drv
-/nix/store/zpji39d116xr3q8nwxxw9lnbrpadk7si-yzx.drv
-/nix/store/zql7cj6j12kpcmiyivv5jhw5w36drfmy-yazelix-core-0.1.0.drv
-/nix/store/zrgy6ha5gnysj9x39gdf2xvyxiva8ka2-yazelix
-/nix/store/zrlwffhgz0c431lmalzgc1nk1rs0nbzk-yazelix-runtime.drv
-/nix/store/zy97ziv6isrrg34s8ry2q3rllwg4h5m0-yzx
-```
+- `.codex/config.toml` — `codex_config` / `ok` / `ok`
+- `.handoff/decisions/ADR-0001-kasetto-handoff-portability-unification.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/decisions/ADR-0002-migration-adoption-engine-v2.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/decisions/ADR-0003-catalog-first-control-plane.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/decisions/ADR-0004-two-plane-model-routing.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/decisions/ADR-0005-ruvector-ext-client-pairing.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/decisions/FINDING-0002-hf-ledger-residency-vs-repo-tier-a.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/decisions/TASK-0016-agent-lock-boundary.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/ledger.events.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/HANDOFF.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/AGENT-WEB-ACCESS-PLAN.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/dashboard-forge-loop.2026-06-05.backlog.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/dashboard-forge-loop.2026-06-05.loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/g2-native-mint.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/g2-native-mint.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/g2-native-mint.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/n8n-live-smoke-runbook.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/prev-loop.2026-06-17.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/prev-loop.2026-06-17.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/prev-loop.2026-06-17.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/prev-loop.2026-06-17.cycle-01-task-0001.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/prev-loop.2026-06-17.cycle-02-task-0002.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/profile-runtime.20260713.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/profile-runtime.20260713.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/secretd-provisioning-runbook.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0012.2026-06-14.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0012.2026-06-14.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0012.2026-06-14.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0019.2026-06-17.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0019.2026-06-17.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0019.2026-06-17.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0019.2026-06-17.combined-pr110-guardian.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0020.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0020.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0020.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0021.2026-06-23.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0021.2026-06-23.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/_done/task-0021.2026-06-23.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/backlog.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cli-tdd-backlog.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/01_architect_plan-blueprint-20260709.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/01_architect_plan-task0033-20260627.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/01_architect_plan-task0078-next-inventory-20260627-pre-sensitive-hints.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/02_implementer_log-blueprint-20260709.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/02_implementer_log-task0033-20260627.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/02_implementer_log-task0078-next-inventory-20260627-pre-sensitive-hints.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/03_guardian_report-blueprint-20260709.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/03_guardian_report-task0033-20260627.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/03_guardian_report-task0078-next-inventory-20260627-pre-sensitive-hints.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/pre-openrouter.20260714.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/pre-openrouter.20260714.01_architect_plan_fleet_agent_env.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/pre-openrouter.20260714.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/prev-cycle.20260709.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/prev-cycle.20260709.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/prev-cycle.20260709.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/prev-cycle.20260712.01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/prev-cycle.20260712.02_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/cycle/_done/prev-cycle.20260712.03_guardian_report.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/eval/README.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/eval/model-lane-comparison-codex-vs-opus.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/evaluation.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/findings/health.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/kache_nu_enforce/00_baseline.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/kache_nu_enforce/00_impact_map.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/kache_nu_enforce/01_architect_plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/kache_nu_enforce/02_workflow_cache_implementer_log.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/HANDOFF.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/LESSONS.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/agent-backend-matrix.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/agent-interop.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/dimensions.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/evaluation.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/architecture-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/architecture-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/architecture-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/architecture-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/architecture-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-envctl-cycle2.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-envctl.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/autoresearch-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/convergence-analysis-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/distributed-compute-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/distributed-compute-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/distributed-compute-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/distributed-compute-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/distributed-compute-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/distributed-compute-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/filesystem-layout-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/filesystem-layout-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/filesystem-layout-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/filesystem-layout-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/filesystem-layout-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/filesystem-layout-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/fleet-north-star-map.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/governance-config-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/governance-config-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/governance-config-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/governance-config-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/governance-config-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/governance-config-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/memory-vector-intelligence-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/memory-vector-intelligence-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/memory-vector-intelligence-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/memory-vector-intelligence-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/memory-vector-intelligence-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/memory-vector-intelligence-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/prompt-architecture-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/prompt-architecture-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/prompt-architecture-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/prompt-architecture-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/prompt-architecture-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/prompt-architecture-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/resolved-decisions.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/rules-policy-org-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/rules-policy-org-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/rules-policy-org-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/rules-policy-org-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/rules-policy-org-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/rules-policy-org-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/test-strategy-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/test-strategy-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/test-strategy-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/test-strategy-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/test-strategy-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/test-strategy-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/union-handoff-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/verdicts-agentic-os-blueprint.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/findings/verdicts.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/envctl-cycle2.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/envctl-cycle2.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/envctl.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/envctl.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/grit.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/grit.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/handoff.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/handoff.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/icm.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/icm.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/prompt-hub.cross-repo.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/prompt-hub.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/prompt-hub.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/rusty-idd.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/rusty-idd.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/target-dag.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/weave.diff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/graph/weave.graph.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/LESSONS.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/agent-backend-matrix.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/agent-interop.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/dimensions.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/evaluation.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/findings/verdicts.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/graph/target-dag.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/proposed-upgrades.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/risk-policy.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/targets.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/fleet-convergence-first-run/README.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/agent-backend-matrix.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/agent-interop.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/dimensions.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/evaluation.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/findings/verdicts.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/graph/target-dag.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/risk-policy.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/plan/targets.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/.handoff/loop/proposed-upgrades.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/grit/README.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/HANDOFF.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/LESSONS.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/agent-backend-matrix.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/agent-interop.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/dimensions.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/evaluation.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/findings/verdicts.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/graph/target-dag.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/risk-policy.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/.handoff/loop/plan/targets.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/icm/README.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/LESSONS.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/agent-backend-matrix.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/agent-interop.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/dimensions.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/evaluation.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/findings/verdicts.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/graph/target-dag.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/risk-policy.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/targets.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/instances/prompt-hub/README.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/proposed-upgrades.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ADR-DRAFT-handoff-rusty-idd-union.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ADR-DRAFT-rusty-idd-convergence-boundary.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ADR-DRAFT-weave-a2a-interop.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ADR-DRAFT-weave-cross-vendor-model-lane.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ROADMAP-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ROADMAP-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ROADMAP-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ROADMAP-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/ROADMAP-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/TASK-0078-migration-adoption-engine-v2-design.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/adr-draft-grit-reconciler.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/adr-draft-prompt-hub-goal-artifact.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agent-run-ledger-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agent-run-ledger-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agent-run-ledger-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agent-run-ledger-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agent-run-ledger-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agent-run-ledger-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/agentic-os-blueprint-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/codemap-grit.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/codemap-handoff.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/codemap-icm.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/codemap-prompt-hub.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/codemap-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/codemap-weave.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/grit-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/handoff-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/icm-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/north-star-DRAFT.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/prompt-hub-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/rusty-idd-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/union-plan-handoff-rusty-idd.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/reports/weave-plan.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/agentic-planning-trends-2026-06.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/grit.trends.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/handoff.trends.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/icm.trends.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/plan-architecture-loop-distributed-compute-2026-06.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/prompt-hub.trends.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/rusty-idd.trends.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/research/sources-envctl-cycle2.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-envctl.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-grit.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-handoff.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-icm.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-prompt-hub.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-rusty-idd.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/sources-weave.jsonl` — `handoff_ledger_export` / `ok` / `not_parsed`
+- `.handoff/loop/plan/research/weave.trends.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/risk-policy.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/plan/targets.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/proposed-upgrades.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/reports/cross-repo-refs.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/reports/runbook-audit-20260713.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/HANDOFF.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/baseline.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/loop_state.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/merge-ledger.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/parity-ledger.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/reports/inventory.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/reports/research.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/loop/rust-port/target-architecture.md` — `handoff_report` / `ok` / `ok`
+- `.handoff/tasks/TASK-0001.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0002.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0003.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0004.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0005.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0006.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0007.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0008.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0009.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0010.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0011.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0012.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0013.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0014.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0015.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0016.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0017.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0018.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0019.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0020.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0021.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0022.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0023.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0024.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0025.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0026.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0027.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0028.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0029.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0030.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0031-PR2.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0031-PR2C.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0031.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0032.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0033.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0034.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0035.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0036.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0037.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0038.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0039.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0041.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0042.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0043.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0044.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0045.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0046.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0047.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0048.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0049.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0050.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0051.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0052.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0053.task.json` — `handoff_task` / `ok` / `ok`
+- `.handoff/tasks/TASK-0078.task.json` — `handoff_task` / `ok` / `ok`
+- `.mcp.json` — `mcp_config` / `ok` / `ok`
+- `agent-env.lock` — `agent_env_lock` / `ok` / `ok`
+- `agent-env.yaml` — `agent_env` / `ok` / `ok`
+- `crates/engine/src/layout.rs` — `path_registry` / `ok` / `not_parsed`
+- `crates/secretd/src/config.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secretd/src/conv.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secretd/src/edge/tls.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secretd/src/grpc.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secretd/src/main.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secretd/src/proxy.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secrets-engine/src/broker/gate.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secrets-engine/src/inject.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secrets-engine/src/lib.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secrets-engine/src/mint_github.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secrets-engine/src/paths.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `crates/secrets-engine/src/seam.rs` — `secrets_env_schema` / `ok` / `not_parsed`
+- `home/.config/ghostty/config.ghostty` — `envctl_home_ghostty_config` / `ok` / `not_parsed`
+- `home/.config/kasetto/kasetto.yaml` — `envctl_home_kasetto_config` / `ok` / `ok`
+- `home/.config/nushell/config.nu` — `envctl_home_nushell_config` / `ok` / `ok`
+- `home/.config/nushell/profile-path.nu` — `envctl_home_nushell_path` / `ok` / `ok`
+- `home/.config/rtk/config.toml` — `envctl_home_rtk_config` / `ok` / `ok`
+- `home/.config/rtk/filters.toml` — `envctl_home_rtk_config` / `ok` / `ok`
+- `home/.config/yazelix/configs/zellij/layouts/mission-control.kdl` — `envctl_home_yazelix_config` / `ok` / `ok`
+- `home/.config/yazelix/helix/steel_plugins/README.md` — `envctl_home_yazelix_config` / `ok` / `ok`
+- `home/.config/yazelix/settings.jsonc` — `envctl_home_yazelix_config` / `ok` / `ok`
+- `home/.config/yazelix/shell_bash.sh` — `envctl_home_yazelix_config` / `ok` / `not_parsed`
+- `home/.config/yazelix/shell_nu.nu` — `envctl_home_yazelix_config` / `ok` / `ok`
+- `home/.config/yazelix/shell_zsh.zsh` — `envctl_home_yazelix_config` / `ok` / `not_parsed`
+- `home/.config/yazelix/terminal_ghostty.conf` — `envctl_home_yazelix_config` / `ok` / `ok`
+- `home/.config/yazelix/tombi.toml` — `envctl_home_yazelix_config` / `ok` / `ok`
+- `home/.gitconfig` — `envctl_home_git_config` / `ok` / `not_parsed`
+- `manifest/agent-env.toml` — `manifest` / `ok` / `ok`
+- `manifest/ai-clis.toml` — `manifest` / `ok` / `ok`
+- `manifest/apt-base.toml` — `manifest` / `ok` / `ok`
+- `manifest/base.toml` — `manifest` / `ok` / `ok`
+- `manifest/boot-repair.toml` — `manifest` / `ok` / `ok`
+- `manifest/cognitum-seed-autounlock.toml` — `manifest` / `ok` / `ok`
+- `manifest/cognitum-seed-net.toml` — `manifest` / `ok` / `ok`
+- `manifest/cognitum-seed-trust.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/cache-agent-env.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/cache-jna.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/cache-starship.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/cache-wasm-pack.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/cargo-audit.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/codex-global-baseline.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/envctl-cli.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/epic-h-toolchains.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/handoff-hf.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/just.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/meta-core-clis.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/meta-env-plugin.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/meta-session-env.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/portability-links.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/postgres-ruvector.toml` — `manifest` / `ok` / `ok`
+- `manifest/components.d/secretd.toml` — `manifest` / `ok` / `ok`
+- `manifest/dashboard.toml` — `manifest` / `ok` / `ok`
+- `manifest/desktop-app.toml` — `manifest` / `ok` / `ok`
+- `manifest/dev-tools.toml` — `manifest` / `ok` / `ok`
+- `manifest/env-ctl.toml` — `manifest` / `ok` / `ok`
+- `manifest/envctl.lock` — `envctl_lock` / `ok` / `ok`
+- `manifest/gpu.toml` — `manifest` / `ok` / `ok`
+- `manifest/grit.toml` — `manifest` / `ok` / `ok`
+- `manifest/n8n-mcp.toml` — `manifest` / `ok` / `ok`
+- `manifest/nix-yazelix.toml` — `manifest` / `ok` / `ok`
+- `manifest/odysseus.toml` — `manifest` / `ok` / `ok`
+- `manifest/prompt_hub.toml` — `manifest` / `ok` / `ok`
+- `manifest/rusty-idd.toml` — `manifest` / `ok` / `ok`
+- `manifest/sqld.toml` — `manifest` / `ok` / `ok`
+- `mcp_hub/registry.json` — `hub_registry` / `ok` / `ok`
 
-## Direct Catalog Scan Files
+## Environment-variable names
 
-These files are database-bound through the direct catalog scan path.
-
-```text
-.handoff/decisions/ADR-0001-kasetto-handoff-portability-unification.md
-.handoff/decisions/ADR-0002-migration-adoption-engine-v2.md
-.handoff/decisions/ADR-0003-catalog-first-control-plane.md
-.handoff/decisions/FINDING-0002-hf-ledger-residency-vs-repo-tier-a.md
-.handoff/decisions/TASK-0016-agent-lock-boundary.md
-.handoff/ledger.events.jsonl
-.handoff/loop/HANDOFF.md
-.handoff/loop/_done/AGENT-WEB-ACCESS-PLAN.md
-.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.01_architect_plan.md
-.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.02_implementer_log.md
-.handoff/loop/_done/adr-0003-catalog-phase1.20260628T233118Z.03_guardian_report.md
-.handoff/loop/_done/dashboard-forge-loop.2026-06-05.backlog.md
-.handoff/loop/_done/dashboard-forge-loop.2026-06-05.loop_state.md
-.handoff/loop/_done/g2-native-mint.01_architect_plan.md
-.handoff/loop/_done/g2-native-mint.02_implementer_log.md
-.handoff/loop/_done/g2-native-mint.03_guardian_report.md
-.handoff/loop/_done/n8n-live-smoke-runbook.md
-.handoff/loop/_done/prev-loop.2026-06-17.01_architect_plan.md
-.handoff/loop/_done/prev-loop.2026-06-17.02_implementer_log.md
-.handoff/loop/_done/prev-loop.2026-06-17.03_guardian_report.md
-.handoff/loop/_done/prev-loop.2026-06-17.cycle-01-task-0001.md
-.handoff/loop/_done/prev-loop.2026-06-17.cycle-02-task-0002.md
-.handoff/loop/_done/secretd-provisioning-runbook.md
-.handoff/loop/_done/task-0012.2026-06-14.01_architect_plan.md
-.handoff/loop/_done/task-0012.2026-06-14.02_implementer_log.md
-.handoff/loop/_done/task-0012.2026-06-14.03_guardian_report.md
-.handoff/loop/_done/task-0019.2026-06-17.01_architect_plan.md
-.handoff/loop/_done/task-0019.2026-06-17.02_implementer_log.md
-.handoff/loop/_done/task-0019.2026-06-17.03_guardian_report.md
-.handoff/loop/_done/task-0019.2026-06-17.combined-pr110-guardian.md
-.handoff/loop/_done/task-0020.01_architect_plan.md
-.handoff/loop/_done/task-0020.02_implementer_log.md
-.handoff/loop/_done/task-0020.03_guardian_report.md
-.handoff/loop/_done/task-0021.2026-06-23.01_architect_plan.md
-.handoff/loop/_done/task-0021.2026-06-23.02_implementer_log.md
-.handoff/loop/_done/task-0021.2026-06-23.03_guardian_report.md
-.handoff/loop/backlog.md
-.handoff/loop/cli-tdd-backlog.md
-.handoff/loop/cycle/01_architect_plan.md
-.handoff/loop/cycle/02_implementer_log.md
-.handoff/loop/cycle/03_guardian_report.md
-.handoff/loop/cycle/_done/01_architect_plan-task0033-20260627.md
-.handoff/loop/cycle/_done/01_architect_plan-task0078-next-inventory-20260627-pre-sensitive-hints.md
-.handoff/loop/cycle/_done/02_implementer_log-task0033-20260627.md
-.handoff/loop/cycle/_done/02_implementer_log-task0078-next-inventory-20260627-pre-sensitive-hints.md
-.handoff/loop/cycle/_done/03_guardian_report-task0033-20260627.md
-.handoff/loop/cycle/_done/03_guardian_report-task0078-next-inventory-20260627-pre-sensitive-hints.md
-.handoff/loop/eval/README.md
-.handoff/loop/eval/model-lane-comparison-codex-vs-opus.md
-.handoff/loop/evaluation.md
-.handoff/loop/loop_state.md
-.handoff/loop/plan/HANDOFF.md
-.handoff/loop/plan/LESSONS.md
-.handoff/loop/plan/agent-backend-matrix.md
-.handoff/loop/plan/agent-interop.md
-.handoff/loop/plan/dimensions.md
-.handoff/loop/plan/evaluation.md
-.handoff/loop/plan/findings/architecture-grit.md
-.handoff/loop/plan/findings/architecture-handoff.md
-.handoff/loop/plan/findings/architecture-prompt-hub.md
-.handoff/loop/plan/findings/architecture-rusty-idd.md
-.handoff/loop/plan/findings/architecture-weave.md
-.handoff/loop/plan/findings/autoresearch-grit.md
-.handoff/loop/plan/findings/autoresearch-handoff.md
-.handoff/loop/plan/findings/autoresearch-icm.md
-.handoff/loop/plan/findings/autoresearch-prompt-hub.md
-.handoff/loop/plan/findings/autoresearch-rusty-idd.md
-.handoff/loop/plan/findings/autoresearch-weave.md
-.handoff/loop/plan/findings/convergence-analysis-icm.md
-.handoff/loop/plan/findings/distributed-compute-grit.md
-.handoff/loop/plan/findings/distributed-compute-handoff.md
-.handoff/loop/plan/findings/distributed-compute-icm.md
-.handoff/loop/plan/findings/distributed-compute-prompt-hub.md
-.handoff/loop/plan/findings/distributed-compute-rusty-idd.md
-.handoff/loop/plan/findings/distributed-compute-weave.md
-.handoff/loop/plan/findings/filesystem-layout-grit.md
-.handoff/loop/plan/findings/filesystem-layout-handoff.md
-.handoff/loop/plan/findings/filesystem-layout-icm.md
-.handoff/loop/plan/findings/filesystem-layout-prompt-hub.md
-.handoff/loop/plan/findings/filesystem-layout-rusty-idd.md
-.handoff/loop/plan/findings/filesystem-layout-weave.md
-.handoff/loop/plan/findings/fleet-north-star-map.md
-.handoff/loop/plan/findings/governance-config-grit.md
-.handoff/loop/plan/findings/governance-config-handoff.md
-.handoff/loop/plan/findings/governance-config-icm.md
-.handoff/loop/plan/findings/governance-config-prompt-hub.md
-.handoff/loop/plan/findings/governance-config-rusty-idd.md
-.handoff/loop/plan/findings/governance-config-weave.md
-.handoff/loop/plan/findings/memory-vector-intelligence-grit.md
-.handoff/loop/plan/findings/memory-vector-intelligence-handoff.md
-.handoff/loop/plan/findings/memory-vector-intelligence-icm.md
-.handoff/loop/plan/findings/memory-vector-intelligence-prompt-hub.md
-.handoff/loop/plan/findings/memory-vector-intelligence-rusty-idd.md
-.handoff/loop/plan/findings/memory-vector-intelligence-weave.md
-.handoff/loop/plan/findings/prompt-architecture-grit.md
-.handoff/loop/plan/findings/prompt-architecture-handoff.md
-.handoff/loop/plan/findings/prompt-architecture-icm.md
-.handoff/loop/plan/findings/prompt-architecture-prompt-hub.md
-.handoff/loop/plan/findings/prompt-architecture-rusty-idd.md
-.handoff/loop/plan/findings/prompt-architecture-weave.md
-.handoff/loop/plan/findings/resolved-decisions.md
-.handoff/loop/plan/findings/rules-policy-org-grit.md
-.handoff/loop/plan/findings/rules-policy-org-handoff.md
-.handoff/loop/plan/findings/rules-policy-org-icm.md
-.handoff/loop/plan/findings/rules-policy-org-prompt-hub.md
-.handoff/loop/plan/findings/rules-policy-org-rusty-idd.md
-.handoff/loop/plan/findings/rules-policy-org-weave.md
-.handoff/loop/plan/findings/test-strategy-grit.md
-.handoff/loop/plan/findings/test-strategy-handoff.md
-.handoff/loop/plan/findings/test-strategy-icm.md
-.handoff/loop/plan/findings/test-strategy-prompt-hub.md
-.handoff/loop/plan/findings/test-strategy-rusty-idd.md
-.handoff/loop/plan/findings/test-strategy-weave.md
-.handoff/loop/plan/findings/union-handoff-rusty-idd.md
-.handoff/loop/plan/findings/verdicts.md
-.handoff/loop/plan/graph/grit.diff.md
-.handoff/loop/plan/graph/grit.graph.md
-.handoff/loop/plan/graph/handoff.diff.md
-.handoff/loop/plan/graph/handoff.graph.md
-.handoff/loop/plan/graph/icm.diff.md
-.handoff/loop/plan/graph/icm.graph.md
-.handoff/loop/plan/graph/prompt-hub.cross-repo.md
-.handoff/loop/plan/graph/prompt-hub.diff.md
-.handoff/loop/plan/graph/prompt-hub.graph.md
-.handoff/loop/plan/graph/rusty-idd.diff.md
-.handoff/loop/plan/graph/rusty-idd.graph.md
-.handoff/loop/plan/graph/rusty-idd.md
-.handoff/loop/plan/graph/target-dag.md
-.handoff/loop/plan/graph/weave.diff.md
-.handoff/loop/plan/graph/weave.graph.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/LESSONS.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/agent-backend-matrix.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/agent-interop.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/dimensions.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/evaluation.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/findings/verdicts.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/graph/target-dag.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/loop_state.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/proposed-upgrades.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/risk-policy.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/.handoff/loop/plan/targets.md
-.handoff/loop/plan/instances/fleet-convergence-first-run/README.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/agent-backend-matrix.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/agent-interop.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/dimensions.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/evaluation.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/findings/verdicts.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/graph/target-dag.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/loop_state.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/risk-policy.md
-.handoff/loop/plan/instances/grit/.handoff/loop/plan/targets.md
-.handoff/loop/plan/instances/grit/.handoff/loop/proposed-upgrades.md
-.handoff/loop/plan/instances/grit/README.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/HANDOFF.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/LESSONS.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/agent-backend-matrix.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/agent-interop.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/dimensions.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/evaluation.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/findings/verdicts.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/graph/target-dag.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/loop_state.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/risk-policy.md
-.handoff/loop/plan/instances/icm/.handoff/loop/plan/targets.md
-.handoff/loop/plan/instances/icm/README.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/LESSONS.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/agent-backend-matrix.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/agent-interop.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/dimensions.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/evaluation.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/findings/verdicts.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/graph/target-dag.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/loop_state.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/risk-policy.md
-.handoff/loop/plan/instances/prompt-hub/.handoff/loop/plan/targets.md
-.handoff/loop/plan/instances/prompt-hub/README.md
-.handoff/loop/plan/loop_state.md
-.handoff/loop/plan/proposed-upgrades.md
-.handoff/loop/plan/reports/ADR-DRAFT-handoff-rusty-idd-union.md
-.handoff/loop/plan/reports/ADR-DRAFT-rusty-idd-convergence-boundary.md
-.handoff/loop/plan/reports/ADR-DRAFT-weave-a2a-interop.md
-.handoff/loop/plan/reports/ADR-DRAFT-weave-cross-vendor-model-lane.md
-.handoff/loop/plan/reports/ROADMAP-grit.md
-.handoff/loop/plan/reports/ROADMAP-handoff.md
-.handoff/loop/plan/reports/ROADMAP-prompt-hub.md
-.handoff/loop/plan/reports/ROADMAP-rusty-idd.md
-.handoff/loop/plan/reports/ROADMAP-weave.md
-.handoff/loop/plan/reports/TASK-0078-migration-adoption-engine-v2-design.md
-.handoff/loop/plan/reports/adr-draft-grit-reconciler.md
-.handoff/loop/plan/reports/adr-draft-prompt-hub-goal-artifact.md
-.handoff/loop/plan/reports/agent-run-ledger-grit.md
-.handoff/loop/plan/reports/agent-run-ledger-handoff.md
-.handoff/loop/plan/reports/agent-run-ledger-icm.md
-.handoff/loop/plan/reports/agent-run-ledger-prompt-hub.md
-.handoff/loop/plan/reports/agent-run-ledger-rusty-idd.md
-.handoff/loop/plan/reports/agent-run-ledger-weave.md
-.handoff/loop/plan/reports/codemap-grit.md
-.handoff/loop/plan/reports/codemap-handoff.md
-.handoff/loop/plan/reports/codemap-icm.md
-.handoff/loop/plan/reports/codemap-prompt-hub.md
-.handoff/loop/plan/reports/codemap-rusty-idd.md
-.handoff/loop/plan/reports/codemap-weave.md
-.handoff/loop/plan/reports/grit-plan.md
-.handoff/loop/plan/reports/handoff-plan.md
-.handoff/loop/plan/reports/icm-plan.md
-.handoff/loop/plan/reports/north-star-DRAFT.md
-.handoff/loop/plan/reports/prompt-hub-plan.md
-.handoff/loop/plan/reports/rusty-idd-plan.md
-.handoff/loop/plan/reports/union-plan-handoff-rusty-idd.md
-.handoff/loop/plan/reports/weave-plan.md
-.handoff/loop/plan/research/agentic-planning-trends-2026-06.md
-.handoff/loop/plan/research/grit.trends.md
-.handoff/loop/plan/research/handoff.trends.md
-.handoff/loop/plan/research/icm.trends.md
-.handoff/loop/plan/research/plan-architecture-loop-distributed-compute-2026-06.md
-.handoff/loop/plan/research/prompt-hub.trends.md
-.handoff/loop/plan/research/rusty-idd.trends.md
-.handoff/loop/plan/research/sources-grit.jsonl
-.handoff/loop/plan/research/sources-handoff.jsonl
-.handoff/loop/plan/research/sources-icm.jsonl
-.handoff/loop/plan/research/sources-prompt-hub.jsonl
-.handoff/loop/plan/research/sources-rusty-idd.jsonl
-.handoff/loop/plan/research/sources-weave.jsonl
-.handoff/loop/plan/research/weave.trends.md
-.handoff/loop/plan/risk-policy.md
-.handoff/loop/plan/targets.md
-.handoff/loop/proposed-upgrades.md
-.handoff/loop/rust-port/HANDOFF.md
-.handoff/loop/rust-port/baseline.md
-.handoff/loop/rust-port/loop_state.md
-.handoff/loop/rust-port/merge-ledger.md
-.handoff/loop/rust-port/parity-ledger.md
-.handoff/loop/rust-port/reports/inventory.md
-.handoff/loop/rust-port/reports/research.md
-.handoff/loop/rust-port/target-architecture.md
-.handoff/tasks/TASK-0001.task.json
-.handoff/tasks/TASK-0002.task.json
-.handoff/tasks/TASK-0003.task.json
-.handoff/tasks/TASK-0004.task.json
-.handoff/tasks/TASK-0005.task.json
-.handoff/tasks/TASK-0006.task.json
-.handoff/tasks/TASK-0007.task.json
-.handoff/tasks/TASK-0008.task.json
-.handoff/tasks/TASK-0009.task.json
-.handoff/tasks/TASK-0010.task.json
-.handoff/tasks/TASK-0011.task.json
-.handoff/tasks/TASK-0012.task.json
-.handoff/tasks/TASK-0013.task.json
-.handoff/tasks/TASK-0014.task.json
-.handoff/tasks/TASK-0015.task.json
-.handoff/tasks/TASK-0016.task.json
-.handoff/tasks/TASK-0017.task.json
-.handoff/tasks/TASK-0018.task.json
-.handoff/tasks/TASK-0019.task.json
-.handoff/tasks/TASK-0020.task.json
-.handoff/tasks/TASK-0021.task.json
-.handoff/tasks/TASK-0022.task.json
-.handoff/tasks/TASK-0023.task.json
-.handoff/tasks/TASK-0024.task.json
-.handoff/tasks/TASK-0025.task.json
-.handoff/tasks/TASK-0026.task.json
-.handoff/tasks/TASK-0027.task.json
-.handoff/tasks/TASK-0028.task.json
-.handoff/tasks/TASK-0029.task.json
-.handoff/tasks/TASK-0030.task.json
-.handoff/tasks/TASK-0031-PR2.task.json
-.handoff/tasks/TASK-0031-PR2C.task.json
-.handoff/tasks/TASK-0031.task.json
-.handoff/tasks/TASK-0032.task.json
-.handoff/tasks/TASK-0033.task.json
-.handoff/tasks/TASK-0034.task.json
-.handoff/tasks/TASK-0035.task.json
-.handoff/tasks/TASK-0036.task.json
-.handoff/tasks/TASK-0037.task.json
-.handoff/tasks/TASK-0038.task.json
-.handoff/tasks/TASK-0039.task.json
-.handoff/tasks/TASK-0041.task.json
-.handoff/tasks/TASK-0042.task.json
-.handoff/tasks/TASK-0043.task.json
-.handoff/tasks/TASK-0044.task.json
-.handoff/tasks/TASK-0045.task.json
-.handoff/tasks/TASK-0046.task.json
-.handoff/tasks/TASK-0047.task.json
-.handoff/tasks/TASK-0048.task.json
-.handoff/tasks/TASK-0049.task.json
-.handoff/tasks/TASK-0050.task.json
-.handoff/tasks/TASK-0051.task.json
-.handoff/tasks/TASK-0052.task.json
-.handoff/tasks/TASK-0053.task.json
-.handoff/tasks/TASK-0078.task.json
-.mcp.json
-agent-env.lock
-agent-env.yaml
-crates/engine/src/layout.rs
-crates/secretd/src/config.rs
-crates/secretd/src/conv.rs
-crates/secretd/src/edge/tls.rs
-crates/secretd/src/grpc.rs
-crates/secretd/src/main.rs
-crates/secretd/src/proxy.rs
-crates/secrets-engine/src/broker/gate.rs
-crates/secrets-engine/src/inject.rs
-crates/secrets-engine/src/lib.rs
-crates/secrets-engine/src/mint_github.rs
-crates/secrets-engine/src/paths.rs
-crates/secrets-engine/src/seam.rs
-manifest/agent-env.toml
-manifest/ai-clis.toml
-manifest/apt-base.toml
-manifest/base.toml
-manifest/boot-repair.toml
-manifest/cognitum-seed-autounlock.toml
-manifest/cognitum-seed-net.toml
-manifest/cognitum-seed-trust.toml
-manifest/components.d/cache-agent-env.toml
-manifest/components.d/cache-jna.toml
-manifest/components.d/cache-starship.toml
-manifest/components.d/cache-wasm-pack.toml
-manifest/components.d/codex-global-baseline.toml
-manifest/components.d/epic-h-toolchains.toml
-manifest/components.d/handoff-hf.toml
-manifest/components.d/just.toml
-manifest/components.d/meta-core-clis.toml
-manifest/components.d/meta-env-plugin.toml
-manifest/components.d/meta-session-env.toml
-manifest/components.d/ohmyzsh.toml
-manifest/components.d/portability-links.toml
-manifest/components.d/secretd.toml
-manifest/components.d/zsh-migration-launcher.toml
-manifest/components.d/zsh.toml
-manifest/dashboard.toml
-manifest/desktop-app.toml
-manifest/dev-tools.toml
-manifest/env-ctl.toml
-manifest/envctl.lock
-manifest/gpu.toml
-manifest/grit.toml
-manifest/n8n-mcp.toml
-manifest/nix-yazelix.toml
-manifest/odysseus.toml
-manifest/prompt_hub.toml
-manifest/rusty-idd.toml
-manifest/sqld.toml
-mcp_hub/registry.json
-```
+- `ANTHROPIC_API_KEY` — `secrets_env_schema` (`crates/secretd/src/conv.rs`)
+- `ANTHROPIC_API_KEY` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `ANTHROPIC_BASE_URL` — `secrets_env_schema` (`crates/secretd/src/conv.rs`)
+- `ANTHROPIC_BASE_URL` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `ENVCTL_BIN_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_CACHE_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_ENVCTL_LIB_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_ENVCTL_SHARE_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_ETC` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_ETC_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_GITHUB_API_BASE` — `secrets_env_schema` (`crates/secretd/src/grpc.rs`)
+- `ENVCTL_GITHUB_API_BASE` — `secrets_env_schema` (`crates/secrets-engine/src/mint_github.rs`)
+- `ENVCTL_GITHUB_APP_SECRET` — `secrets_env_schema` (`crates/secretd/src/grpc.rs`)
+- `ENVCTL_LIB_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_META_ROOT` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_OPT_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_REPO_STORE` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_RUN_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_SECRETS_BIN_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_SEED_API` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `ENVCTL_SEED_CA` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_SEED_CA` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `ENVCTL_SEED_KEK_CONTEXT` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `ENVCTL_SEED_PUBKEY` — `secrets_env_schema` (`crates/secrets-engine/src/broker/gate.rs`)
+- `ENVCTL_SEED_PUBKEY` — `secrets_env_schema` (`crates/secrets-engine/src/lib.rs`)
+- `ENVCTL_SEED_PUBKEY` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `ENVCTL_SEED_TOKEN` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `ENVCTL_SEED_TOKEN_FILE` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `ENVCTL_SHARE_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_STATE_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_SYSTEMD_USER_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_TMP_DIR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_BIN` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_GAMES` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_INCLUDE` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LIB` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LIB64` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LIBEXEC` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL_BIN` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL_INCLUDE` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL_LIB` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL_LIB64` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL_SBIN` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_LOCAL_SHARE` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_SBIN` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_SHARE` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_SHARE_MAN` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_USR_SRC` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_VAR` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_VAR_CACHE` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_VAR_LIB` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_VAR_LOG` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_XDG_CACHE_HOME` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_XDG_CONFIG_HOME` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_XDG_DATA_HOME` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_XDG_STATE_HOME` — `layout` (`crates/engine/src/layout.rs`)
+- `ENV_BACKEND` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `ENV_CONFIG` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `ENV_TOKEN` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `ENV_TOKEN_FILE` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `ENV_URL` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `GH_TOKEN` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `GH_TOKEN` — `secrets_env_schema` (`crates/secrets-engine/src/lib.rs`)
+- `GITHUB_API_URL` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `GITHUB_TOKEN` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `GITHUB_TOKEN` — `secrets_env_schema` (`crates/secrets-engine/src/lib.rs`)
+- `HOME` — `secrets_env_schema` (`crates/secrets-engine/src/paths.rs`)
+- `HOME` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `HTTPS_PROXY` — `secrets_env_schema` (`crates/secretd/src/proxy.rs`)
+- `HTTPS_PROXY` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `HTTPS_PROXY` — `secrets_env_schema` (`crates/secrets-engine/src/lib.rs`)
+- `LLM_API_KEY` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `META_ROOT` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `META_ROOT` — `secrets_env_schema` (`crates/secretd/src/edge/tls.rs`)
+- `META_ROOT` — `secrets_env_schema` (`crates/secrets-engine/src/paths.rs`)
+- `META_ROOT` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `NODE_EXTRA_CA_CERTS` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `OPENAI_API_KEY` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `OPENAI_BASE_URL` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `PATH` — `secrets_env_schema` (`crates/secrets-engine/src/lib.rs`)
+- `REQUESTS_CA_BUNDLE` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `REVOKE_TOKEN` — `secrets_env_schema` (`crates/secrets-engine/src/mint_github.rs`)
+- `SECRETD_CONFIG` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_EDGE_BIND_ADDR` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_EDGE_CLIENT_CA_PATH` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_EDGE_CLIENT_REVOCATIONS_PATH` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_EDGE_ENABLED` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_EDGE_REQUIRE_CLIENT_CERT` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_LIBSQL_AUTH_TOKEN` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_LIBSQL_AUTH_TOKEN_FILE` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_LIBSQL_URL` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_OPERATOR_AUTHORIZER_URL` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_REQUIRE_MLOCK` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_REQUIRE_MLOCK` — `secrets_env_schema` (`crates/secretd/src/main.rs`)
+- `SECRETD_STORE_BACKEND` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SECRETD_TOPOLOGY` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
+- `SSL_CERT_FILE` — `secrets_env_schema` (`crates/secrets-engine/src/inject.rs`)
+- `XDG_CONFIG_HOME` — `secrets_env_schema` (`crates/secrets-engine/src/paths.rs`)
+- `XDG_DATA_HOME` — `secrets_env_schema` (`crates/secrets-engine/src/paths.rs`)
+- `XDG_DATA_HOME` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
+- `XDG_RUNTIME_DIR` — `secrets_env_schema` (`crates/secrets-engine/src/paths.rs`)
+- `XDG_STATE_HOME` — `secrets_env_schema` (`crates/secrets-engine/src/paths.rs`)

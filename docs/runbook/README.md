@@ -124,7 +124,7 @@ The harness has two operator-facing prompt paths and they are one contract:
 .codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md
 ```
 
-The active host runtime remains `/home/flexnetos/.codex/config.toml`. Repository
+The active host runtime remains `/run/user/1001/yazelix/profile-runtime/codex/config.toml`. Repository
 profiles model that runtime for reproducible harness execution:
 `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`,
 `default_permissions = ":danger-full-access"`, and retired hooks disabled.
@@ -163,7 +163,7 @@ cargo clippy --manifest-path home/agent-env/codex-harness/Cargo.toml \
 cargo run --quiet --manifest-path home/agent-env/codex-harness/Cargo.toml \
   --bin codex-harness-prompt-review -- \
   .codex/prompts/prompt:codex-gpt-harness.prompt.md
-codex execpolicy check --pretty --rules home/.codex/rules/no-yolo.rules -- \
+codex execpolicy check --pretty --rules profile-runtime/codex/rules/no-yolo.rules -- \
   codex --dangerously-bypass-approvals-and-sandbox
 ```
 

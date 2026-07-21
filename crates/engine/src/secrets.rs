@@ -13,57 +13,24 @@
 //! divergence structurally impossible and adds ZERO crate deps.
 use crate::{Event, EventSink};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use zeroize::Zeroizing;
 
-/// Resolve the `secretctl` binary, fail-closed (returns `None` if it cannot be found):
-/// (a) alongside the current executable when that executable is already under `$META_ROOT`,
-/// (b) `$META_ROOT/usr/bin/secretctl` (the canonical envctl exposure prefix),
-/// (c) `$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl` (private canonical install),
-/// (d) `$META_ROOT/.toolchains/secrets/bin/secretctl` (legacy manifest prefix), and
-/// (e) the first `secretctl` on `PATH` whose resolved target is still under `$META_ROOT`.
-/// Host-global user-local and Cargo-home copies are intentionally ignored.
+/// Resolve the `secretctl` binary through the sole installed-runtime owner.
+/// The returned path always remains profile-addressed; store provenance is a
+/// profile-health concern and must never replace the profile frontdoor here.
 fn resolve_secretctl() -> Option<PathBuf> {
-    let layout = crate::layout::MetaLayout::from_env_or_default();
-    let meta_root = canonical_or_self(layout.meta_root().to_path_buf());
-
-    // (a) alongside current_exe, but only when the resolved sibling remains meta-hosted.
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            if let Some(path) = existing_meta_file(dir.join("secretctl"), &meta_root) {
-                return Some(path);
-            }
-        }
-    }
-
-    // (b-d) explicit meta-owned prefixes.
-    for cand in [
-        layout.bin().join("secretctl"),
-        layout.secrets_libexec().join("secretctl"),
-        layout.legacy_secrets_bin().join("secretctl"),
-    ] {
-        if let Some(path) = existing_meta_file(cand, &meta_root) {
-            return Some(path);
-        }
-    }
-
-    // (e) PATH compatibility is still allowed only for a meta-hosted target.
-    which::which_all("secretctl")
-        .ok()?
-        .find_map(|path| existing_meta_file(path, &meta_root))
-}
-
-fn existing_meta_file(path: PathBuf, meta_root: &Path) -> Option<PathBuf> {
-    if !path.is_file() {
-        return None;
-    }
-    let resolved = canonical_or_self(path.clone());
-    resolved.starts_with(meta_root).then_some(path)
-}
-
-fn canonical_or_self(path: PathBuf) -> PathBuf {
-    std::fs::canonicalize(&path).unwrap_or(path)
+    let home = std::env::var_os("ENVCTL_REAL_HOME")
+        .filter(|value| !value.is_empty())
+        .or_else(|| std::env::var_os("HOME").filter(|value| !value.is_empty()))?;
+    let profile = PathBuf::from(home).join(".nix-profile");
+    [
+        profile.join("toolbin/secretctl"),
+        profile.join("bin/secretctl"),
+    ]
+    .into_iter()
+    .find(|path| path.is_file())
 }
 
 /// Spawn `secretctl <argv...>`, optionally piping `stdin` (a `Zeroizing` secret buffer —
@@ -85,10 +52,8 @@ pub fn run_secretctl(
         sink.emit(Event::SecretsResult {
             verb,
             json_stdout: String::new(),
-            stderr: "secretctl not installed under $META_ROOT (looked alongside the binary \
-                     when meta-hosted, in $META_ROOT/usr/bin, \
-                     $META_ROOT/usr/libexec/envctl/secrets/bin, legacy \
-                     $META_ROOT/.toolchains/secrets/bin, and meta-hosted PATH entries)"
+            stderr: "secretctl is not installed through the active Nix profile \
+                     (checked profile toolbin and bin frontdoors)"
                 .to_string(),
             code: None,
         });
@@ -154,6 +119,7 @@ pub fn run_secretctl(
 mod tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;
+    use std::path::Path;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_root(name: &str) -> PathBuf {
@@ -182,7 +148,7 @@ mod tests {
         let home = root.join("home");
         let meta = root.join("meta");
         let path_dir = root.join("foreign-bin");
-        write_executable(&home.join(".local/bin/secretctl"));
+        write_executable(&home.join("bin/secretctl"));
         write_executable(&home.join(".cargo/bin/secretctl"));
         write_executable(&path_dir.join("secretctl"));
         let prev_path = std::env::var("PATH").ok();
@@ -215,7 +181,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_secretctl_accepts_meta_usr_bin_target() {
+    fn resolve_secretctl_rejects_workspace_usr_bin_target() {
         let _g = crate::test_env_lock();
         let root = temp_root("accept-meta-usr-bin");
         let home = root.join("home");
@@ -245,13 +211,15 @@ mod tests {
         }
         let _ = std::fs::remove_dir_all(root);
 
-        assert_eq!(resolved.as_deref(), Some(secretctl.as_path()));
+        assert!(
+            resolved.is_none(),
+            "workspace binary must not own the frontdoor"
+        );
     }
 
     #[test]
     fn missing_binary_emits_failclosed_result_not_panic() {
-        // Force resolution to miss: empty PATH + a HOME with no meta/.local/.cargo secretctl,
-        // and current_exe's dir won't have a `secretctl` in the test harness.
+        // Force resolution to miss: empty PATH and a HOME with no profile secretctl.
         let _g = crate::test_env_lock();
         let prev_path = std::env::var("PATH").ok();
         let prev_home = std::env::var("HOME").ok();

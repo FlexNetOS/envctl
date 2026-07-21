@@ -22,7 +22,7 @@ This component is the envctl realization of that verdict.
 
 Odysseus is **AGPL-3.0-or-later**. We run it as a **separate process boundary** (its own
 containers) from a **pinned upstream clone** — we never vendor its source into the envctl Rust
-workspace, and the clone lives under managed local state (`$META_ROOT/.local/share/odysseus/src`,
+workspace, and the clone lives under managed local state (`$META_ROOT/var/lib/odysseus/src`,
 not a workspace member, not committed). No code is merged. A license decision is a prerequisite
 for any deeper integration (see promotion gates).
 

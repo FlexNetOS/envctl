@@ -92,7 +92,7 @@ M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/sqld/bin"
 payload="$DEST/sqld"
 front="$M/usr/bin/sqld"
-data="$M/.local/share/sqld"
+data="$M/var/lib/sqld"
 auth_dir="$M/.config/sqld"
 key="$auth_dir/auth-jwt-key.pem"
 token_file="$auth_dir/client.jwt"
@@ -982,7 +982,7 @@ M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/sqld/bin"
 payload="$DEST/sqld"
 front="$M/usr/bin/sqld"
-data="$M/.local/share/sqld"
+data="$M/var/lib/sqld"
 auth_dir="$M/.config/sqld"
 key="$auth_dir/auth-jwt-key.pem"
 token_file="$auth_dir/client.jwt"
@@ -1835,7 +1835,7 @@ if [ "$runtime_nodes" = 5 ]; then
     || { echo "FATAL: sqld removal committed and the service remains stopped/disabled, but retired-state cleanup/fsync failed; retry removal or inspect the retired paths" >&2; exit 1; }
 fi
 service_restore_needed=0
-# $META_ROOT/.local/share/sqld is data_paths below — never deleted by remove(); --purge only (user data rule).
+# $META_ROOT/var/lib/sqld is data_paths below — never deleted by remove(); --purge only (user data rule).
 '''
 
 # ---- WIRING: PATH + the loopback user service that secretd orders after ----
@@ -1855,7 +1855,7 @@ Type=exec
 # Loopback-only (no remote exposure) and JWT-authenticated. Only the public verification key path is
 # passed to sqld; the matching client JWT remains in a current-user-owned 0600 file read by secretd.
 Environment="META_ROOT=${META_ROOT}"
-ExecStart="${META_ROOT}/usr/bin/sqld" --http-listen-addr 127.0.0.1:8080 --auth-jwt-key-file "${META_ROOT}/.config/sqld/auth-jwt-key.pem" -d "${META_ROOT}/.local/share/sqld"
+ExecStart="${META_ROOT}/usr/bin/sqld" --http-listen-addr 127.0.0.1:8080 --auth-jwt-key-file "${META_ROOT}/.config/sqld/auth-jwt-key.pem" -d "${META_ROOT}/var/lib/sqld"
 # systemd includes non-ignored ExecStartPost completion in Before=/After= ordering. The pure-Rust
 # helper first hashes its already-open /proc/self/exe handle against the 0600 owned-byte record;
 # only then may it open the token. It binds this exact $MAINPID + /proc/PID/exe to the listening
@@ -1872,7 +1872,7 @@ ProtectSystem=strict
 ProtectHome=read-only
 ReadOnlyPaths="${META_ROOT}/.config/sqld/auth-jwt-key.pem" "${META_ROOT}/.config/sqld/client.jwt"
 ReadOnlyPaths="${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl" "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256" "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.source.sha256"
-ReadWritePaths="${META_ROOT}/.local/share/sqld"
+ReadWritePaths="${META_ROOT}/var/lib/sqld"
 PrivateTmp=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
@@ -1884,7 +1884,7 @@ WantedBy=default.target
 
 # ---- DATA: the durable libSQL database — deleted ONLY by `envctl reset sqld --purge` ----
 [[component.wiring.data_paths]]
-path = "$META_ROOT/.local/share/sqld"
+path = "$META_ROOT/var/lib/sqld"
 uuid = "runtime" # resolve + reverify at purge time; NotLiveDevice remains fail-closed
 
 # Auth material is preserved by the remove hook. The engine only moves it to recoverable trash on a

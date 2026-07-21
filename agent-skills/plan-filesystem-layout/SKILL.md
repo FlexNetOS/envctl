@@ -49,7 +49,7 @@ Write `findings/filesystem-layout-<T>.md` with:
   accepted surface; otherwise mark `DRIFT`.
 - **No mixed semantics.** Do not mix cache/state/config/log/runtime/generated files in source/doc/test
   directories unless the repo already documents that surface and the verifier confirms it.
-- **No unmanaged global writes.** `/usr/local`, `$HOME`, `~/.config`, `~/.local`, `/etc`, `/var`, and
+- **No unmanaged global writes.** `/usr/local`, `$HOME`, `~/.config`, user-bin trees, `/etc`, `/var`, and
   systemd surfaces are PROPOSE/OWNER-WALL unless envctl owns the component and has an apply/preview,
   lock, rollback, and parity story.
 - **Compatibility is not ownership.** A legacy path can be `LEGACY-COMPAT`, but the plan must name the

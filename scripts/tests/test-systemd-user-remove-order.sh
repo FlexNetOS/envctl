@@ -49,7 +49,6 @@ chmod 755 "$FAKE_BIN/systemctl"
 
 ENV_CTL_REMOVE="$(extract_script "$ROOT/manifest/env-ctl.toml" env-ctl remove)"
 ENV_CTL_FIX="$(extract_script "$ROOT/manifest/env-ctl.toml" env-ctl fix)"
-KACHE_REMOVE="$(extract_script "$ROOT/manifest/components.d/epic-h-toolchains.toml" kache remove)"
 
 if grep -Fq 'systemctl --user' <<<"$ENV_CTL_FIX"; then
   echo "systemd remove-order test: env-ctl fix hook must leave reload/restart to typed wiring" >&2
@@ -72,26 +71,6 @@ setup_env_ctl() {
     "$real/.config/systemd/user/env-ctl.service"
 }
 
-setup_kache() {
-  local meta="$1" real="$2"
-  mkdir -p "$meta/.toolchains/kache/bin" "$meta/usr/bin" "$meta/.cargo" \
-    "$meta/.config/systemd/user" "$real/.config/systemd/user"
-  printf 'kache payload\n' >"$meta/.toolchains/kache/bin/kache"
-  printf '#!/bin/sh\n# envctl kache wrapper\n' >"$meta/usr/bin/kache"
-  cat >"$meta/.cargo/config.toml" <<'CFG'
-[net]
-offline = true
-# >>> envctl kache (Epic H TASK-0055) >>>
-[build]
-rustc-wrapper = "/meta/usr/bin/kache"
-# <<< envctl kache (Epic H TASK-0055) <<<
-CFG
-  printf '[Service]\nExecStart=%s/.toolchains/kache/bin/kache daemon run\n' "$meta" \
-    >"$meta/.config/systemd/user/kache.service"
-  ln -s "$meta/.config/systemd/user/kache.service" \
-    "$real/.config/systemd/user/kache.service"
-}
-
 run_remove() {
   local script="$1" meta="$2" real="$3" fail="$4"
   env -i \
@@ -110,42 +89,26 @@ assert_one_stop_call() {
   test "$(wc -l <"$SYSTEMCTL_LOG" | tr -d '[:space:]')" = 1
 }
 
-# A failed stop must abort before any component-owned deletion.
-for component in env-ctl kache; do
-  meta="$TMP/$component-fail/meta"
-  real="$TMP/$component-fail/home"
-  mkdir -p "$meta" "$real"
-  : >"$SYSTEMCTL_LOG"
-  if [ "$component" = env-ctl ]; then
-    setup_env_ctl "$meta" "$real"
-    cp "$meta/.config/env-ctl/secretd.toml" "$TMP/env-ctl-config.before"
-    if run_remove "$ENV_CTL_REMOVE" "$meta" "$real" 1; then
-      echo "systemd remove-order test: env-ctl remove ignored stop failure" >&2
-      exit 1
-    fi
-    assert_one_stop_call env-ctl.service
-    test -f "$meta/usr/libexec/envctl/secrets/bin/secretd"
-    test -f "$meta/usr/libexec/envctl/secrets/bin/secretctl"
-    test -f "$meta/usr/bin/secretd"
-    test -f "$meta/usr/bin/secretctl"
-    cmp -s "$TMP/env-ctl-config.before" "$meta/.config/env-ctl/secretd.toml"
-    test -f "$meta/.config/systemd/user/env-ctl.service"
-    test -L "$real/.config/systemd/user/env-ctl.service"
-  else
-    setup_kache "$meta" "$real"
-    cp "$meta/.cargo/config.toml" "$TMP/kache-config.before"
-    if run_remove "$KACHE_REMOVE" "$meta" "$real" 1; then
-      echo "systemd remove-order test: kache remove ignored stop failure" >&2
-      exit 1
-    fi
-    assert_one_stop_call kache.service
-    test -f "$meta/.toolchains/kache/bin/kache"
-    test -f "$meta/usr/bin/kache"
-    cmp -s "$TMP/kache-config.before" "$meta/.cargo/config.toml"
-    test -f "$meta/.config/systemd/user/kache.service"
-    test -L "$real/.config/systemd/user/kache.service"
-  fi
-done
+# A failed stop must abort before any envctl-owned deletion. Kache is omitted:
+# Yazelix owns its runtime and envctl has no Kache service/remove hook.
+meta="$TMP/env-ctl-fail/meta"
+real="$TMP/env-ctl-fail/home"
+mkdir -p "$meta" "$real"
+: >"$SYSTEMCTL_LOG"
+setup_env_ctl "$meta" "$real"
+cp "$meta/.config/env-ctl/secretd.toml" "$TMP/env-ctl-config.before"
+if run_remove "$ENV_CTL_REMOVE" "$meta" "$real" 1; then
+  echo "systemd remove-order test: env-ctl remove ignored stop failure" >&2
+  exit 1
+fi
+assert_one_stop_call env-ctl.service
+test -f "$meta/usr/libexec/envctl/secrets/bin/secretd"
+test -f "$meta/usr/libexec/envctl/secrets/bin/secretctl"
+test -f "$meta/usr/bin/secretd"
+test -f "$meta/usr/bin/secretctl"
+cmp -s "$TMP/env-ctl-config.before" "$meta/.config/env-ctl/secretd.toml"
+test -f "$meta/.config/systemd/user/env-ctl.service"
+test -L "$real/.config/systemd/user/env-ctl.service"
 
 # A successful hook removes only component payload/config wiring. Canonical
 # unit content remains for the executor's immediately-following generic revert;
@@ -164,19 +127,5 @@ test ! -e "$meta/usr/bin/secretctl"
 test -f "$meta/.config/env-ctl/secretd.toml"
 test -f "$meta/.config/systemd/user/env-ctl.service"
 test ! -L "$real/.config/systemd/user/env-ctl.service"
-
-meta="$TMP/kache-success/meta"
-real="$TMP/kache-success/home"
-mkdir -p "$meta" "$real"
-setup_kache "$meta" "$real"
-: >"$SYSTEMCTL_LOG"
-run_remove "$KACHE_REMOVE" "$meta" "$real" 0
-assert_one_stop_call kache.service
-test ! -e "$meta/.toolchains/kache"
-test ! -e "$meta/usr/bin/kache"
-grep -Fq '[net]' "$meta/.cargo/config.toml"
-! grep -Fq 'envctl kache' "$meta/.cargo/config.toml"
-test -f "$meta/.config/systemd/user/kache.service"
-test ! -L "$real/.config/systemd/user/kache.service"
 
 echo "SYSTEMD USER REMOVE ORDER TEST PASS"

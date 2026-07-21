@@ -111,7 +111,7 @@ SH
 reset_fixture() {
   rm -rf "$case_root"
   mkdir -p "$data/pg_tblspc" "$meta/var/lib/ruvector" \
-    "$real_home/.local/state/nix" \
+    "$real_home/var/lib/nix" \
     "$combined/toolbin" "$combined/bin" "$combined/lib" \
     "$combined/share/postgresql/extension" "$combined/include/server" "$frontdoors/bin" \
     "$profile_generation/toolbin"
@@ -137,9 +137,9 @@ relocatable = true
 EOF
   printf '%s\n' '-- ruvector 0.3.0 fixture schema' \
     >"$combined/share/postgresql/extension/ruvector--0.3.0.sql"
-  ln -s "$profile_generation" "$real_home/.local/state/nix/profile-1-link"
-  ln -s profile-1-link "$real_home/.local/state/nix/profile"
-  ln -s "$real_home/.local/state/nix/profile" "$real_home/.nix-profile"
+  ln -s "$profile_generation" "$real_home/var/lib/nix/profile-1-link"
+  ln -s profile-1-link "$real_home/var/lib/nix/profile"
+  ln -s "$real_home/var/lib/nix/profile" "$real_home/.nix-profile"
 
   export META_ROOT="$meta"
   export ENVCTL_REAL_HOME="$real_home"
@@ -233,7 +233,7 @@ rm "$real_home/.nix-profile"
 ln -s "$profile_generation" "$real_home/.nix-profile"
 expect_fail 'hostile direct profile generation' postgres_profile_validate
 rm "$real_home/.nix-profile"
-ln -s "$real_home/.local/state/nix/profile" "$real_home/.nix-profile"
+ln -s "$real_home/var/lib/nix/profile" "$real_home/.nix-profile"
 postgres_profile_validate
 
 printf '16\n' >"$data/PG_VERSION"

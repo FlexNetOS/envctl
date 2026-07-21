@@ -3,7 +3,7 @@
 use serde_json::{json, Value};
 use std::fs;
 #[cfg(unix)]
-use std::os::unix::fs::symlink;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -74,7 +74,14 @@ wire_api = "responses"
     let codex_bin = home.join(".nix-profile/bin/codex");
     fs::create_dir_all(codex_bin.parent().unwrap()).unwrap();
     #[cfg(unix)]
-    symlink("/home/flexnetos/.nix-profile/bin/codex", &codex_bin).unwrap();
+    {
+        fs::write(
+            &codex_bin,
+            "#!/home/flexnetos/.nix-profile/bin/sh\nprintf '%s\\n' 'codex-cli fixture'\n",
+        )
+        .unwrap();
+        fs::set_permissions(&codex_bin, fs::Permissions::from_mode(0o755)).unwrap();
+    }
 
     (temp, meta, projects, active_codex, codex_bin)
 }

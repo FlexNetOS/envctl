@@ -1,7 +1,6 @@
-# Nix + Yazelix stack. The FlexNetOS foundation is built from the canonical
-# $META_ROOT/src/yazelix input, then consumed through the generated real-home Nix
-# profile. No META_ROOT-local profile, user-bin wrapper, or user-local desktop
-# compatibility path participates in ownership.
+# Nix + Yazelix stack. Envctl validates the installed FlexNetOS foundation but
+# never builds or switches it. Cutover belongs only to a clean, merged
+# FlexNetOS/yazelix origin/main checkout.
 
 [[component]]
 id = "nix"
@@ -138,7 +137,7 @@ args = ["fix"]
 [[component]]
 id = "yazelix"
 name = "FlexNetOS Yazelix foundation profile"
-description = "Builds $META_ROOT/src/yazelix#lifeos_foundation_yzx first, then owns it as the only element in $ENVCTL_REAL_HOME/.local/state/nix/profile."
+description = "Read-only validation of the sole profile-owned FlexNetOS Yazelix foundation; envctl never builds, installs, removes, or switches the profile."
 requires = ["nix", "nix-yazelix-cache"]
 [component.detect]
 kind = "command"

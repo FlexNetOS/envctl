@@ -351,7 +351,7 @@ After=default.target
 [Service]
 Type=notify
 # Loopback-only embedded sqld + pure-Rust libSQL `remote` client (C core isolated in a separate process):
-ExecStartPre=/usr/bin/sqld --http-listen-addr 127.0.0.1:8081 --db-path %h/Desktop/meta/.local/share/env-ctl/vault.db
+ExecStartPre=/usr/bin/sqld --http-listen-addr 127.0.0.1:8081 --db-path %h/Desktop/meta/var/lib/env-ctl/vault.db
 ExecStart=/usr/local/bin/secretd --store-profile embedded --no-tcp-control
 # Startup self-check: refuse to start unless exactly one non-loopback listener (the relay edge) exists,
 # control is a UDS under XDG_RUNTIME_DIR, and an enabled usb_keyfile slot exists (FS-S8/FS-S22).
@@ -365,7 +365,7 @@ LockPersonality=true
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %t/env-ctl     # %t = $XDG_RUNTIME_DIR (control.sock dir, 0700)
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl %t/env-ctl     # %t = $XDG_RUNTIME_DIR (control.sock dir, 0700)
 PrivateTmp=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6       # AF_UNIX (control) + INET (relay edge) only
 SystemCallFilter=@system-service

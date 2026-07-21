@@ -32,7 +32,7 @@ pub mod hub_registry; // read-only federation over *_hub/registry.json
 pub mod install; // Phase 4: regular frontdoor wrappers into meta usr/bin (refuse-unmanaged) + wire-in
 pub mod layout; // meta-hosted FHS/XDG path resolver (usr/etc/var/opt/run/tmp + XDG roots)
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
-pub mod migration; // adoption engine: scan/plan/apply/verify/purge into meta .local topology
+pub mod migration; // adoption engine: scan/plan/apply/verify/purge into the canonical meta topology
 pub mod migration_db; // event-sourced migration automation store (redb): targets/recipes/runs/ops/events/approvals/replay
 pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunSummary, AddRepoSpec
 pub mod peer; // add-repo PEER path: meta-native .meta.yaml/.gitignore registration (vs component)

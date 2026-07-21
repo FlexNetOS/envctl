@@ -28,13 +28,13 @@ $META_ROOT/.toolchains/        # legacy compatibility prefix while older manifes
 $META_ROOT/.config/            # tracked/configured dot roots that are intentionally meta-hosted
 ```
 
-Yazelix owns the active Nix profile under the real user-home `.local` state tree:
+Yazelix owns the active Nix profile through the real-home selector and Nix state tree:
 
 ```text
-$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile
+$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/var/lib/nix/profile
 ```
 
-Envctl must not replace that whole `.local` tree. It may archive known per-tool user-bin shadows
+Envctl must not replace the real-home state tree. It may archive known per-tool user-bin shadows
 after the replacement frontdoor exists in the Yazelix profile or a META_ROOT-owned prefix. No
 component may install into any real-home/user-home/systemd-home local-bin spelling, or any
 leading-tilde local path. Managed hooks run with `HOME=$META_ROOT`; hook bodies that truly need
@@ -54,10 +54,10 @@ these paths through the layout registry rather than re-deriving strings by hand.
 | Private executables | `$META_ROOT/usr/libexec` | Non-PATH helper binaries, including private envctl/secrets executables. |
 | Config/trust pins | `$META_ROOT/etc/envctl` | Envctl-owned config fragments and trust pins that are not reviewed dotfiles. |
 | Read-only shared payloads | `$META_ROOT/usr/share` | Envctl-owned read-only shared assets, templates, manpages, and generated drop-ins when they are not desktop/XDG assets. |
-| XDG data | `$META_ROOT/.local/share` | Only for host/XDG contracts such as desktop entries, icons, fonts, and component data that explicitly requires XDG data semantics. |
+| XDG data | `$META_ROOT/var/lib` | Only for host/XDG contracts such as desktop entries, icons, fonts, and component data that explicitly requires XDG data semantics. |
 | Mutable envctl state | `$META_ROOT/var/lib/envctl` | Envctl-owned durable operational state such as migration ledgers, repo stores, and logs that are not app-XDG state. |
 | Logs | `$META_ROOT/var/log/envctl` | Envctl-owned log files when separated from state. |
-| XDG state | `$META_ROOT/.local/state` | Only for host/XDG app contracts that explicitly require XDG state semantics. |
+| XDG state | `$META_ROOT/var/lib` | Only for host/XDG app contracts that explicitly require XDG state semantics. |
 | Cache | `$META_ROOT/var/cache/envctl` | Envctl-owned regenerable caches. |
 | XDG cache | `$META_ROOT/.cache` | Only for host/XDG app caches that explicitly require XDG cache semantics. |
 | Temp | `$META_ROOT/var/tmp` | Meta-local temp space. |
@@ -87,16 +87,16 @@ allowlisted target. The current canonical map is:
 
 | real-home source | canonical target | mutation rule |
 |---|---|---|
-| `$ENVCTL_REAL_HOME/.local/state/nix` | Yazelix/Nix profile state | Preserved in place because `$ENVCTL_REAL_HOME/.nix-profile` resolves through it. |
-| Known per-tool real-home user-bin shadows | Yazelix profile or `$META_ROOT/usr/bin` | Archive after the replacement frontdoor exists; never replace the whole real-home `.local` tree. |
+| `$ENVCTL_REAL_HOME/var/lib/nix` | Yazelix/Nix profile state | Preserved in place because `$ENVCTL_REAL_HOME/.nix-profile` resolves through it. |
+| Known per-tool real-home user-bin shadows | Yazelix profile or `$META_ROOT/usr/bin` | Archive after the replacement frontdoor exists; never replace the whole real-home state tree. |
 | Safe duplicate shell dotfiles (`.bash_logout`, `.profile`, `.zshenv`, `.zshrc`) | `$META_ROOT/<dot-entry>` | `--apply-shell-dotfiles` moves only duplicate/safe sources; differing files stay owner-supervised. |
 | History/backup dot entries | `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>` | `--apply-history-archives` is required in addition to `--apply`; stale backup-only archive mode is intentionally absent. |
 | `.ideavimrc` | `$META_ROOT/.ideavimrc` | Named `--migrate-dot .ideavimrc` only; refuses non-regular-file sources. |
 | `.gphoto` | `$META_ROOT/.config/gphoto` | Named `--migrate-dot .gphoto` only; refuses non-directory sources. |
-| `.vscode-shared` | `$META_ROOT/.local/share/vscode-shared` | Named `--migrate-dot .vscode-shared` only; refuses non-directory sources. |
-| `.claude.json` | `$META_ROOT/.local/share/claude/claude.json` | Named `--migrate-dot .claude.json` only; preserves a real-home bridge for app compatibility. |
+| `.vscode-shared` | `$META_ROOT/var/lib/vscode-shared` | Named `--migrate-dot .vscode-shared` only; refuses non-directory sources. |
+| `.claude.json` | `$META_ROOT/var/lib/claude/claude.json` | Named `--migrate-dot .claude.json` only; preserves a real-home bridge for app compatibility. |
 | `.ollama` | `$META_ROOT/var/lib/ollama` | Named `--migrate-dot .ollama` only; model/state payloads remain meta-local and outside git. |
-| Known agent/app config dirs (`.agents`, `.ampcode`, `.claude`, `.codex`, `.codeium`, `.copilot`, `.cursor`, `.gemini`, `.goose_recipes`, `.junie`, `.kimi`, `.kimi-code`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird`, `.repomix`) | `$META_ROOT/.local/share/<name>` | Named `--migrate-dot <entry>` only; conflicts/different existing targets stay owner-supervised. |
+| Known agent/app config dirs (`.agents`, `.ampcode`, `.claude`, `.codex`, `.codeium`, `.copilot`, `.cursor`, `.gemini`, `.goose_recipes`, `.junie`, `.kimi`, `.kimi-code`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird`, `.repomix`) | `$META_ROOT/var/lib/<name>` | Named `--migrate-dot <entry>` only; conflicts/different existing targets stay owner-supervised. |
 | Broad config/cache/credential stores (`.config`, `.cache`, `.aws`, `.gnupg`, `.ssh`, and similar) | owner-supervised-vault-or-bridge | No automatic move; audit reports the class so a later component-specific upgrade can prove safety first. |
 
 For direct `.cache` children, `scripts/audit-meta-local-paths.sh` keeps the upgrade path read-only
@@ -116,17 +116,17 @@ and do not move owner-supervised cache state.
 The review loop must keep this map synchronized with `scripts/audit-meta-local-paths.sh`,
 `scripts/tests/test-meta-local-path-audit.sh`, `home/README.md`, and `ci/gates/meta-local-policy.sh`.
 
-## Decision: no `.local` peer repo
+## Decision: no hidden user-state peer repo
 
-A separate `.local` git peer is the wrong shape. `$META_ROOT/.local` and `$META_ROOT/.toolchains`
-contain large, host-specific, regenerable install state. The correct reproducibility surface is:
+A separate hidden user-state git peer is the wrong shape. Retired user-state roots and
+`$META_ROOT/.toolchains` contain large, host-specific, regenerable install state. The correct reproducibility surface is:
 
 1. manifests and component hooks,
 2. `manifest/envctl.lock`,
 3. `envctl doctor --json` / `envctl auto-detect --json`, and
 4. targeted component state under `$META_ROOT/var/lib/envctl`, `$META_ROOT/var/cache/envctl`, `$META_ROOT/opt/<component>`, or an explicitly declared meta-XDG root.
 
-Tracking a snapshot of `.local` would bloat git, pin one host's absolute state, and duplicate the
+Tracking a snapshot of user runtime state would bloat git, pin one host's absolute state, and duplicate the
 declarative manifests. The invariant is declaration plus verification, not filesystem snapshotting.
 
 ## Cleanup and migration rule
@@ -147,7 +147,7 @@ component's explicit guarded reset flow.
 | CLI exposure | `$META_ROOT/usr/bin` or the Yazelix profile | Recreated by `envctl install` or the profile owner; host per-tool user-bin shadows are archive-only migration debt. |
 | Secrets daemon binaries | `$META_ROOT/usr/libexec/envctl/secrets/bin/{secretd,secretctl}` with frontdoors in `$META_ROOT/usr/bin` | Legacy compatibility paths are retained only until migrated and parity-proven. |
 | Secrets config | `$META_ROOT/.config/env-ctl/secretd.toml` | Preserved unless the owning reset flow explicitly removes it; auth tokens are never stored here. |
-| Secrets data/audit | `$META_ROOT/.local/share/env-ctl` and `$META_ROOT/.local/state/env-ctl` | Data paths are deleted only by the guarded `envctl reset env-ctl --purge --confirm --apply` flow. |
+| Secrets data/audit | `$META_ROOT/var/lib/env-ctl` and `$META_ROOT/var/lib/env-ctl` | Data paths are deleted only by the guarded `envctl reset env-ctl --purge --confirm --apply` flow. |
 | Cognitum Seed Device CA pin | `$META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt` | `env-ctl.service` exports `ENVCTL_SEED_CA` to this path. |
 | Local MITM/remote-client CAs | sealed in the encrypted vault store (`ca_key`/`certs` rows and `mitm.ca_cert_der` / `remote_clients.ca_cert_der` metadata) | Private keys never leave the daemon; public trust apply remains explicit/dry-run by default. |
 
@@ -176,7 +176,7 @@ system binary/lib/header is shadowed until meta actually installs into it.
 Three session surfaces consume this — because each reads a different startup file:
 - **bash/zsh** — the `eval "$(envctl env --toolchains)"` shell-rc block. The `yazelix auto-enter`
   block evals it *before* `yzx enter` so re-exec'd zellij/nushell panes inherit the full PATH.
-- **nushell/yazelix** — the version-controlled overlay module `home/.config/nushell/meta-usr-path.nu`,
+- **nushell/yazelix** — the version-controlled profile normalizer `home/.config/nushell/profile-path.nu`,
   sourced (relative, `$HOME`-independent) from `config.nu` and `yazelix/shell_nu.nu`.
 - **graphical/desktop login** — the `meta-session-env` component renders `systemd` user
   `environment.d/10-meta.conf` from `envctl env`, so `.desktop` launchers + GUI sessions (which

@@ -10,23 +10,19 @@
 - Materialize only when requested with `envctl agent sync --apply --color never`.
 - Check drift without network with `envctl agent lock --check --locked` and the repo agent-env gate.
 - Synced skills are replaced from owning sources; do not hand-edit generated copies.
-- Retired Claude lifecycle configuration is absent from both
-  `home/.claude/settings.json` and its `.tmpl`. Test this owner contract with
-  `scripts/tests/test-agent-env-hooks.sh` via the harness-scripts gate.
-- Settings template ownership (OWNER RULING 2026-07-07, enforced by the Rust gate
-  `env_cmd_tests::settings_json_matches_rendered_tmpl_no_drift`): session wiring uses
-  EXPLICIT REAL PATHS — no META_ROOT/LIFEOS_ROOT/placeholder root-var wiring in
-  `home/.claude/settings.json` or its `.tmpl`. With no placeholders the portability-links
-  render is an identity copy BY DESIGN, and the tmpl must equal settings.json
-  byte-for-byte. Adopt any live-only top-level key (e.g. `effortLevel`) into BOTH files or
-  a re-render drops it. Do NOT "fix" the inert render by parameterizing the tmpl — that
-  exact change REDs CI (observed 2026-07-12, PR #495 first push).
+- Claude configuration authority is the profile input at
+  `/home/flexnetos/.nix-profile/share/yazelix/agent_configs/claude/settings.json.src`.
+  The profile-owned materializer projects it into the volatile
+  `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/claude/settings.json` runtime. Envctl
+  validates both surfaces with `scripts/tests/test-agent-env-hooks.sh`; it owns neither.
+- Settings changes belong in the canonical `FlexNetOS/yazelix` source input and must
+  pass that repository's materialization contract before a merged profile cutover.
 - Tier-B ratification: session toggles (permission mode, effort) stay OUT of durable config
   by default (ANTI-LOCKOUT) — but the operator may RATIFY one into declared state via an
   answered decision marker, after which it lives in BOTH settings files and must survive
   re-renders (ratified 2026-07-12: `permissions.defaultMode:"auto"`, `effortLevel:"high"`;
   markers in $HARNESS_VAR/lib/claude-harness/decisions/). Unratified Tier-B state found
-  hard-coded is still drift to sweep.
+  hard-coded in the profile source is still drift to sweep.
 - Coverage gates DERIVE, never enumerate: a gate that guards per-job/per-item invariants
   (e.g. `ci/gates/runner-routing.sh` local-first job routing) derives its item list from
   the governed artifact itself, with a required-floor set so renames/removals fail loudly —

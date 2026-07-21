@@ -22,11 +22,11 @@ Use this map before rebuilding or editing the Codex harness.
 | `/home/flexnetos/meta/src/ccboard/` | Claude/Codex session ingestion, analytics, TUI, and web/API | Preserve existing Codex parser/store path; complete content/watcher/live integration in a separate Meta-managed ccboard worktree/PR. |
 | `/home/flexnetos/meta/src/yazelix/configs/zellij/layouts/flexnetos_agent_workspace.kdl` and `packaging/runtime_release_contracts.nix` | Source owner for installed ccboard pane/runtime packaging | Change only when package/layout delivery changes; rebuild profile and use generated runtime as proof. |
 | `agent-skills/`, `agent-env.yaml`, `agent-env.lock` | envctl-managed agent inputs and lock | Edit inputs, preview sync, apply only when requested, check lock. |
-| `home/.codex/` | Repo projection | Treat as owner-produced projection according to agent-env/runbook rules. |
-| `/home/flexnetos/.codex/skills/agent-env-codex/` | Active skill materialization | Must match `agent-skills/agent-env-codex/`; runtime activation is not the durable owner. |
-| `/home/flexnetos/.codex/` | Active Codex runtime | Runtime proof/activation; do not use as substitute for durable repo owners. |
+| `profile-runtime/codex/` | Repo projection | Treat as owner-produced projection according to agent-env/runbook rules. |
+| `/run/user/1001/yazelix/profile-runtime/codex/skills/agent-env-codex/` | Active skill materialization | Must match `agent-skills/agent-env-codex/`; runtime activation is not the durable owner. |
+| `/run/user/1001/yazelix/profile-runtime/codex/` | Active Codex runtime | Runtime proof/activation; do not use as substitute for durable repo owners. |
 | `/home/flexnetos/.config/yazelix/` | Editable Yazelix inputs | Edit owning inputs. |
-| `/home/flexnetos/.local/share/yazelix/` | Generated Yazelix runtime | Never hand-edit; proof only. |
+| `/home/flexnetos/var/lib/yazelix/` | Generated Yazelix runtime | Never hand-edit; proof only. |
 | `/home/flexnetos/.nix-profile/bin/yzx` | Active runtime frontdoor | Use for installed behavior proof. |
 | `/home/flexnetos/meta/src/yazelix-yazi-assets/` | Required Yazelix plugin/add-on consolidation owner | Own all plugin/add-on source, package, and manifest authority after no-downgrade migration. |
 | `/home/flexnetos/meta/src/yazelix_helix_cogs_noop_wt/` | Main Yazelix task worktree and migration evidence | Inventory only; not a durable plugin owner. Finish/merge legitimate work and migrate plugin/add-on authority. |

@@ -46,7 +46,7 @@ secrets-engine/src/
   error.rs      EngineError (thiserror, setup-time ONLY) + VaultState
   seam.rs       Clock, UsbProbe, ProviderMint, Upstream (HookRunner analogues, all Send+Sync)
   guard.rs      SecGuard + check_sec_guards (fail-closed, resolve-once UnlockContext) — mirror of envctl guard.rs
-  paths.rs      XDG: ~/.config|.local/share(0700)|.local/state/env-ctl + $XDG_RUNTIME_DIR/env-ctl
+  paths.rs      XDG: ~/.config|var/lib(0700)|var/lib/env-ctl + $XDG_RUNTIME_DIR/env-ctl
   vault/        mod.rs (Vault state machine) + store.rs (backend-abstracted, AEAD records) + crypto.rs (seal/open) + aad.rs (canonical AAD)
   keyslot.rs    LUKS-style dual KEK wrap/unwrap (USB-KEK via HKDF, passphrase-KEK via argon2id) + header MAC
   broker/       mod.rs (Broker handle) + policy.rs + decide.rs (PURE default-deny) + token.rs + adapter.rs
@@ -122,8 +122,8 @@ Fail-closed `SecGuard` engine (Phase 0, real signatures + refusal types, `todo!(
 
 ```
 $META_ROOT/.config/env-ctl/                      config (profiles defaults, daemon config, trusted-profile-roots allowlist)
-$META_ROOT/.local/share/env-ctl/        (0700)   vault.db (0600), ca/ca.pem (0644, public cert), ca/bundles/<tool>.pem
-$META_ROOT/.local/state/env-ctl/        (0700)   secretd.log, audit mirror (audit_head second home)
+$META_ROOT/var/lib/env-ctl/        (0700)   vault.db (0600), ca/ca.pem (0644, public cert), ca/bundles/<tool>.pem
+$META_ROOT/var/lib/env-ctl/        (0700)   secretd.log, audit mirror (audit_head second home)
 $XDG_RUNTIME_DIR/env-ctl/      (0700)   control.sock (0600), relay-proxy bind config
 USB <partition-uuid>:/env-ctl/keyfile  (0400) 64-byte CSPRNG keyfile (mode bits advisory on vfat/exfat — see THREAT-MODEL A5/A11)
 ```

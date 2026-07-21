@@ -272,7 +272,7 @@ mod tests {
         let report = EnvReport {
             meta_boundary: MetaBoundaryReport {
                 meta_root: Some("/meta".into()),
-                local_bin: "/home/user/.local/bin".into(),
+                local_bin: "/home/user/.nix-profile/bin".into(),
                 cargo_bin: "/home/user/.cargo/bin".into(),
                 violations: vec![MetaBoundaryViolation {
                     tool: "secretctl".into(),

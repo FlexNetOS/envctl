@@ -137,11 +137,13 @@ another language or toolchain:
   external repo into the workspace as a Rust crate. Use it (or its design as a template) rather
   than carrying foreign-language code as-is.
 
-## Agent environment is agent-env-managed (absorbed kasetto) — do NOT hand-edit ECC files
+## Agent environment is agent-env-managed (absorbed kasetto) — do NOT hand-edit projections
 
-The `.claude/` and `.codex/` agent config (skills + MCP baseline) is **provisioned and locked
-by the built-in agent-env engine** (`agent-env.yaml` → `agent-env.lock`, driven by `envctl agent`),
-sourced from `./agent-skills`. (kasetto v3.2.0 was absorbed into `crates/agent-env` and the external
+The canonical repository agent content lives in `agent-skills/` and is selected
+by `agent-env.yaml` → `agent-env.lock`. Repository-local `.codex/skills/` and
+`.agents/skills/` are locked projections produced by the built-in agent-env
+engine (`envctl agent`); no home Claude or Codex tree is an ownership source.
+(kasetto v3.2.0 was absorbed into `crates/agent-env` and the external
 `kasetto` binary retired — TASK-0018/#98; the config/lock were renamed `kasetto.yaml`/`kasetto.lock`
 → `agent-env.yaml`/`agent-env.lock` — TASK-0040.) It supersedes the **ECC-auto-generated** files,
 which were derived from a misread and assert **JavaScript** conventions (camelCase, `*.test.ts`,
@@ -153,10 +155,11 @@ JS imports) — those are **wrong for this repo**.
   that says otherwise.
 - **To change the agent env:** edit `agent-skills/` + `agent-env.yaml`, then `envctl agent sync --apply`
   (the built-in agent-env engine; the external `kasetto` binary is retired — TASK-0018).
-  Do **not** hand-maintain `.claude/skills/*` or `.claude/homunculus/instincts/*` — they're
-  generated. CI enforces with `envctl agent lock --check --locked` (read-only, zero-network, exits 1 on
-  drift — `ci/gates/agent-env.sh`, TASK-0040).
-- Keep the repo-local MCP baseline identical across Claude (`.mcp.json`) and Codex
+  Do **not** hand-maintain `.codex/skills/*` or `.agents/skills/*`; regenerate
+  them from the locked catalog. Maintained Codex agent definitions live in
+  `.codex/agents/*.toml`. CI enforces with `envctl agent lock --check --locked`
+  (read-only, zero-network, exits 1 on drift — `ci/gates/agent-env.sh`, TASK-0040).
+- Keep the repo-local MCP baseline identical across `.mcp.json` and Codex
   (`.codex/config.toml`). The current baseline is remote `exa` only. Do not restore the retired
   local-launch `github`, `context7`, `memory`, `playwright`, or `sequential-thinking` entries until
   each has a profile-owned Yazelix-mirrored frontdoor and the agent-env source plus lock are
@@ -226,13 +229,11 @@ fresh `claude -p` per cycle (the `/new` effect) wrapping `env-install-loop`. To 
 trivial edits may be answered/done directly. (A SINGLE component install → `env-toolchain-install`;
 drift/lock/doctor → `env-stabilize`; conventions → `agent-env-config`.)
 
-**Placement:** the harness is **hand-authored and git-tracked**, intentionally *outside* the
-kasetto/agent-env pipeline. Agent definitions live in `.claude/agents/*.md` and the harness skills
-(`feature-forge`, `rust-feature-impl`, `forge-loop`, `session-relay`, `env-install-loop`,
-`auto-provision`, `handoff-sync`) live directly in `.claude/skills/` — edit those files in place and commit them. They are **not** sourced from `agent-skills/`, not in `agent-env.yaml` /
-`agent-env.lock`, and not produced by `envctl agent sync`. (Note: this is a deliberate exception to the
-general "`.claude/skills/*` are kasetto-generated" rule above — the kasetto-managed skills remain
-`agent-env-config`, `env-stabilize`, `env-toolchain-install`.)
+**Placement:** harness skills are maintained, git-tracked source under
+`agent-skills/`. The locked catalog selects repository projections under
+`.codex/skills/` and `.agents/skills/`; maintained Codex agent definitions live
+in `.codex/agents/*.toml`. Edit the maintained source, regenerate the lock and
+projections, and never recreate a home Claude tree as an alternate source.
 
 > **Packaged upstream (TASK-0052, owner-locked 2026-06-18):** the generic construction-crew core —
 > `feature-forge` + `forge-loop` + `rust-feature-impl` + the architect/implementer/guardian/
@@ -240,15 +241,17 @@ general "`.claude/skills/*` are kasetto-generated" rule above — the kasetto-ma
 > `harness_hub`** (`/harness:feature-forge`, `harness_hub/harness/skills/feature-forge/` + prefixed
 > `harness/agents/feature-forge-*`, `registry.json`/`entries/feature-forge.md`; harness_hub PR #38).
 > This **supersedes the "hand-authored, never packaged" stance for that core**: the hub package is the
-> reusable source-of-truth (the envctl `.claude/` copies are an ejected instance that may be
-> re-synced via the package's `eject.sh`). The **envctl-specific loops** (`env-install-loop`,
+> reusable source-of-truth. Envctl adopts maintained copies under `agent-skills/`
+> through the package's `eject.sh`; no home agent tree is an ejection target. The
+> **envctl-specific loops** (`env-install-loop`,
 > `auto-provision`, `handoff-sync`) are NOT generically reusable and remain hand-authored in envctl
 > only — they are deliberately out of the hub package's scope.
 
 > **Packaged planning upstream (2026-06-26):** the recovered **planning-engineer** harness is now a
 > registered, ejectable packaged harness in `harness_hub` (`/harness:planning-engineer` for one
-> evidence-backed planning cycle and `/harness:plan-loop` for the continuous Ralph loop). The envctl
-> `.claude/`/`.agents/` copies are ejected mirrors; the hub package is the reusable source-of-truth.
+> evidence-backed planning cycle and `/harness:plan-loop` for the continuous Ralph loop). Envctl's
+> maintained planning skills live in `agent-skills/`, with Codex definitions in
+> `.codex/agents/*.toml`; the hub package is the reusable upstream source.
 > The loop is read-only on product code and writes planning artifacts under `.handoff/loop/plan/`.
 
 **Change history:**
@@ -408,7 +411,7 @@ rtk gain --history      # View command history with savings
 rtk discover            # Analyze Claude Code sessions for missed RTK usage
 rtk proxy <cmd>         # Run command without filtering (for debugging)
 rtk init                # Add RTK instructions to CLAUDE.md
-rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
+rtk init --global       # Add RTK to /run/user/1001/yazelix/profile-runtime/claude/CLAUDE.md
 ```
 
 ## Token Savings Overview
@@ -461,17 +464,17 @@ This project is indexed by GitNexus as **envctl** (14492 symbols, 30909 relation
 
 ## Cross-Repo Groups
 
-This repository is listed under GitNexus **group(s): envctl-migration** (see `~/.gitnexus/groups/`). For cross-repo analysis, use MCP tools `impact`, `query`, and `context` with `repo` set to `@<groupName>` or `@<groupName>/<memberPath>` (paths match keys in that group’s `group.yaml`). Use `group_list` / `group_sync` for membership and sync. From the project root: `node .gitnexus/run.cjs group list`, `node .gitnexus/run.cjs group sync <name>`, `node .gitnexus/run.cjs group impact <name> --target <symbol> --repo <group-path>` (the `.gitnexus/run.cjs` path is repo-root-relative).
+This repository is listed under GitNexus **group(s): envctl-migration**. For cross-repo analysis, use MCP tools `impact`, `query`, and `context` with `repo` set to `@<groupName>` or `@<groupName>/<memberPath>` (paths match keys in that group’s `group.yaml`). Use `group_list` / `group_sync` for membership and sync. CLI execution must use the profile-owned Bun lane (`bunx --bun gitnexus@latest ...`), never Node/npm/npx or a user-bin shadow.
 
 ## CLI
 
 | Task | Read this skill file |
 |------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Understand architecture / "How does X work?" | `/home/flexnetos/.agents/skills/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `/home/flexnetos/.agents/skills/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `/home/flexnetos/.agents/skills/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `/home/flexnetos/.agents/skills/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `/home/flexnetos/.agents/skills/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `/home/flexnetos/.agents/skills/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->

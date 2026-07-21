@@ -177,13 +177,8 @@ impl Catalog {
         let matches: Vec<_> = self
             .skills
             .iter()
-            .filter_map(|(name, skill)| {
-                skill
-                    .aliases
-                    .iter()
-                    .any(|a| a == query)
-                    .then(|| name.clone())
-            })
+            .filter(|(_, skill)| skill.aliases.iter().any(|alias| alias == query))
+            .map(|(name, _)| name.clone())
             .collect();
         exactly_one("skill or alias", query, matches)
     }
@@ -192,13 +187,8 @@ impl Catalog {
         let matches: Vec<_> = self
             .skills
             .iter()
-            .filter_map(|(name, skill)| {
-                skill
-                    .intents
-                    .iter()
-                    .any(|i| i == intent)
-                    .then(|| name.clone())
-            })
+            .filter(|(_, skill)| skill.intents.iter().any(|candidate| candidate == intent))
+            .map(|(name, _)| name.clone())
             .collect();
         exactly_one("task intent", intent, matches)
     }
@@ -245,7 +235,8 @@ impl Catalog {
                     packs: self
                         .packs
                         .iter()
-                        .filter_map(|(pack, p)| p.skills.contains(name).then(|| pack.clone()))
+                        .filter(|(_, pack)| pack.skills.contains(name))
+                        .map(|(pack, _)| pack.clone())
                         .collect(),
                     active: active.contains(name),
                 })

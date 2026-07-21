@@ -62,7 +62,7 @@ use envctl_engine::{
     version,
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
-    about = "meta's agentic environment manager — installs every tool into meta's .local layout",
+    about = "meta's agentic environment manager — projects state and validates profile-owned tools",
     long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's standard $META_ROOT layout ($META_ROOT/usr, $META_ROOT/etc, $META_ROOT/var, $META_ROOT/opt, plus meta-home XDG roots) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
@@ -500,7 +500,7 @@ enum Cmd {
     /// for `eval "$(envctl env)"`; `--json` emits a map. This is the seam that
     /// lets every config reference `$META_ROOT` no matter where meta is installed.
     #[command(
-        long_about = "Resolve the meta workspace root (via the `.meta.yaml` marker, like git's `.git`) and emit environment exports so shells and configs locate meta WITHOUT hardcoding paths. Read-only. By default it prints POSIX `export` lines for `eval \"$(envctl env)\"`; --json emits a map. --toolchains also emits the meta-hosted .local layout, legacy toolchain prefixes, and PATH. --materialize FILE renders `${META_ROOT}` tokens in FILE to the absolute root for configs a consumer reads literally.",
+        long_about = "Resolve the meta workspace root (via the `.meta.yaml` marker, like git's `.git`) and emit environment exports so shells and configs locate meta WITHOUT hardcoding paths. Read-only. By default it prints POSIX `export` lines for `eval \"$(envctl env)\"`; --json emits a map. --toolchains emits the same strict profile PATH for compatibility. --materialize FILE renders `${META_ROOT}` tokens in FILE to the absolute root for configs a consumer reads literally.",
         after_help = envctl_examples!(
             "eval \"$(envctl env)\"",
             "envctl env --json",
@@ -512,9 +512,8 @@ enum Cmd {
         /// Explicit `.meta.yaml` path (else walk up from CWD / use $META_FILE).
         #[arg(long)]
         meta_file: Option<std::path::PathBuf>,
-        /// ALSO emit the meta-hosted .local layout, legacy toolchain prefix
-        /// exports, and PATH. Manager stores still point at `$META_ROOT/.toolchains`
-        /// until manifests migrate, but envctl-owned exposure begins at `usr/bin`.
+        /// Compatibility flag: emit the same strict profile-owned PATH as the
+        /// default environment without manager-specific ownership exports.
         #[arg(long)]
         toolchains: bool,
         /// Instead of emitting exports, read FILE and print it with `${META_ROOT}`
@@ -2348,7 +2347,7 @@ fn migration_action_label(action: MigrationAction) -> &'static str {
         MigrationAction::None => "none",
         MigrationAction::MaterializeCanonicalDir => "materialize-dir",
         MigrationAction::UpdateManifestToCanonicalLayout => "update-manifest",
-        MigrationAction::AdoptIntoMetaLocal => "adopt-meta-local",
+        MigrationAction::AdoptIntoMetaVar => "adopt-meta-var",
         MigrationAction::PreserveConfig => "preserve-config",
         MigrationAction::ProtectSubstrate => "protect-substrate",
         MigrationAction::ReportOnly => "report-only",
@@ -3411,32 +3410,41 @@ fn run_env(
         return Ok(());
     }
 
-    // The meta-hosted install layout (opt-in via --toolchains for now because
-    // this is the shell seam that mutates PATH). `usr/bin` is canonical for
-    // envctl-owned exposure; `.local/bin` and `.toolchains` remain compatibility surfaces.
-    let tc = layout.legacy_toolchains().to_string_lossy().to_string();
+    // `--toolchains` is retained as a stable CLI surface, but it now projects
+    // the sole installed-runtime owner: the invoking user's Nix profile. Envctl
+    // may expose its data/config layout; it must never add a second executable
+    // tree or a language-manager prefix to PATH.
+    let real_home = std::env::var_os("ENVCTL_REAL_HOME")
+        .filter(|value| !value.is_empty())
+        .or_else(|| std::env::var_os("HOME").filter(|value| !value.is_empty()))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| {
+            anyhow::anyhow!("ENVCTL_REAL_HOME or HOME is required to resolve the profile")
+        })?;
+    let profile_root = real_home.join(".nix-profile");
+    let profile_path = format!(
+        "{}:{}",
+        profile_root.join("toolbin").display(),
+        profile_root.join("bin").display()
+    );
     let ollama_models = layout.ollama_models().to_string_lossy().to_string();
-    let usr = layout.usr().to_string_lossy().to_string();
-    let bin_dir = layout.bin().to_string_lossy().to_string();
-    let compat_local_bin = layout.local_bin().to_string_lossy().to_string();
     if json {
         let mut map = serde_json::json!({ "META_ROOT": meta_root, "META_FILE": meta_yaml });
         if toolchains {
             for (key, path) in layout.env_exports() {
                 map[key] = path.to_string_lossy().to_string().into();
             }
-            map["BUN_INSTALL"] = format!("{tc}/.bun").into();
-            map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
-            map["CARGO_HOME"] = format!("{tc}/cargo").into();
-            map["RUSTUP_HOME"] = format!("{tc}/rustup").into();
+            map["ENVCTL_PROFILE_ROOT"] = profile_root.to_string_lossy().to_string().into();
+            map["PATH"] = profile_path.clone().into();
+            map["XDG_CONFIG_HOME"] = layout
+                .xdg_config_home()
+                .to_string_lossy()
+                .to_string()
+                .into();
+            map["XDG_DATA_HOME"] = layout.xdg_data_home().to_string_lossy().to_string().into();
+            map["XDG_STATE_HOME"] = layout.xdg_state_home().to_string_lossy().to_string().into();
             map["XDG_CACHE_HOME"] = layout.xdg_cache_home().to_string_lossy().to_string().into();
-            map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
-            map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
-            map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
             map["OLLAMA_MODELS"] = ollama_models.clone().into();
-            map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
-            map["GCC_PATH"] = format!("{tc}/libgccjit/lib").into();
-            map["HELIX_RUNTIME"] = format!("{tc}/helix/runtime").into();
         }
         println!("{}", serde_json::to_string_pretty(&map)?);
         return Ok(());
@@ -3451,90 +3459,28 @@ fn run_env(
         for (key, path) in layout.env_exports() {
             println!("export {key}={}", sh_single_quote(&path.to_string_lossy()));
         }
-        // Redirect each manager's install prefix INTO meta (ADR: meta-located
-        // toolchain prefix). Canonical exposure starts at `usr/bin`; the meta-home
-        // `.local/bin` bridge and legacy manager bins trail it for compatibility. PATH uses double quotes so
-        // `$PATH` expands.
         println!(
-            "export BUN_INSTALL={}",
-            sh_single_quote(&format!("{tc}/.bun"))
+            "export ENVCTL_PROFILE_ROOT={}",
+            sh_single_quote(&profile_root.to_string_lossy())
+        );
+        println!("export PATH={}", sh_single_quote(&profile_path));
+        println!(
+            "export XDG_CONFIG_HOME={}",
+            sh_single_quote(&layout.xdg_config_home().to_string_lossy())
         );
         println!(
-            "export MISE_DATA_DIR={}",
-            sh_single_quote(&format!("{tc}/mise"))
+            "export XDG_DATA_HOME={}",
+            sh_single_quote(&layout.xdg_data_home().to_string_lossy())
         );
         println!(
-            "export CARGO_HOME={}",
-            sh_single_quote(&format!("{tc}/cargo"))
+            "export XDG_STATE_HOME={}",
+            sh_single_quote(&layout.xdg_state_home().to_string_lossy())
         );
-        // RUSTUP_HOME must travel with CARGO_HOME: the rustup toolchain store is
-        // meta-owned at .toolchains/rustup (set in the `rustup` component's install
-        // hooks), but without exporting it here, `eval "$(envctl env --toolchains)"`
-        // shells fall back to ~/.rustup and miss the meta-owned nightly/codegen-gcc
-        // toolchain. Pairs CARGO_HOME ↔ RUSTUP_HOME so the shell seam matches the
-        // component hooks. (ADR-0013: compiler resolves under $META_ROOT/.toolchains/rustup.)
-        println!(
-            "export RUSTUP_HOME={}",
-            sh_single_quote(&format!("{tc}/rustup"))
-        );
-        // Cache-heavy toolchain frontdoors (notably kache as Cargo's rustc-wrapper)
-        // must default to meta-owned XDG cache instead of leaking active state into
-        // ~/.cache when a shell has only sourced `envctl env --toolchains`.
         println!(
             "export XDG_CACHE_HOME={}",
             sh_single_quote(&layout.xdg_cache_home().to_string_lossy())
         );
-        println!(
-            "export UV_TOOL_DIR={}",
-            sh_single_quote(&format!("{tc}/uv/tools"))
-        );
-        println!(
-            "export UV_PYTHON_INSTALL_DIR={}",
-            sh_single_quote(&format!("{tc}/uv/python"))
-        );
-        // GPU runner .so redirect for the meta-owned ollama (.toolchains/ollama/lib/
-        // ollama holds the cuda_v12/cuda_v13 ggml runners). The binary also resolves
-        // ../lib/ollama from its real path, so this is belt-and-suspenders.
-        println!(
-            "export OLLAMA_LIBRARY_PATH={}",
-            sh_single_quote(&format!("{tc}/ollama/lib/ollama"))
-        );
-        // Model blobs are persistent state, not runner binaries. Keep them under
-        // meta's canonical var/lib tree so pulls never fall back to the root
-        // daemon's /usr/share/ollama or a real-home ~/.ollama store (TASK-0072).
         println!("export OLLAMA_MODELS={}", sh_single_quote(&ollama_models));
-        // libclang.so redirect for the meta-owned LLVM/clang (.toolchains/llvm/lib
-        // holds libclang.so) so bindgen-style consumers find it (Epic H TASK-0061).
-        println!(
-            "export LIBCLANG_PATH={}",
-            sh_single_quote(&format!("{tc}/llvm/lib"))
-        );
-        // libgccjit.so dir for rustc_codegen_gcc (config.toml `gcc-path` /
-        // LIBRARY_PATH+LD_LIBRARY_PATH consume it) — Epic H TASK-0062.
-        println!(
-            "export GCC_PATH={}",
-            sh_single_quote(&format!("{tc}/libgccjit/lib"))
-        );
-        // helix tree-sitter runtime (grammars + queries) for the meta-owned hx
-        // (.toolchains/helix/runtime, bundled in the upstream release tarball). hx also finds
-        // runtime/ as a sibling of its resolved exe, so this is belt-and-suspenders (Epic H).
-        println!(
-            "export HELIX_RUNTIME={}",
-            sh_single_quote(&format!("{tc}/helix/runtime"))
-        );
-        println!("export PATH=\"{bin_dir}:{usr}/sbin:{usr}/local/bin:{usr}/local/sbin:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
-        // The rest of the meta /usr mirror on its respective search paths. Each is
-        // prepend-with-fallback so an inherited value (e.g. the CUDA LD_LIBRARY_PATH
-        // shell-rc block) is preserved, never clobbered. The skeleton starts empty,
-        // so no system binary/lib/header is shadowed until meta installs into it.
-        println!(
-            "export LD_LIBRARY_PATH=\"{usr}/lib:{usr}/lib64:{usr}/local/lib:{usr}/local/lib64:${{LD_LIBRARY_PATH:-}}\""
-        );
-        println!("export CPATH=\"{usr}/include:{usr}/local/include:${{CPATH:-}}\"");
-        println!(
-            "export PKG_CONFIG_PATH=\"{usr}/lib/pkgconfig:{usr}/share/pkgconfig:${{PKG_CONFIG_PATH:-}}\""
-        );
-        println!("export MANPATH=\"{usr}/share/man:{usr}/local/share/man${{MANPATH:+:$MANPATH}}\"");
     }
     Ok(())
 }
@@ -3566,8 +3512,8 @@ mod env_cmd_tests {
             "path = \"/home/d/Desktop/meta/claude-plugins\""
         );
         assert_eq!(
-            super::render_meta_root("bash $META_ROOT/.claude/x.sh", r),
-            "bash /home/d/Desktop/meta/.claude/x.sh"
+            super::render_meta_root("bash $META_ROOT/assets/x.sh", r),
+            "bash /home/d/Desktop/meta/assets/x.sh"
         );
         // no token -> unchanged
         assert_eq!(super::render_meta_root("nothing here", r), "nothing here");
@@ -3582,44 +3528,6 @@ mod env_cmd_tests {
         assert_eq!(sh_single_quote("/path with space"), "'/path with space'");
         // embedded single quote: close, escaped quote, reopen
         assert_eq!(sh_single_quote("a'b"), "'a'\\''b'");
-    }
-
-    /// Drift guard (TASK-0004 / TASK-0005): the live `home/.claude/settings.json` MUST
-    /// be exactly `settings.json.tmpl` rendered with `${META_ROOT}` -> this machine's
-    /// meta root — the `claude-global-links` component's `sed` render. Editing
-    /// settings.json directly, or changing the tmpl without re-rendering, breaks this.
-    /// Also pins the TASK-0004 env block that wires META_ROOT into the env Claude inherits.
-    #[test]
-    fn settings_json_matches_rendered_tmpl_no_drift() {
-        let base = concat!(env!("CARGO_MANIFEST_DIR"), "/../../home/.claude/");
-        let tmpl = std::fs::read_to_string(format!("{base}settings.json.tmpl"))
-            .expect("read settings.json.tmpl");
-        let live =
-            std::fs::read_to_string(format!("{base}settings.json")).expect("read settings.json");
-
-        // Owner ruling 2026-07-07: neither META_ROOT nor LIFEOS_ROOT may be used or
-        // linger in session wiring — lifeos does not come into play until the first
-        // real release compiles, and META_ROOT was inaccurate meta-centric doctrine
-        // (the old statusline-command.sh anchor of this test had already broken
-        // silently when the harness moved the statusline; masked because push CI
-        // runs only on develop). This gate now ENFORCES the ban.
-        for (name, text) in [("settings.json", &live), ("settings.json.tmpl", &tmpl)] {
-            for banned in ["META_ROOT", "META_FILE", "LIFEOS_ROOT", "${"] {
-                assert!(
-                    !text.contains(banned),
-                    "{name} contains banned root-var wiring `{banned}` — owner ruling: \
-                     no META_ROOT/LIFEOS_ROOT in session wiring; use explicit real paths"
-                );
-            }
-        }
-
-        // With no root-var placeholders left, the tmpl renders as identity: the live
-        // settings MUST equal the template byte-for-byte (still a real drift gate).
-        assert_eq!(
-            tmpl, live,
-            "settings.json drifted from settings.json.tmpl — copy the tmpl over it \
-             (the template has no placeholders since the root-var ban)"
-        );
     }
 }
 
@@ -4752,28 +4660,39 @@ fn run_secret(cmd: SecretCmd, _json: bool) -> anyhow::Result<()> {
         &sink,
     );
 
-    // Drain events and render results.
-    for ev in rx.iter() {
-        if let Event::SecretsResult {
-            verb: v,
-            json_stdout,
-            stderr,
-            code,
-        } = &ev
-        {
-            if *v == verb && !json_stdout.is_empty() {
-                println!("{}", json_stdout);
-            }
-            if !stderr.is_empty() {
-                eprintln!("{}", stderr);
-            }
-            if let Some(c) = code {
-                std::process::exit(*c);
-            }
+    // The seam emits exactly one terminal result. Receive that result directly
+    // instead of iterating until every sender is dropped; the latter hangs on
+    // fail-closed resolution because this scope still owns `sink`.
+    let ev = rx
+        .recv()
+        .map_err(|err| anyhow::anyhow!("secretctl result channel closed: {err}"))?;
+    let Event::SecretsResult {
+        verb: result_verb,
+        json_stdout,
+        stderr,
+        code,
+    } = ev
+    else {
+        anyhow::bail!("secretctl returned an unexpected event")
+    };
+    if result_verb == verb && !json_stdout.is_empty() {
+        println!("{json_stdout}");
+    }
+    if !stderr.is_empty() {
+        eprintln!("{stderr}");
+    }
+    match code {
+        Some(0) => Ok(()),
+        Some(code) => std::process::exit(code),
+        None => {
+            let detail = if stderr.is_empty() {
+                "secretctl did not produce an exit status".to_string()
+            } else {
+                stderr
+            };
+            anyhow::bail!(detail)
         }
     }
-
-    Ok(())
 }
 
 struct DashboardArgs {

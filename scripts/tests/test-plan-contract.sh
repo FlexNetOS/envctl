@@ -12,13 +12,12 @@
 set -euo pipefail
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
-# Locate the packaged state-contract.md regardless of which of the two byte-identical copies is running
-# (mirrored into envctl/scripts/tests/ and the harness_hub plugin). Walk up from this script to the
-# meta-worktree root (holding both envctl/ and harness_hub/) and descend to the plugin references.
+# Locate the maintained state contract. In envctl, `agent-skills/` is the
+# tracked projection; in harness_hub package CI, `harness/skills/` is the
+# package source. Never depend on a live repo-local `.claude/` projection.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; root="$here"
-# Prefer the repo-local ejected copy first; a sibling harness_hub checkout can be older than this PR.
 repo_probe="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)"
-CONTRACT="$repo_probe/.claude/skills/planning-engineer/references/state-contract.md"
+CONTRACT="$repo_probe/agent-skills/planning-engineer/references/state-contract.md"
 [ -f "$CONTRACT" ] || CONTRACT="$repo_probe/harness/skills/planning-engineer/references/state-contract.md"
 REL="harness_hub/harness/skills/planning-engineer/references/state-contract.md"
 if [ ! -f "$CONTRACT" ]; then
@@ -27,6 +26,11 @@ if [ ! -f "$CONTRACT" ]; then
 fi
 [ -f "$CONTRACT" ] || { echo "FAIL: planning-engineer state-contract.md not found from $here" >&2; exit 1; }
 repo_root="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)"
+if [[ "$CONTRACT" == "$repo_root/agent-skills/"* ]]; then
+  SOURCE_LAYOUT="envctl"
+else
+  SOURCE_LAYOUT="package"
+fi
 
 # Codex prompt front doors: the recovered planning-engineer harness must be reachable from Codex,
 # not only as Claude/.agents skills. The compatibility alias covers the historically-mistyped
@@ -41,19 +45,10 @@ grep -q 'agent-skills/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop.m
 grep -q '.codex/prompts/plan-loop.md' "$repo_root/.codex/prompts/plan-engineering-loop.md" \
   || fail "plan-engineering-loop alias does not route to plan-loop"
 
-# Claude Code slash-command shims: `.claude/skills/*` are not slash commands by themselves.
-# Keep `/plan-loop`, `/plan-engineering-loop`, and `/planning-engineer` directly loadable in Claude.
-for command in planning-engineer plan-loop plan-engineering-loop; do
-  [ -f "$repo_root/.claude/commands/$command.md" ] || fail "missing Claude slash command front door: $command"
-done
-grep -q '.codex/prompts/planning-engineer.md' "$repo_root/.claude/commands/planning-engineer.md" \
-  || fail "Claude planning-engineer command does not route to Codex canonical prompt"
-grep -q '.codex/prompts/plan-loop.md' "$repo_root/.claude/commands/plan-loop.md" \
-  || fail "Claude plan-loop command does not route to Codex canonical prompt"
-grep -q '.claude/commands/plan-loop.md' "$repo_root/.claude/commands/plan-engineering-loop.md" \
-  || fail "Claude plan-engineering-loop alias does not route to plan-loop"
-grep -q 'five required Opus background lanes through weave' "$repo_root/.claude/commands/plan-loop.md" \
-  || fail "Claude plan-loop command does not preserve weave background lane contract"
+# Claude project material is an explicit ejection output, not a checked-in
+# authority or a prerequisite for this clean-checkout gate. The hermetic eject
+# test proves that projection separately.
+[ ! -e "$repo_root/.claude" ] || fail "repo-local .claude projection must not be an active source tree"
 for agent in \
   plan-analyst \
   plan-architect \
@@ -257,14 +252,21 @@ for da in "${doc_arts[@]}"; do
 done
 
 # ---- self-eval + self-upgrade after EVERY cycle is wired (anti-drift on the harness-evolution contract) ----
-# Resolve the sibling skill/agent files from the located CONTRACT so this works in BOTH the plugin
-# layout (.../harness/skills + .../harness/agents) and the ejected layout (.../.claude/skills + agents).
-PE_DIR="$(dirname "$(dirname "$CONTRACT")")"     # .../skills/planning-engineer
-SKILLS_DIR="$(dirname "$PE_DIR")"                # .../skills
-HARNESS_ROOT="$(dirname "$SKILLS_DIR")"          # .../harness (plugin) | .../.claude (ejected)
+PE_DIR="$(dirname "$(dirname "$CONTRACT")")"
+SKILLS_DIR="$(dirname "$PE_DIR")"
+HARNESS_ROOT="$(dirname "$SKILLS_DIR")"
+if [ "$SOURCE_LAYOUT" = "envctl" ]; then
+  AGENTS_DIR="$repo_root/.codex/agents"
+  AGENT_SUFFIX="toml"
+  EVO_AGENT="$SKILLS_DIR/harness-evolution/SKILL.md"
+else
+  AGENTS_DIR="$HARNESS_ROOT/agents"
+  AGENT_SUFFIX="md"
+  EVO_AGENT="$AGENTS_DIR/evolution-steward.md"
+fi
+agent_path() { printf '%s/%s.%s\n' "$AGENTS_DIR" "$1" "$AGENT_SUFFIX"; }
 PE_SKILL="$PE_DIR/SKILL.md"
 PLAN_LOOP_SKILL="$SKILLS_DIR/plan-loop/SKILL.md"
-EVO_AGENT="$HARNESS_ROOT/agents/evolution-steward.md"
 for f in "$PE_SKILL" "$PLAN_LOOP_SKILL" "$EVO_AGENT"; do
   [ -f "$f" ] || fail "self-eval contract: required file missing: $f"
 done
@@ -276,19 +278,19 @@ grep -qiE 'self-eval.*self-upgrade'    "$PLAN_LOOP_SKILL" || fail "plan-loop SKI
 grep -qiE 'after every cycle'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must run the evolution after every cycle"
 grep -qi  'harness-evolution'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must reference the harness-evolution method"
 grep -qiE 'never weaken'               "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must keep the never-weaken-a-gate guard"
-# shared evolution-steward: fires every cycle, fail-closed, never mid-cycle.
-grep -qiE 'every cycle'                "$EVO_AGENT" || fail "evolution-steward must run every cycle"
+# shared evolution contract: fires at every run boundary, fail-closed, never mid-cycle.
+grep -qiE 'every cycle|every run boundary|end of any.*harness run' "$EVO_AGENT" || fail "evolution contract must run at every cycle boundary"
 grep -qiE 'never mid-cycle'            "$EVO_AGENT" || fail "evolution-steward must keep the never-mid-cycle rule"
 echo "PASS: self-eval+self-upgrade-every-cycle contract locked (planning-engineer Phase 5 · plan-loop · evolution-steward)"
 
 # ---- prompt-parity: the loop has what the north-star prompt describes (laws · P4 · P5 · P6 · P8) ----
-# (reuses PE_DIR/SKILLS_DIR/HARNESS_ROOT resolved above; ejected layout → these land under .claude/.)
+# (reuses the maintained skills and runtime-specific agent definitions resolved above.)
 TREND_SKILL="$SKILLS_DIR/plan-trend-research/SKILL.md"
 SYNTH_SKILL="$SKILLS_DIR/plan-synthesis/SKILL.md"
 TSTRAT_SKILL="$SKILLS_DIR/plan-test-strategy/SKILL.md"
-ANALYST="$HARNESS_ROOT/agents/plan-analyst.md"
-CARTO="$HARNESS_ROOT/agents/plan-cartographer.md"
-GCAUD="$HARNESS_ROOT/agents/plan-governance-config-auditor.md"
+ANALYST="$(agent_path plan-analyst)"
+CARTO="$(agent_path plan-cartographer)"
+GCAUD="$(agent_path plan-governance-config-auditor)"
 DDRIVE="$PE_DIR/scripts/differential-drive.sh"
 for f in "$TREND_SKILL" "$SYNTH_SKILL" "$TSTRAT_SKILL" "$ANALYST" "$CARTO" "$GCAUD" "$DDRIVE"; do
   [ -f "$f" ] || fail "prompt-parity: required file missing: $f"
@@ -312,16 +314,9 @@ grep -qiE 'differential-drive\.sh' "$TSTRAT_SKILL" || fail "plan-test-strategy m
 grep -qiE 'tests-ran'     "$TSTRAT_SKILL" || fail "plan-test-strategy must keep the tests-ran>0 count-verify"
 echo "PASS: prompt-parity contract locked (toolchain law · P4 control-plane diagram · P5 row schema · P2 HF/cross-repo · P8 differential-drive + count-verify)"
 
-# ---- Codex-tree parity: the .agents/skills mirror must not drift from the parity content the Claude
-# tree carries (the eject maintains BOTH .claude/skills and the Codex-front-door .agents/skills). The
-# Codex mirror lagged once and only re-synced here, so lock the three parity carriers in .agents too.
-AG="$repo_root/.agents/skills"
-if [ -d "$AG" ]; then
-  grep -qiE 'ruvllm'                "$AG/planning-engineer/SKILL.md"  || fail ".agents Codex mirror: planning-engineer SKILL lost the shimmy/ruvllm toolchain law"
-  grep -qiE 'hugging ?face'         "$AG/plan-trend-research/SKILL.md" || fail ".agents Codex mirror: plan-trend-research lost the Hugging Face research tool"
-  grep -qiE 'differential-drive\.sh' "$AG/plan-test-strategy/SKILL.md" || fail ".agents Codex mirror: plan-test-strategy lost the differential-drive.sh driver"
-  echo "PASS: Codex-tree parity locked (.agents/skills mirror carries the toolchain law · HF · differential-drive driver)"
-fi
+# Inactive packs need not be materialized under `.agents/skills`; the tracked
+# `agent-skills/` content above is the parity carrier and has already passed.
+echo "PASS: maintained skill parity locked"
 
 # ---- source-of-truth + transport + terminal artifact-gate hardening ----
 PE_SCRIPT_DIR="$PE_DIR/scripts"
@@ -350,10 +345,10 @@ grep -q 'plan-artifact-gate.sh' "$PE_SKILL"        || fail "planning-engineer DO
 grep -q 'plan-artifact-gate.sh' "$PLAN_LOOP_SKILL" || fail "plan-loop DONE gate must invoke plan-artifact-gate.sh"
 grep -q 'terminal plan state'   "$ARTIFACT_GATE"   || fail "artifact gate must reject terminal zero-target/nonterminal roll-ups"
 # P9: concurrent fan-out peer artifacts are PENDING until the producer lane reports done.
-for agent in "$HARNESS_ROOT/agents/plan-analyst.md" \
-             "$HARNESS_ROOT/agents/plan-governance-config-auditor.md" \
-             "$HARNESS_ROOT/agents/plan-memory-vector-intelligence-auditor.md" \
-             "$HARNESS_ROOT/agents/plan-prompt-architecture-auditor.md"; do
+for agent in "$(agent_path plan-analyst)" \
+             "$(agent_path plan-governance-config-auditor)" \
+             "$(agent_path plan-memory-vector-intelligence-auditor)" \
+             "$(agent_path plan-prompt-architecture-auditor)"; do
   grep -q 'Concurrent peer-artifact rule (P9)' "$agent" || fail "agent missing P9 peer-artifact pending rule: $agent"
   grep -q 'PENDING' "$agent" || fail "agent must record not-yet-produced peer artifacts as PENDING: $agent"
 done

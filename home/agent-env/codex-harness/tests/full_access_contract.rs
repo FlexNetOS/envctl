@@ -22,6 +22,19 @@ fn string_at<'a>(value: &'a toml::Value, key: &str) -> Option<&'a str> {
     value.get(key).and_then(toml::Value::as_str)
 }
 
+fn tree_has_files(path: &Path) -> bool {
+    if path.is_file() {
+        return true;
+    }
+    fs::read_dir(path)
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .any(|entry| tree_has_files(&entry.path()))
+        })
+        .unwrap_or(false)
+}
+
 #[test]
 fn tracked_policy_is_a_complete_clean_checkout_grant() {
     let root = envctl_root();
@@ -60,49 +73,23 @@ fn tracked_policy_is_a_complete_clean_checkout_grant() {
 }
 
 #[test]
-fn every_routeable_profile_is_full_access_without_retired_hooks() {
+fn envctl_owns_no_routeable_agent_runtime_profiles() {
     let root = envctl_root();
-    let config_dir = root.join("home/.codex");
-    for entry in fs::read_dir(config_dir).unwrap() {
-        let path = entry.unwrap().path();
-        let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
-            continue;
-        };
-        if !name.starts_with("envctl-") || !name.ends_with(".config.toml") {
-            continue;
-        }
-        let config = parse_toml(&path);
-        if name == "envctl-yolo-breakglass-disabled.config.toml" {
-            assert_ne!(
-                string_at(&config, "sandbox_mode"),
-                Some("danger-full-access"),
-                "{name} must remain an intentionally disabled bypass trap"
-            );
-            continue;
-        }
-        assert_eq!(
-            string_at(&config, "approval_policy"),
-            Some("never"),
-            "{name}"
+    let retired_agent_roots = ["codex", "claude"]
+        .map(|agent| format!("home/.{agent}"))
+        .into_iter()
+        .chain(["profile-runtime".to_string()]);
+    for relative in retired_agent_roots {
+        assert!(
+            !tree_has_files(&root.join(&relative)),
+            "envctl must not project an installed agent runtime: {relative}"
         );
-        assert_eq!(
-            string_at(&config, "sandbox_mode"),
-            Some("danger-full-access"),
-            "{name}"
-        );
-        assert_eq!(
-            string_at(&config, "default_permissions"),
-            Some(":danger-full-access"),
-            "{name}"
-        );
-        if let Some(features) = config.get("features") {
-            assert_ne!(
-                features.get("hooks").and_then(toml::Value::as_bool),
-                Some(true),
-                "{name} re-enables retired hooks"
-            );
-        }
     }
+
+    let manifest = fs::read_to_string(root.join("manifest/ai-clis.toml")).unwrap();
+    assert!(manifest.contains("envctl-codex-profile-lifecycle.sh"));
+    assert!(manifest.contains("envctl-claude-cleanup.sh"));
+    assert!(manifest.contains("envctl-profile-command-lifecycle.sh"));
 }
 
 #[test]
@@ -123,99 +110,46 @@ fn every_agent_route_preserves_full_access_context() {
         );
     }
 
-    let active_agents = root.join("home/.codex/agents");
-    for entry in fs::read_dir(&active_agents).unwrap() {
-        let path = entry.unwrap().path();
-        if path.extension().and_then(|value| value.to_str()) != Some("toml") {
-            continue;
-        }
-        let agent = parse_toml(&path);
-        assert_eq!(
-            string_at(&agent, "sandbox_mode"),
-            Some("danger-full-access"),
-            "{}",
-            path.display()
-        );
-    }
+    assert!(!root.join("profile-runtime/codex/agents").exists());
 }
 
 #[test]
 fn native_rule_mirrors_allow_the_operator_frontdoor() {
     let root = envctl_root();
-    let rule_paths = [
-        "home/.codex/rules/no-yolo.rules",
-        "home/agent-env/codex-harness/rules/no-yolo.rules",
-    ];
-    let mut previous = None;
-    for relative in rule_paths {
-        let text = fs::read_to_string(root.join(relative)).unwrap();
-        assert!(
-            text.contains("pattern = [\"codex\", \"--dangerously-bypass-approvals-and-sandbox\"]"),
-            "{relative}"
-        );
-        assert!(text.contains("decision = \"allow\""), "{relative}");
-        assert!(
-            text.contains(codex_harness::USER_FULL_ACCESS_DECISION_ID),
-            "{relative}"
-        );
-        if let Some(expected) = previous {
-            assert_eq!(text, expected, "native rule mirrors diverged");
-        }
-        previous = Some(text);
-    }
+    let relative = "home/agent-env/codex-harness/rules/no-yolo.rules";
+    let text = fs::read_to_string(root.join(relative)).unwrap();
+    assert!(
+        text.contains("pattern = [\"codex\", \"--dangerously-bypass-approvals-and-sandbox\"]"),
+        "{relative}"
+    );
+    assert!(text.contains("decision = \"allow\""), "{relative}");
+    assert!(
+        text.contains(codex_harness::USER_FULL_ACCESS_DECISION_ID),
+        "{relative}"
+    );
+    assert!(!root.join("profile-runtime/codex/rules").exists());
 }
 
 #[test]
-fn routeable_models_are_sol_terra_luna_or_explicit_fallbacks() {
+fn repository_agent_models_are_sol_terra_luna_or_explicit_fallbacks() {
     let root = envctl_root();
-    let config_dir = root.join("home/.codex");
-    for entry in fs::read_dir(config_dir).unwrap() {
-        let path = entry.unwrap().path();
-        let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
-            continue;
-        };
-        if !name.starts_with("envctl-") || !name.ends_with(".config.toml") {
-            continue;
+    for directory in [
+        root.join("home/agent-env/codex-harness/agents"),
+        root.join(".codex/agents"),
+    ] {
+        for entry in fs::read_dir(directory).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|value| value.to_str()) != Some("toml") {
+                continue;
+            }
+            let agent = parse_toml(&path);
+            assert_ne!(
+                string_at(&agent, "model"),
+                Some("gpt-5.5"),
+                "{} retains a routeable GPT-5.5 assignment",
+                path.display()
+            );
         }
-        let config = parse_toml(&path);
-        assert_ne!(
-            string_at(&config, "model"),
-            Some("gpt-5.5"),
-            "{name} retains a routeable GPT-5.5 assignment"
-        );
-    }
-
-    let main_config = parse_toml(&root.join("home/.codex/config.toml"));
-    assert_eq!(
-        string_at(&main_config, "model"),
-        Some("gpt-5.6-terra"),
-        "Terra must be the balanced default lane"
-    );
-
-    let agents = [
-        ("rust-harness-engineer.toml", "gpt-5.6-sol"),
-        ("security-reviewer.toml", "gpt-5.6-sol"),
-        ("verifier.toml", "gpt-5.6-sol"),
-        ("researcher.toml", "gpt-5.6-terra"),
-        ("explorer.toml", "gpt-5.6-luna"),
-    ];
-    for (name, expected) in agents {
-        let agent = parse_toml(&root.join("home/.codex/agents").join(name));
-        assert_eq!(string_at(&agent, "model"), Some(expected), "{name}");
-    }
-
-    for entry in fs::read_dir(root.join(".codex/agents")).unwrap() {
-        let path = entry.unwrap().path();
-        if path.extension().and_then(|value| value.to_str()) != Some("toml") {
-            continue;
-        }
-        let agent = parse_toml(&path);
-        assert_ne!(
-            string_at(&agent, "model"),
-            Some("gpt-5.5"),
-            "{} retains a routeable GPT-5.5 planning assignment",
-            path.display()
-        );
     }
     for (name, expected) in [
         ("plan-architect.toml", "gpt-5.6-sol"),
@@ -230,35 +164,27 @@ fn routeable_models_are_sol_terra_luna_or_explicit_fallbacks() {
 #[test]
 fn retired_roots_and_tracked_model_cache_are_absent() {
     let root = envctl_root();
-    assert!(
-        !root.join("home/.codex/models_cache.json").exists(),
-        "tracked models_cache.json must not be a secondary authority"
-    );
+    assert!(!root.join("profile-runtime").exists());
+    for agent in ["codex", "claude"] {
+        assert!(!tree_has_files(
+            &root.join("home").join(format!(".{agent}"))
+        ));
+    }
 
     let library = fs::read_to_string(root.join("home/agent-env/codex-harness/src/lib.rs")).unwrap();
     assert!(!library.contains("/home/flexnetos/lifeos/src/envctl"));
     assert!(library.contains("/home/flexnetos/meta/src/envctl/home"));
 
-    let config = fs::read_to_string(root.join("home/.codex/config.toml")).unwrap();
-    assert!(!config.contains("[projects.\"/home/flexnetos/lifeos"));
-    assert!(!config.contains("[projects.\"/home/flexnetos/FlexNetOS"));
-    assert!(!config.contains("\"/home/flexnetos/lifeos/src/envctl\""));
-    assert!(config.contains("[projects.\"/home/flexnetos/meta/src/envctl\"]"));
-    assert!(config.contains("image_generation = true"));
-    assert!(!config.contains("imagegenext"));
-    assert!(config.contains("shell_zsh_fork = false"));
-    assert!(config.contains("unified_exec_zsh_fork = false"));
-
     let baseline =
         fs::read_to_string(root.join("manifest/components.d/codex-global-baseline.toml")).unwrap();
     assert!(
         baseline.contains("envctl-codex-global-baseline-lifecycle.sh"),
-        "Codex global policy must dispatch the audited active-home lifecycle"
+        "Codex policy must dispatch the read-only profile compatibility lifecycle"
     );
     assert!(!baseline.contains("LIFEOS_ROOT"));
     for forbidden in [
         "model-catalog",
-        "home/.codex/agents",
+        "profile-runtime/codex/agents",
         "marketplaces.",
         "plugins.\"",
         "CODEX_HOME",
@@ -294,7 +220,9 @@ fn retired_roots_and_tracked_model_cache_are_absent() {
 fn one_skill_owns_session_controls_and_github_execution_policy() {
     let root = envctl_root();
     assert!(
-        !root.join("home/.codex/skills/harness-ops").exists(),
+        !root
+            .join("profile-runtime/codex/skills/harness-ops")
+            .exists(),
         "a second top-level harness skill must not compete with /agent-env-codex"
     );
     assert!(
@@ -302,10 +230,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         "split status/full/restricted/toggle skill products must not return"
     );
 
-    let skill = fs::read_to_string(
-        root.join("agent-skills/agent-env-codex/SKILL.md"),
-    )
-    .unwrap();
+    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
     assert!(skill.contains("references/github-execution-policy.md"));
     assert!(skill.contains("references/github-org-and-ccboard.md"));
     assert!(skill.contains("references/bunx-and-github-ssh.md"));
@@ -436,10 +361,7 @@ fn persistent_runner_jobs_have_isolated_cargo_targets() {
 #[test]
 fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     let root = envctl_root();
-    let skill = fs::read_to_string(
-        root.join("agent-skills/agent-env-codex/SKILL.md"),
-    )
-    .unwrap();
+    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
     for required in [
         "references/yazelix-cli-plugin-policy.md",
         "A toggle may be off",
@@ -534,9 +456,8 @@ fn provider_and_rtk_routes_preserve_supervised_execution() {
     for name in ["no-nested-agents.rules", "parallel-runner.rules"] {
         let harness =
             fs::read_to_string(root.join("home/agent-env/codex-harness/rules").join(name)).unwrap();
-        let projection = fs::read_to_string(root.join("home/.codex/rules").join(name)).unwrap();
-        assert_eq!(harness, projection, "{name} mirrors diverged");
         assert!(harness.contains("pattern = [\"rtk\", \"codex\""));
         assert!(harness.contains("pattern = [\"rtk\", \"claude\""));
     }
+    assert!(!root.join("profile-runtime/codex/rules").exists());
 }

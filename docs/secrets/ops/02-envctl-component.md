@@ -143,8 +143,8 @@ rustix = { version = "0.38", features = ["process", "net"] }
 Field names, hook `kind`s, and guard `kind`s below are exact against
 `$META_ROOT/envctl/crates/engine/src/component.rs` and `model.rs`. Paths are the verified
 XDG layout from ARCHITECTURE.md §"Layout" (lines 124-127):
-`$META_ROOT/.config/env-ctl` (config), `$META_ROOT/.local/share/env-ctl` (0700; `vault.db` 0600, `ca/`),
-`$META_ROOT/.local/state/env-ctl` (0700; `secretd.log`, audit mirror),
+`$META_ROOT/.config/env-ctl` (config), `$META_ROOT/var/lib/env-ctl` (0700; `vault.db` 0600, `ca/`),
+`$META_ROOT/var/lib/env-ctl` (0700; `secretd.log`, audit mirror),
 `$XDG_RUNTIME_DIR/env-ctl` (0700; `secretd.sock` 0600, relay-proxy bind config). `VERIFIED`.
 
 ```toml
@@ -190,8 +190,8 @@ install -Dm755 "$repo/target/release/secretctl" "$HOME/.cargo/bin/secretctl"
 
 # XDG dirs, fail-closed perms (ARCHITECTURE.md layout). RUNTIME dir is created by the unit at start.
 install -d -m700 "$HOME/.config/env-ctl"
-install -d -m700 "$META_ROOT/.local/share/env-ctl"
-install -d -m700 "$META_ROOT/.local/state/env-ctl"
+install -d -m700 "$META_ROOT/var/lib/env-ctl"
+install -d -m700 "$META_ROOT/var/lib/env-ctl"
 '''
 
 # VERIFY: bins answer, AND secretd's own listener/lockdown self-check passes (SERVER-MODE.md §3,
@@ -266,7 +266,7 @@ LimitCORE=0
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl %h/Desktop/meta/var/lib/env-ctl %t/env-ctl
 RuntimeDirectory=env-ctl
 RuntimeDirectoryMode=0700
 PrivateTmp=true
@@ -284,9 +284,9 @@ WantedBy=default.target
 
 # ---- VAULT DATA: deleted ONLY by `envctl reset env-ctl --purge` (after UUID re-verify) ----
 [[component.wiring.data_paths]]
-path = "$META_ROOT/.local/share/env-ctl"   # vault.db (0600), ca/ (local CA private material)
+path = "$META_ROOT/var/lib/env-ctl"   # vault.db (0600), ca/ (local CA private material)
 [[component.wiring.data_paths]]
-path = "$META_ROOT/.local/state/env-ctl"   # secretd.log, durable hash-chained audit mirror
+path = "$META_ROOT/var/lib/env-ctl"   # secretd.log, durable hash-chained audit mirror
 
 # ---- CONFIG: kept with `--keep-config`, else engine-removed on reset ----
 [[component.wiring.config_paths]]

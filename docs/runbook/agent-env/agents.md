@@ -15,9 +15,9 @@ Set the `agent` field in your config and envctl figures out where to put things.
 | Amp | `amp` | `~/.config/agents/skills/` |
 | Antigravity | `antigravity` | `~/.gemini/antigravity/skills/` |
 | Augment | `augment` | `~/.augment/skills/` |
-| Claude Code | `claude-code` | `~/.claude/skills/` |
+| Claude Code | `claude-code` | `/run/user/1001/yazelix/profile-runtime/claude/skills/` |
 | Cline | `cline` | `~/.agents/skills/` |
-| Codex | `codex` | `~/.codex/skills/` |
+| Codex | `codex` | `/run/user/1001/yazelix/profile-runtime/codex/skills/` |
 | Continue | `continue` | `~/.continue/skills/` |
 | Cursor | `cursor` | `~/.cursor/skills/` |
 | Gemini CLI | `gemini-cli` | `~/.gemini/skills/` |
@@ -47,8 +47,8 @@ file per instruction) are noted below; project paths are relative to the repo ro
 
 | Agent | Project instructions path | Global instructions path | Shape |
 | --- | --- | --- | --- |
-| Claude Code | `CLAUDE.md` | `~/.claude/CLAUDE.md` | aggregate |
-| Codex | `AGENTS.md` | `~/.codex/AGENTS.md` | aggregate |
+| Claude Code | `CLAUDE.md` | `/run/user/1001/yazelix/profile-runtime/claude/CLAUDE.md` | aggregate |
+| Codex | `AGENTS.md` | `/run/user/1001/yazelix/profile-runtime/codex/AGENTS.md` | aggregate |
 | OpenCode | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | aggregate |
 | Amp | `AGENTS.md` | `~/.config/amp/AGENTS.md` | aggregate |
 | Gemini CLI | `GEMINI.md` | `~/.gemini/GEMINI.md` | aggregate |

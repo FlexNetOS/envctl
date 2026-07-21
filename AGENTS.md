@@ -127,11 +127,13 @@ another language or toolchain:
   external repo into the workspace as a Rust crate. Use it (or its design as a template) rather
   than carrying foreign-language code as-is.
 
-## Agent environment is agent-env-managed (absorbed kasetto) — do NOT hand-edit ECC files
+## Agent environment is agent-env-managed (absorbed kasetto) — do NOT hand-edit projections
 
-The `.Codex/` and `.codex/` agent config (skills + MCP baseline) is **provisioned and locked
-by the built-in agent-env engine** (`agent-env.yaml` → `agent-env.lock`, driven by `envctl agent`),
-sourced from `./agent-skills`. (kasetto v3.2.0 was absorbed into `crates/agent-env` and the external
+The canonical repository agent content lives in `agent-skills/` and is selected
+by `agent-env.yaml` → `agent-env.lock`. Repository-local `.codex/skills/` and
+`.agents/skills/` are locked projections produced by the built-in agent-env
+engine (`envctl agent`); they are not home-runtime ownership trees. (kasetto
+v3.2.0 was absorbed into `crates/agent-env` and the external
 `kasetto` binary retired — TASK-0018/#98; the config/lock were renamed `kasetto.yaml`/`kasetto.lock`
 → `agent-env.yaml`/`agent-env.lock` — TASK-0040.) It supersedes the **ECC-auto-generated** files,
 which were derived from a misread and assert **JavaScript** conventions (camelCase, `*.test.ts`,
@@ -145,11 +147,15 @@ JS imports) — those are **wrong for this repo**.
   `agent-skills/<skill>/` owner, then activate through `envctl agent catalog`
   and run `envctl agent lock` followed by `envctl agent sync --apply`.
   (the built-in agent-env engine; the external `kasetto` binary is retired — TASK-0018).
-  Do **not** hand-maintain `.Codex/skills/*` or `.Codex/homunculus/instincts/*` — they're
-  generated. CI enforces with `envctl agent lock --check` (read-only, zero-network, exits 1 on
-  drift — `ci/gates/agent-env.sh`, TASK-0040).
-- Keep the MCP baseline identical across Codex (`.mcp.json`) and Codex (`.codex/config.toml`):
-  `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
+  Do **not** hand-maintain `.codex/skills/*` or `.agents/skills/*`; regenerate
+  them from the locked catalog. Maintained Codex agent definitions live in
+  `.codex/agents/*.toml`. Never recreate a home Codex or Claude source tree.
+  CI enforces lock drift with `envctl agent lock --check` (read-only,
+  zero-network, exits 1 on drift — `ci/gates/agent-env.sh`, TASK-0040).
+- Keep the repo-local MCP baseline synchronized between `.mcp.json` and
+  `.codex/config.toml`. The current approved baseline is remote `exa` only;
+  retired local-launch servers remain absent until they have profile-owned
+  frontdoors and regenerated agent-env locks.
 - Treat that envctl baseline as a repo-local MCP floor, not as authority to
   widen the active home/runtime plugin marketplace surface. Do not rehydrate
   removed plugin catalogs, temp marketplace caches, or not-installed plugin
@@ -159,11 +165,12 @@ JS imports) — those are **wrong for this repo**.
   not proof that the active home Codex runtime should preserve or restore every
   observed `mcp_servers` or plugin listing from an older `.codex/config.toml`.
 - When envctl work touches Yazelix-integrated runtime behavior, follow the
-  Yazelix ownership contract exactly: the user config tree is the editable
-  input surface, the real-home data tree is generated runtime output, and the
-  active launch frontdoor is the profile-owned `yzx`. Do not hand-edit
-  generated runtime files or preserve stale user-bin wrappers or per-user
-  desktop-entry shadows as parallel control paths.
+  strict single-profile contract exactly. Canonical Yazelix repository source
+  and approved user configuration are editable inputs; installed binaries,
+  runtime configuration, launchers, and desktop integration materialize under
+  `/home/flexnetos/.nix-profile`. There is no active real-home data-tree
+  runtime. Do not preserve user-bin wrappers or per-user desktop-entry shadows
+  as parallel control paths.
 - Codex binary/runtime ownership must mirror the Yazelix binary/runtime model
   with no drift. Yazelix is the normative model, not a comparison target or one
   possible runtime shape among several. Current Codex, binary, toolchain,
@@ -179,13 +186,10 @@ JS imports) — those are **wrong for this repo**.
     not limited to `codex`: it includes `rtk`, `git-kb`, terminal helpers,
     package-manager shims, MCP/plugin launchers, and any other command exposed
     to the active runtime. User-bin shadows, repo-cache materializations, temp plugin bundles, marketplace caches, and generated-output files are never alternate active locations. No exceptions.
-  - The user config tree is the main editable input surface, including
-    `settings.jsonc` and managed overrides, per the Yazelix customization and
-    POSIX XDG docs.
-  - The real-home data tree is generated runtime output; edit config inputs,
-    not generated runtime files, per the Yazelix customization docs and README.
-  - The profile-owned `yzx` binary is the active install-owner frontdoor, per
-    the Yazelix Home Manager docs.
+  - Canonical repository source and approved user configuration, including
+    `settings.jsonc` and managed overrides, are editable inputs.
+  - The profile-owned `yzx` binary and profile runtime configuration are the
+    sole installed frontdoor and installed runtime surface.
   - Legacy user-bin `yzx` wrappers are stale shadows when they shadow the
     profile path, per the Yazelix Home Manager docs.
   - Per-user desktop entries are stale shadows when they shadow the active
@@ -222,12 +226,12 @@ Use these locations only:
 
 | Purpose | Active location |
 | --- | --- |
-| Global Codex runtime config | `/home/flexnetos/.codex/config.toml` |
-| Global Codex operating rules | `/home/flexnetos/.codex/RULES.md` |
+| Global Codex runtime config | `/run/user/1001/yazelix/profile-runtime/codex/config.toml` |
+| Global Codex operating rules | `/run/user/1001/yazelix/profile-runtime/codex/RULES.md` |
 | Home-level navigation entry | `/home/flexnetos/AGENTS.md` |
-| RTK policy include | `/home/flexnetos/.codex/AGENTS.rtk.md` and `/home/flexnetos/AGENTS.rtk.md` |
+| RTK policy include | `/run/user/1001/yazelix/profile-runtime/codex/AGENTS.rtk.md` and `/home/flexnetos/AGENTS.rtk.md` |
 | Repo-managed agent inputs | `agent-env.yaml`, `agent-env.lock`, `agent-skills/` |
-| Repo home projection | `home/.codex/`, `home/.claude/`, `home/AGENTS.md` |
+| Repo home projection | `profile-runtime/codex/`, `profile-runtime/claude/`, `home/AGENTS.md` |
 | Codex harness source | `home/agent-env/codex-harness/` |
 
 Do **not** use `/home/flexnetos/lifeos/.codex` or
@@ -235,7 +239,7 @@ Do **not** use `/home/flexnetos/lifeos/.codex` or
 fallback. They were retired because `/home/flexnetos/FlexNetOS` is a symlink to
 `/home/flexnetos/lifeos`, so those two paths were the same confusing control
 surface. If either path reappears, archive it and route the change through
-`/home/flexnetos/.codex` or envctl `agent-env.yaml` as appropriate.
+`/run/user/1001/yazelix/profile-runtime/codex` or envctl `agent-env.yaml` as appropriate.
 
 ## Pointers
 
@@ -291,7 +295,7 @@ drift/lock/doctor → `env-stabilize`; conventions → `agent-env-config`.)
 `agent-skills/`. The compact `agent-skills/skill-catalog/` owner selects only
 `core` plus explicitly activated packs into `.codex/skills` and `.agents/skills` through
 `envctl agent sync`; inactive skills remain intact in the canonical catalog and never become
-unmanaged copies. Agent definitions remain under `.Codex/agents/*.md`.
+unmanaged copies. Maintained agent definitions live under `.codex/agents/*.toml`.
 
 > **Packaged upstream (TASK-0052, owner-locked 2026-06-18):** the generic construction-crew core —
 > `feature-forge` + `forge-loop` + `rust-feature-impl` + the architect/implementer/guardian/
@@ -299,15 +303,17 @@ unmanaged copies. Agent definitions remain under `.Codex/agents/*.md`.
 > `harness_hub`** (`/harness:feature-forge`, `harness_hub/harness/skills/feature-forge/` + prefixed
 > `harness/agents/feature-forge-*`, `registry.json`/`entries/feature-forge.md`; harness_hub PR #38).
 > This **supersedes the "hand-authored, never packaged" stance for that core**: the hub package is the
-> reusable source-of-truth (the envctl `.Codex/` copies are an ejected instance that may be
-> re-synced via the package's `eject.sh`). The **envctl-specific loops** (`env-install-loop`,
+> reusable source-of-truth. Envctl adopts maintained copies under `agent-skills/`
+> through the package's `eject.sh`; no home agent tree is an ejection target. The
+> **envctl-specific loops** (`env-install-loop`,
 > `auto-provision`, `handoff-sync`) are NOT generically reusable and remain hand-authored in envctl
 > only — they are deliberately out of the hub package's scope.
 
 > **Packaged planning upstream (2026-06-26):** the recovered **planning-engineer** harness is now a
 > registered, ejectable packaged harness in `harness_hub` (`/harness:planning-engineer` for one
-> evidence-backed planning cycle and `/harness:plan-loop` for the continuous Ralph loop). The envctl
-> `.claude/`/`.agents/` copies are ejected mirrors; the hub package is the reusable source-of-truth.
+> evidence-backed planning cycle and `/harness:plan-loop` for the continuous Ralph loop). Envctl's
+> maintained planning skills live in `agent-skills/`, with Codex definitions in
+> `.codex/agents/*.toml`; the hub package is the reusable upstream source.
 > The loop is read-only on product code and writes planning artifacts under `.handoff/loop/plan/`.
 
 **Change history:**
@@ -382,17 +388,17 @@ This project is indexed by GitNexus as **envctl** (14492 symbols, 30909 relation
 
 ## Cross-Repo Groups
 
-This repository is listed under GitNexus **group(s): envctl-migration** (see `~/.gitnexus/groups/`). For cross-repo analysis, use MCP tools `impact`, `query`, and `context` with `repo` set to `@<groupName>` or `@<groupName>/<memberPath>` (paths match keys in that group’s `group.yaml`). Use `group_list` / `group_sync` for membership and sync. From the project root: `node .gitnexus/run.cjs group list`, `node .gitnexus/run.cjs group sync <name>`, `node .gitnexus/run.cjs group impact <name> --target <symbol> --repo <group-path>` (the `.gitnexus/run.cjs` path is repo-root-relative).
+This repository is listed under GitNexus **group(s): envctl-migration**. For cross-repo analysis, use MCP tools `impact`, `query`, and `context` with `repo` set to `@<groupName>` or `@<groupName>/<memberPath>` (paths match keys in that group’s `group.yaml`). Use `group_list` / `group_sync` for membership and sync. CLI execution must use the profile-owned Bun lane (`bunx --bun gitnexus@latest ...`), never Node/npm/npx or a user-bin shadow.
 
 ## CLI
 
 | Task | Read this skill file |
 |------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Understand architecture / "How does X work?" | `/home/flexnetos/.agents/skills/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `/home/flexnetos/.agents/skills/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `/home/flexnetos/.agents/skills/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `/home/flexnetos/.agents/skills/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `/home/flexnetos/.agents/skills/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `/home/flexnetos/.agents/skills/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->

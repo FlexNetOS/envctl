@@ -32,7 +32,7 @@ pub enum McpSettingsFormat {
     VsCodeServers,
     /// OpenCode `opencode.json`: `{ "mcp": { "name": { "type": "local"|"remote", ... } } }`.
     OpenCode,
-    /// OpenAI Codex `~/.codex/config.toml` (`[mcp_servers.name]` tables).
+    /// OpenAI Codex volatile profile-runtime config (`[mcp_servers.name]` tables).
     CodexToml,
 }
 

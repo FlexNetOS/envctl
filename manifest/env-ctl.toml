@@ -98,8 +98,8 @@ cleanup_legacy_cargo_bin secretctl
 
 # XDG dirs, fail-closed perms (ARCHITECTURE layout). RUNTIME dir is created by the unit at start.
 install -d -m700 "$META_ROOT/.config/env-ctl"
-install -d -m700 "$META_ROOT/.local/share/env-ctl"
-install -d -m700 "$META_ROOT/.local/state/env-ctl"
+install -d -m700 "$META_ROOT/var/lib/env-ctl"
+install -d -m700 "$META_ROOT/var/lib/env-ctl"
 
 # Durable store config (docs/ops/08): point secretd at the loopback sqld (libSQL remote backend).
 # Idempotent: written only if absent (operator edits are preserved). The AUTH TOKEN is NEVER written
@@ -323,8 +323,8 @@ ExecStart="${META_ROOT}/usr/libexec/envctl/secrets/bin/secretd"
 Environment="ENVCTL_SEED_CA=${META_ROOT}/etc/envctl/secrets/ca/cognitum-ca.crt"
 Environment="META_ROOT=${META_ROOT}"
 Environment="XDG_CONFIG_HOME=${META_ROOT}/.config"
-Environment="XDG_DATA_HOME=${META_ROOT}/.local/share"
-Environment="XDG_STATE_HOME=${META_ROOT}/.local/state"
+Environment="XDG_DATA_HOME=${META_ROOT}/var/lib"
+Environment="XDG_STATE_HOME=${META_ROOT}/var/lib"
 # Pin the system service to the envctl-owned durable store. Environment precedence intentionally
 # overrides an operator's stale `inmem`/alternate-URL TOML so READY=1 proves authenticated access to
 # this unit's required sqld.service, not merely that the control socket bound successfully.
@@ -345,7 +345,7 @@ LimitCORE=0
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths="${META_ROOT}/.local/share/env-ctl" "${META_ROOT}/.local/state/env-ctl" %t/env-ctl
+ReadWritePaths="${META_ROOT}/var/lib/env-ctl" "${META_ROOT}/var/lib/env-ctl" %t/env-ctl
 # Belt-and-suspenders read access to the Seed Device-CA dir (TASK-0075b). NOT ReadWritePaths — the
 # daemon must never overwrite its trust root; survives any future ProtectHome=tmpfs hardening.
 ReadOnlyPaths="${META_ROOT}/etc/envctl/secrets/ca"
@@ -367,9 +367,9 @@ WantedBy=default.target
 
 # ---- VAULT DATA: deleted ONLY by `envctl reset env-ctl --purge` (after UUID re-verify) ----
 [[component.wiring.data_paths]]
-path = "$META_ROOT/.local/share/env-ctl"   # vault.db (0600), ca/ (local CA private material)
+path = "$META_ROOT/var/lib/env-ctl"   # vault.db (0600), ca/ (local CA private material)
 [[component.wiring.data_paths]]
-path = "$META_ROOT/.local/state/env-ctl"   # secretd.log, durable hash-chained audit mirror
+path = "$META_ROOT/var/lib/env-ctl"   # secretd.log, durable hash-chained audit mirror
 
 # ---- CONFIG: kept with `--keep-config`, else engine-removed on reset ----
 # This is where docs/ops/08's secretd.toml store-backend selection lives; auth tokens are NEVER

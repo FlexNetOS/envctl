@@ -25,7 +25,11 @@ EOF
 
 write_typed_owner "$TMP/manifest/env-ctl.toml" env-ctl.service
 write_typed_owner "$TMP/manifest/sqld.toml" sqld.service
-write_typed_owner "$TMP/manifest/components.d/epic-h-toolchains.toml" kache.service
+cat >"$TMP/manifest/components.d/epic-h-toolchains.toml" <<'EOF'
+[[component]]
+id = "kache"
+description = "Profile-owned validation only; no envctl systemd unit projection."
+EOF
 cat >"$TMP/manifest/components.d/portability-links.toml" <<'EOF'
 [[component]]
 id = "home-config-links"
@@ -76,6 +80,10 @@ expect_failure home-projection 'tracked home-tree unit projection' \
 write_typed_owner "$TMP/manifest/components.d/duplicate.toml" env-ctl.service
 expect_failure duplicate-owner 'env-ctl.service has duplicate or wrong owners' \
   rm "$TMP/manifest/components.d/duplicate.toml"
+
+write_typed_owner "$TMP/manifest/components.d/forbidden-profile-unit.toml" kache.service
+expect_failure profile-owned-unit 'unregistered active unit projection' \
+  rm "$TMP/manifest/components.d/forbidden-profile-unit.toml"
 
 cat >"$TMP/manifest/components.d/imperative.toml" <<'EOF'
 [[component]]

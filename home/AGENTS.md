@@ -4,9 +4,9 @@ Read this first for sessions that start in `/home/flexnetos`.
 
 ## Active control paths
 
-- Codex runtime config: `/home/flexnetos/.codex/config.toml`.
-- Codex operating rules: `/home/flexnetos/.codex/RULES.md`.
-- RTK policy: `/home/flexnetos/.codex/AGENTS.rtk.md` and
+- Codex runtime config: `/run/user/1001/yazelix/profile-runtime/codex/config.toml`.
+- Codex operating rules: `/run/user/1001/yazelix/profile-runtime/codex/RULES.md`.
+- RTK policy: `/run/user/1001/yazelix/profile-runtime/codex/AGENTS.rtk.md` and
   `/home/flexnetos/AGENTS.rtk.md`.
 - envctl source of truth: `/home/flexnetos/meta/src/envctl`.
 - envctl home projection: `/home/flexnetos/meta/src/envctl/home`.
@@ -35,7 +35,7 @@ or instruction sources:
 
 They were the same symlinked workspace mirror and have been retired to avoid
 new-session navigation confusion. If either reappears, archive it and route the
-change through `/home/flexnetos/.codex` or envctl `agent-env.yaml`.
+change through `/run/user/1001/yazelix/profile-runtime/codex` or envctl `agent-env.yaml`.
 
 ## Toolchain/runtime policy
 

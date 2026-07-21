@@ -47,11 +47,6 @@ CLI=crates/cli/src/main.rs
 GUI=crates/gui/src/main.rs
 grep -q '"peer" => AddRepoMode::Peer' "$CLI" || fail "$CLI must parse --mode peer"
 grep -q 'Register as' "$GUI" || fail "$GUI must offer the 'Register as' (peer/component) selector"
-# Stale child-repo wording: a host-home '.local/bin' install path. The '[~]' class
-# matches a literal tilde without this gate file itself tripping meta-local-policy.
-grep -Eq '[~]/\.local/bin|home/\.local/bin' "$GUI" \
-  && fail "$GUI must not advertise a host-home .local/bin install path (stale child-repo wording)"
-
 # 6. The doctrine is documented.
 grep -qi 'peer' "$DOC" || fail "$DOC must document peer mode"
 

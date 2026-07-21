@@ -29,7 +29,7 @@ The inventory is a JSON array. Each object becomes one `envctl_yazelix_file_impo
 
 - `target_id`: stable ID for the row. Include owner and normalized path when possible.
 - `absolute_path`: path to inspect. Directories, sockets, package outputs, and missing paths are metadata-only.
-- `normalized_logical_path`: source class plus a stable relative/logical path, for example `repo_source:manifest/dashboard.toml` or `real_home_runtime_state:.local/share/yazelix/...`.
+- `normalized_logical_path`: source class plus a stable relative/logical path, for example `repo_source:manifest/dashboard.toml` or `real_home_runtime_state:var/lib/yazelix/...`.
 - `owner`: `envctl`, `yazelix`, `meta`, `nix`, `codex`, `user`, or another explicit owner.
 - `source_of_truth_class`: choose values such as `repo_source`, `generated_runtime_state`, `real_home_user_config`, `real_home_runtime_state`, `meta_fhs_state`, `nix_store_package_output`, `environment_snapshot`, `proof_artifact`, or `external_observation`.
 - `file_kind`: `regular_file`, `directory`, `symlink`, `package_output`, `environment_snapshot`, `proof_log`, `binary`, `socket`, or a more specific local kind.

@@ -78,10 +78,10 @@ hand-spell ad hoc host paths; they should resolve through the engine layout and 
 | executable exposure | `$META_ROOT/usr/bin` |
 | libraries | `$META_ROOT/usr/lib` |
 | read-only shared data + generated drop-ins | `$META_ROOT/usr/share` |
-| XDG data (desktop/icons/fonts/app contracts only) | `$META_ROOT/.local/share` |
+| XDG data (desktop/icons/fonts/app contracts only) | `$META_ROOT/var/lib` |
 | add-repo source/build store | `$META_ROOT/var/lib/envctl/repos` |
 | durable envctl state/logs | `$META_ROOT/var/lib/envctl` / `$META_ROOT/var/log/envctl` |
-| XDG state (app contracts only) | `$META_ROOT/.local/state` |
+| XDG state (app contracts only) | `$META_ROOT/var/lib` |
 | envctl caches | `$META_ROOT/var/cache/envctl` |
 | XDG caches (app contracts only) | `$META_ROOT/.cache` |
 | temporary files | `$META_ROOT/var/tmp` |
@@ -128,9 +128,9 @@ cargo run -p envctl -- install desktop-app   # idempotent; reset removes the lau
 ```
 
 It installs `$META_ROOT/usr/bin/envctl-gui`, an
-`$META_ROOT/.local/share/applications/envctl-gui.desktop` launcher
+`$META_ROOT/var/lib/applications/envctl-gui.desktop` launcher
 (`Categories=System;Monitor;`), and a scalable icon under
-`$META_ROOT/.local/share/icons/hicolor/scalable/apps/`. Re-running is a no-op;
+`$META_ROOT/var/lib/icons/hicolor/scalable/apps/`. Re-running is a no-op;
 `reset desktop-app` (or `--uninstall`) unwinds it.
 
 ## Status

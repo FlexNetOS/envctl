@@ -115,6 +115,11 @@
       "document_id": "019f8275-fd99-7412-a8ca-8ae9026f0481",
       "slug": "tasks/strict-profile-path-owner-purge-20260721",
       "tip_commit_id": "019f8275-fdc9-78b3-b35f-b21e4f9625c9"
+    },
+    {
+      "document_id": "019f832b-1bdd-7201-a391-2e1aaa2b7dd9",
+      "slug": "proofs/strict-profile-path-owner-progress-20260721",
+      "tip_commit_id": "019f832b-1c1d-7402-88aa-e6e1f7b3d1cf"
     }
   ]
 }

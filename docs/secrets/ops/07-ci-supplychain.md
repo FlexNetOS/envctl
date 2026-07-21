@@ -502,8 +502,8 @@ This is the deploy half of the doc. SERVER-MODE §7.2 lists the steps; here are 
 
 ```
 $META_ROOT/.config/env-ctl/                 (0700)  config; relay-tls/{cert.pem,key.pem} (key 0600) — edge cert
-$META_ROOT/.local/share/env-ctl/            (0700)  vault.db (0600), ca/ca.pem (0644 public cert), ca/bundles/<tool>.pem
-$META_ROOT/.local/state/env-ctl/            (0700)  secretd.log, audit mirror (durable deny audit second home)
+$META_ROOT/var/lib/env-ctl/            (0700)  vault.db (0600), ca/ca.pem (0644 public cert), ca/bundles/<tool>.pem
+$META_ROOT/var/lib/env-ctl/            (0700)  secretd.log, audit mirror (durable deny audit second home)
 $XDG_RUNTIME_DIR/env-ctl/          (0700)  control.sock (0600), relay-proxy bind config
 ```
 
@@ -527,7 +527,7 @@ LimitMEMLOCK=infinity             # allow mlockall(MCL_CURRENT|MCL_FUTURE) of th
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only             # secretd writes only to its XDG dirs (granted below)
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl %h/Desktop/meta/var/lib/env-ctl %t/env-ctl
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true

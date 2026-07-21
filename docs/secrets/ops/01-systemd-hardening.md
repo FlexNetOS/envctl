@@ -82,8 +82,8 @@ Before=secretd.service
 After=basic.target
 
 # Fail-closed preconditions: refuse to start if the data dir or JWT key is missing.
-ConditionPathExists=%h/Desktop/meta/.local/share/env-ctl
-ConditionPathExists=%h/Desktop/meta/.local/share/env-ctl/sqld_jwt_pub.pem
+ConditionPathExists=%h/Desktop/meta/var/lib/env-ctl
+ConditionPathExists=%h/Desktop/meta/var/lib/env-ctl/sqld_jwt_pub.pem
 
 [Service]
 Type=notify
@@ -93,8 +93,8 @@ NotifyAccess=main
 # Bind loopback only. No TLS on the loopback hop (ciphertext-only payloads; app-AEAD authoritative).
 ExecStart=/usr/local/bin/sqld \
   --http-listen-addr 127.0.0.1:8080 \
-  --db-path %h/Desktop/meta/.local/share/env-ctl/vault.db \
-  --auth-jwt-key-file %h/Desktop/meta/.local/share/env-ctl/sqld_jwt_pub.pem \
+  --db-path %h/Desktop/meta/var/lib/env-ctl/vault.db \
+  --auth-jwt-key-file %h/Desktop/meta/var/lib/env-ctl/sqld_jwt_pub.pem \
   --no-welcome
 
 Restart=on-failure
@@ -131,7 +131,7 @@ ProtectHostname=yes
 # ---- filesystem isolation ----
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl
 PrivateTmp=yes
 PrivateDevices=yes
 ProtectControlGroups=yes
@@ -179,7 +179,7 @@ Before=default.target
 
 # Fail-closed preconditions (FS-S9, REQ-SEC-4).
 ConditionPathExists=%h/Desktop/meta/.config/env-ctl/secrets.toml
-ConditionPathExists=%h/Desktop/meta/.local/share/env-ctl/vault.db
+ConditionPathExists=%h/Desktop/meta/var/lib/env-ctl/vault.db
 
 [Service]
 Type=notify
@@ -191,7 +191,7 @@ NotifyAccess=main
 ExecStart=/usr/local/bin/secretd \
   --config %h/Desktop/meta/.config/env-ctl/secrets.toml \
   --sqld-url http://127.0.0.1:8080 \
-  --sqld-jwt-priv %h/Desktop/meta/.local/share/env-ctl/sqld_jwt_priv.pem \
+  --sqld-jwt-priv %h/Desktop/meta/var/lib/env-ctl/sqld_jwt_priv.pem \
   --control-socket %t/env-ctl/control.sock
 
 ExecReload=/bin/kill -HUP $MAINPID
@@ -236,7 +236,7 @@ ProtectSystem=strict
 ProtectHome=read-only
 # RW: vault state + audit mirror + (config writes for keyslot rotation). USB mount is read
 # via the device path / by-partuuid; secretd reads the keyfile, never writes the USB.
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl %h/Desktop/meta/var/lib/env-ctl
 ReadOnlyPaths=%h/Desktop/meta/.config/env-ctl
 PrivateTmp=yes
 # NOT PrivateDevices=yes here: secretd must read the USB block device / by-partuuid for
@@ -364,15 +364,15 @@ Note on `ptrace_scope=2`: stricter than the Ubuntu default (`1`) — only root m
 
 ```bash
 # XDG layout (research/05 paths model)
-mkdir -p $META_ROOT/.config/env-ctl $META_ROOT/.local/share/env-ctl $META_ROOT/.local/state/env-ctl
-chmod 700 $META_ROOT/.config/env-ctl $META_ROOT/.local/share/env-ctl $META_ROOT/.local/state/env-ctl
+mkdir -p $META_ROOT/.config/env-ctl $META_ROOT/var/lib/env-ctl $META_ROOT/var/lib/env-ctl
+chmod 700 $META_ROOT/.config/env-ctl $META_ROOT/var/lib/env-ctl $META_ROOT/var/lib/env-ctl
 
 # sqld JWT signing keypair (Ed25519). PRIVATE half -> secretd only; PUBLIC half -> sqld.
-openssl genpkey -algorithm Ed25519 -out $META_ROOT/.local/share/env-ctl/sqld_jwt_priv.pem
-openssl pkey -in $META_ROOT/.local/share/env-ctl/sqld_jwt_priv.pem \
-  -pubout -out $META_ROOT/.local/share/env-ctl/sqld_jwt_pub.pem
-chmod 600 $META_ROOT/.local/share/env-ctl/sqld_jwt_priv.pem
-chmod 644 $META_ROOT/.local/share/env-ctl/sqld_jwt_pub.pem
+openssl genpkey -algorithm Ed25519 -out $META_ROOT/var/lib/env-ctl/sqld_jwt_priv.pem
+openssl pkey -in $META_ROOT/var/lib/env-ctl/sqld_jwt_priv.pem \
+  -pubout -out $META_ROOT/var/lib/env-ctl/sqld_jwt_pub.pem
+chmod 600 $META_ROOT/var/lib/env-ctl/sqld_jwt_priv.pem
+chmod 644 $META_ROOT/var/lib/env-ctl/sqld_jwt_pub.pem
 # [UNVERIFIED] sqld v0.24.32's exact JWT key-file format expectation (PEM vs raw vs JWK).
 # research/03 confirms Ed25519 JWT auth via --auth-jwt-key-file; confirm the encoding
 # against `sqld --help` / libsql-server docs before init.

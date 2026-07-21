@@ -3,7 +3,7 @@
 //! Agent assets are only safe when the shell that launches them has one unambiguous owner.
 //! The Yazelix contract keeps editable user config under `$HOME/.config`, while the generated
 //! Nushell routing module, native RTK binary, and every executable frontdoor live under exactly
-//! one XDG-backed Nix profile.  This module is read-only and fails closed before agent sync,
+//! one direct Nix profile. This module is read-only and fails closed before agent sync,
 //! lock, or doctor can bless a drifted runtime.
 
 use std::fs;
@@ -17,7 +17,8 @@ use crate::dirs::dirs_home;
 use crate::{err, Result};
 
 const FOUNDATION_ELEMENT: &str = "lifeos_foundation_yzx";
-const PROFILE_RELATIVE: &str = ".local/state/nix/profile";
+const FOUNDATION_PRIORITY: u64 = 5;
+const PROFILE_RELATIVE: &str = ".nix-profile";
 const FRONTDOOR_NAME: &str = ".nix-profile";
 const HOST_NU_CONFIG_RELATIVE: &str = ".config/nushell/config.nu";
 const YAZELIX_NU_HOOK_RELATIVE: &str = ".config/yazelix/shell_nu.nu";
@@ -38,10 +39,6 @@ pub fn validate_runtime_contract(contract: Option<RuntimeContract>) -> Result<()
 
 fn validate_yazelix_nushell_at(home: &Path, store_root: &Path) -> Result<()> {
     let profile = home.join(PROFILE_RELATIVE);
-    let frontdoor = home.join(FRONTDOOR_NAME);
-    require_exact_symlink(&frontdoor, &profile, "Nix profile frontdoor")?;
-    reject_legacy_profile_frontdoors(home)?;
-
     let selector = fs::read_link(&profile).map_err(|source| {
         err(format!(
             "Yazelix Nix profile selector is unreadable at {}: {source}",
@@ -54,25 +51,26 @@ fn validate_yazelix_nushell_at(home: &Path, store_root: &Path) -> Result<()> {
         || !is_profile_generation_name(&selector_text)
     {
         return Err(err(format!(
-            "Yazelix Nix profile selector must name one local profile-N-link generation: {}",
+            "Yazelix Nix profile selector must name one direct .nix-profile-N-link generation: {}",
             profile.display()
         )));
     }
+    reject_parallel_profile_frontdoors(home, &selector_text)?;
     let generation_target = resolve_profile_generation(
         profile.parent().expect("profile has parent"),
         &selector,
         store_root,
     )?;
-    let profile_root = frontdoor.canonicalize().map_err(|source| {
+    let profile_root = profile.canonicalize().map_err(|source| {
         err(format!(
             "Yazelix Nix profile frontdoor cannot be resolved at {}: {source}",
-            frontdoor.display()
+            profile.display()
         ))
     })?;
     if profile_root != generation_target {
         return Err(err(format!(
             "Yazelix Nix profile frontdoor does not resolve to its selected generation: {}",
-            frontdoor.display()
+            profile.display()
         )));
     }
 
@@ -82,24 +80,7 @@ fn validate_yazelix_nushell_at(home: &Path, store_root: &Path) -> Result<()> {
     Ok(())
 }
 
-fn require_exact_symlink(path: &Path, expected: &Path, label: &str) -> Result<()> {
-    let target = fs::read_link(path).map_err(|source| {
-        err(format!(
-            "{label} must be a symlink at {}: {source}",
-            path.display()
-        ))
-    })?;
-    if target != expected {
-        return Err(err(format!(
-            "{label} must point only to {} (found {})",
-            expected.display(),
-            target.display()
-        )));
-    }
-    Ok(())
-}
-
-fn reject_legacy_profile_frontdoors(home: &Path) -> Result<()> {
+fn reject_parallel_profile_frontdoors(home: &Path, selected: &str) -> Result<()> {
     let entries = fs::read_dir(home).map_err(|source| {
         err(format!(
             "cannot inspect home for retired Nix profile frontdoors at {}: {source}",
@@ -110,9 +91,9 @@ fn reject_legacy_profile_frontdoors(home: &Path) -> Result<()> {
         let entry = entry.map_err(|source| err(format!("cannot read home entry: {source}")))?;
         let name = entry.file_name();
         let name = name.to_string_lossy();
-        if name.starts_with(".nix-profile-") && name.ends_with("-link") {
+        if name.starts_with(".nix-profile-") && name.ends_with("-link") && name != selected {
             return Err(err(format!(
-                "retired parallel Nix profile frontdoor remains at {}; only {} is allowed",
+                "parallel Nix profile generation remains at {}; only {} may select one generation",
                 entry.path().display(),
                 home.join(FRONTDOOR_NAME).display()
             )));
@@ -122,7 +103,7 @@ fn reject_legacy_profile_frontdoors(home: &Path) -> Result<()> {
 }
 
 fn is_profile_generation_name(value: &str) -> bool {
-    let Some(mut suffix) = value.strip_prefix("profile-") else {
+    let Some(mut suffix) = value.strip_prefix(".nix-profile-") else {
         return false;
     };
     loop {
@@ -173,7 +154,7 @@ fn resolve_profile_generation(
             || !is_profile_generation_name(&target.to_string_lossy())
         {
             return Err(err(format!(
-                "Yazelix Nix profile generation must link only to a local profile-N-link generation: {}",
+                "Yazelix Nix profile generation must link only to a direct .nix-profile-N-link generation: {}",
                 link.display()
             )));
         }
@@ -220,11 +201,11 @@ fn validate_foundation_manifest(profile_root: &Path, store_root: &Path) -> Resul
         || foundation
             .get("priority")
             .and_then(serde_json::Value::as_u64)
-            != Some(4)
+            != Some(FOUNDATION_PRIORITY)
     {
-        return Err(err(
-            "Yazelix foundation profile element must be active at priority 4",
-        ));
+        return Err(err(format!(
+            "Yazelix foundation profile element must be active at priority {FOUNDATION_PRIORITY}"
+        )));
     }
     let Some(attribute) = foundation
         .get("attrPath")
@@ -408,7 +389,6 @@ mod tests {
         fs::create_dir_all(profile_root.join("toolbin")).unwrap();
         fs::create_dir_all(profile_root.join("bin")).unwrap();
         fs::create_dir_all(profile_root.join("nushell/config")).unwrap();
-        fs::create_dir_all(home.join(".local/state/nix")).unwrap();
         fs::create_dir_all(home.join(".config/nushell")).unwrap();
         fs::create_dir_all(home.join(".config/yazelix")).unwrap();
         fs::write(profile_root.join("toolbin/nu"), "nu").unwrap();
@@ -431,7 +411,7 @@ mod tests {
                 "elements": {
                     FOUNDATION_ELEMENT: {
                         "active": true,
-                        "priority": 4,
+                        "priority": FOUNDATION_PRIORITY,
                         "attrPath": "packages.x86_64-linux.lifeos_foundation_yzx",
                         "storePaths": [store.join("fixture-lifeos-foundation-yzx").to_string_lossy()],
                     }
@@ -440,11 +420,8 @@ mod tests {
             .to_string(),
         )
         .unwrap();
-        let profiles = home.join(".local/state/nix");
-        symlink(&profile_root, profiles.join("profile-1-link-1-link")).unwrap();
-        symlink("profile-1-link-1-link", profiles.join("profile-1-link")).unwrap();
-        symlink("profile-1-link", profiles.join("profile")).unwrap();
-        symlink(profiles.join("profile"), home.join(FRONTDOOR_NAME)).unwrap();
+        symlink(&profile_root, home.join(".nix-profile-1-link")).unwrap();
+        symlink(".nix-profile-1-link", home.join(FRONTDOOR_NAME)).unwrap();
         fs::write(
             home.join(HOST_NU_CONFIG_RELATIVE),
             "use ~/.nix-profile/nushell/config/rtk_wrappers.nu *\n",
@@ -468,39 +445,32 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn yazelix_contract_rejects_legacy_parallel_frontdoor() {
+    fn yazelix_contract_rejects_parallel_profile_generation() {
         let (root, home, store) = fixture();
         symlink(
-            home.join(".local/state/nix/profile"),
-            home.join(".nix-profile-1-link"),
+            store.join("fixture-profile"),
+            home.join(".nix-profile-2-link"),
         )
         .unwrap();
         let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
-        assert!(error.to_string().contains("parallel Nix profile frontdoor"));
+        assert!(error
+            .to_string()
+            .contains("parallel Nix profile generation"));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[cfg(unix)]
     #[test]
-    fn yazelix_contract_rejects_plural_or_store_bypassing_frontdoors() {
+    fn yazelix_contract_rejects_absolute_or_store_bypassing_frontdoors() {
         let (root, home, store) = fixture();
         fs::remove_file(home.join(FRONTDOOR_NAME)).unwrap();
-        symlink(
-            home.join(".local/state/nix/profiles/profile"),
-            home.join(FRONTDOOR_NAME),
-        )
-        .unwrap();
+        symlink(store.join("fixture-profile"), home.join(FRONTDOOR_NAME)).unwrap();
         let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
-        assert!(error.to_string().contains("must point only"));
+        assert!(error.to_string().contains("must name one direct"));
         fs::remove_file(home.join(FRONTDOOR_NAME)).unwrap();
-        symlink(
-            fs::canonicalize(home.join(FRONTDOOR_NAME))
-                .unwrap_or_else(|_| store.join("fixture-profile")),
-            home.join(FRONTDOOR_NAME),
-        )
-        .unwrap();
+        symlink("../outside", home.join(FRONTDOOR_NAME)).unwrap();
         let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
-        assert!(error.to_string().contains("must point only"));
+        assert!(error.to_string().contains("must name one direct"));
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -514,7 +484,7 @@ mod tests {
         let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
         assert!(error
             .to_string()
-            .contains("must name one local profile-N-link generation"));
+            .contains("must name one direct .nix-profile-N-link generation"));
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -524,16 +494,23 @@ mod tests {
         let (root, home, store) = fixture();
         let selector = home.join(PROFILE_RELATIVE);
         fs::remove_file(&selector).unwrap();
-        symlink("profile-99-link", &selector).unwrap();
+        fs::remove_file(home.join(".nix-profile-1-link")).unwrap();
+        symlink(".nix-profile-99-link", &selector).unwrap();
         symlink(
             store.join("not-a-generation"),
-            home.join(".local/state/nix/profile-99-link"),
+            home.join(".nix-profile-99-link"),
         )
         .unwrap();
         let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
         assert!(error.to_string().contains("must resolve directly under"));
         fs::remove_file(&selector).unwrap();
-        symlink("profile-1-link", &selector).unwrap();
+        fs::remove_file(home.join(".nix-profile-99-link")).unwrap();
+        symlink(
+            store.join("fixture-profile"),
+            home.join(".nix-profile-1-link"),
+        )
+        .unwrap();
+        symlink(".nix-profile-1-link", &selector).unwrap();
 
         let profile_root = fs::canonicalize(home.join(FRONTDOOR_NAME)).unwrap();
         let manifest = profile_root.join("manifest.json");
@@ -545,12 +522,12 @@ mod tests {
                 "storePaths": [store.join("fixture-lifeos-foundation-yzx").to_string_lossy()],
             }}}),
             serde_json::json!({"version": 3, "elements": { FOUNDATION_ELEMENT: {
-                "active": true, "priority": 4,
+                "active": true, "priority": FOUNDATION_PRIORITY,
                 "attrPath": "legacy.lifeos_foundation_yzx",
                 "storePaths": [store.join("fixture-lifeos-foundation-yzx").to_string_lossy()],
             }}}),
             serde_json::json!({"version": 3, "elements": { FOUNDATION_ELEMENT: {
-                "active": true, "priority": 4,
+                "active": true, "priority": FOUNDATION_PRIORITY,
                 "attrPath": "packages.x86_64-linux.lifeos_foundation_yzx",
                 "storePaths": [
                     store.join("fixture-lifeos-foundation-yzx").to_string_lossy(),

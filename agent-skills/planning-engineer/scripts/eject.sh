@@ -12,7 +12,56 @@ TARGET="${1:-}"
 [ -n "$TARGET" ] || { echo "usage: bash eject.sh <target-repo-dir>" >&2; exit 1; }
 [ -d "$TARGET" ] || { echo "error: target dir not found: $TARGET" >&2; exit 1; }
 TARGET="$(cd "$TARGET" && pwd)"
-PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"  # harness/
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# The same ejector runs from either the harness_hub package layout
+# (`harness/skills/<skill>/scripts`) or envctl's maintained projection
+# (`agent-skills/<skill>/scripts`). Never depend on a live repo-local
+# `.claude/` mirror: that projection is the output this command creates.
+if [ "$(basename "$(cd "$SCRIPT_DIR/../.." && pwd)")" = "agent-skills" ]; then
+  SOURCE_KIND="envctl"
+  SKILLS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  SOURCE_ROOT="$(cd "$SKILLS_ROOT/.." && pwd)"
+  AGENTS_ROOT="$SOURCE_ROOT/.codex/agents"
+else
+  SOURCE_KIND="package"
+  SOURCE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  SKILLS_ROOT="$SOURCE_ROOT/skills"
+  AGENTS_ROOT="$SOURCE_ROOT/agents"
+fi
+
+emit_agent() {
+  local name="$1" destination="$2"
+  if [ "$SOURCE_KIND" = "package" ]; then
+    [ -f "$AGENTS_ROOT/$name.md" ] || return 1
+    cp "$AGENTS_ROOT/$name.md" "$destination"
+    return 0
+  fi
+
+  [ -f "$AGENTS_ROOT/$name.toml" ] || return 1
+  python3 - "$AGENTS_ROOT/$name.toml" "$destination" <<'PY'
+import json
+from pathlib import Path
+import sys
+import tomllib
+
+source = Path(sys.argv[1])
+destination = Path(sys.argv[2])
+data = tomllib.loads(source.read_text(encoding="utf-8"))
+name = str(data["name"])
+description = str(data["description"])
+instructions = str(data["developer_instructions"])
+destination.write_text(
+    "---\n"
+    f"name: {json.dumps(name, ensure_ascii=False)}\n"
+    f"description: {json.dumps(description, ensure_ascii=False)}\n"
+    "model: opus\n"
+    "---\n\n"
+    f"{instructions.rstrip()}\n",
+    encoding="utf-8",
+)
+PY
+}
 
 # OWN: the harness's own skills + its specific reuse (code-research-verify) → always refresh.
 OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-memory-vector-intelligence plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify)
@@ -31,21 +80,21 @@ for d in graph research findings reports; do
 done
 
 for s in "${OWN_SKILLS[@]}"; do
-  if [ -d "$PLUGIN/skills/$s" ]; then rm -rf "$TARGET/.claude/skills/$s"; cp -r "$PLUGIN/skills/$s" "$TARGET/.claude/skills/$s"; echo "  skill  (own)    -> .claude/skills/$s";
+  if [ -d "$SKILLS_ROOT/$s" ]; then rm -rf "$TARGET/.claude/skills/$s"; cp -r "$SKILLS_ROOT/$s" "$TARGET/.claude/skills/$s"; echo "  skill  (own)    -> .claude/skills/$s";
   else echo "  skill  -- MISSING in plugin: $s" >&2; fi
 done
 for s in "${SHARED_SKILLS[@]}"; do
   if [ -d "$TARGET/.claude/skills/$s" ]; then echo "  skill  (shared) == keep target's existing .claude/skills/$s";
-  elif [ -d "$PLUGIN/skills/$s" ]; then cp -r "$PLUGIN/skills/$s" "$TARGET/.claude/skills/$s"; echo "  skill  (shared) -> .claude/skills/$s (was absent)";
+  elif [ -d "$SKILLS_ROOT/$s" ]; then cp -r "$SKILLS_ROOT/$s" "$TARGET/.claude/skills/$s"; echo "  skill  (shared) -> .claude/skills/$s (was absent)";
   else echo "  skill  -- MISSING in plugin & target: $s" >&2; fi
 done
 for a in "${OWN_AGENTS[@]}"; do
-  if [ -f "$PLUGIN/agents/$a.md" ]; then cp "$PLUGIN/agents/$a.md" "$TARGET/.claude/agents/$a.md"; echo "  agent  (own)    -> .claude/agents/$a.md";
+  if emit_agent "$a" "$TARGET/.claude/agents/$a.md"; then echo "  agent  (own)    -> .claude/agents/$a.md";
   else echo "  agent  -- MISSING in plugin: $a" >&2; fi
 done
 for a in "${SHARED_AGENTS[@]}"; do
   if [ -f "$TARGET/.claude/agents/$a.md" ]; then echo "  agent  (shared) == keep target's existing .claude/agents/$a.md";
-  elif [ -f "$PLUGIN/agents/$a.md" ]; then cp "$PLUGIN/agents/$a.md" "$TARGET/.claude/agents/$a.md"; echo "  agent  (shared) -> .claude/agents/$a.md (was absent)";
+  elif emit_agent "$a" "$TARGET/.claude/agents/$a.md"; then echo "  agent  (shared) -> .claude/agents/$a.md (was absent)";
   else echo "  agent  -- MISSING in plugin & target: $a" >&2; fi
 done
 echo "  state  -> .handoff/loop/plan/ scaffolded (seed loop_state.md: planning_target + target_root; targets.md auto-derives on first cycle)"

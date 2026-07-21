@@ -7,8 +7,6 @@ files=(
   "$root/AGENTS.md"
   "$root/home/AGENTS.md"
   "$root/home/AGENTS.rtk.md"
-  "$root/home/.codex/AGENTS.rtk.md"
-  "$root/home/.codex/RTK.md"
 )
 
 for file in "${files[@]}"; do
@@ -19,21 +17,15 @@ for file in "${files[@]}"; do
 done
 
 grep -Fq "$exact proxy --" "$root/home/AGENTS.rtk.md"
-grep -Fq "$exact proxy --" "$root/home/.codex/AGENTS.rtk.md"
-grep -Fq 'Do not hide several independent diagnostics' "$root/home/.codex/AGENTS.rtk.md"
-test "$(grep -Fxc '@/home/flexnetos/.codex/AGENTS.rtk.md' "$root/home/.codex/AGENTS.md")" = 1
-if grep -Fq '@/home/flexnetos/.codex/RTK.md' "$root/home/.codex/AGENTS.md"; then
-  echo "Codex AGENTS still imports the retired duplicate RTK policy surface" >&2
+grep -Fq 'Do not hide several independent diagnostics' "$root/home/AGENTS.rtk.md"
+if [ -e "$root/profile-runtime" ]; then
+  echo "repo-local profile-runtime must not be an installed-agent authority" >&2
   exit 1
 fi
-grep -Fq 'fork_turns="none"' "$root/home/.codex/AGENTS.md" || {
-  echo "Codex global guidance lost the context-minimal delegation policy" >&2
-  exit 1
-}
 
 if rg -n -i \
   'run (these commands )?raw|run it raw|raw rather than|direct raw command invocation is (allowed|preferred)' \
-  "$root/home/AGENTS.rtk.md" "$root/home/.codex/AGENTS.rtk.md"; then
+  "$root/home/AGENTS.rtk.md"; then
   echo "RTK policy still authorizes an unaccounted raw-command bypass" >&2
   exit 1
 fi

@@ -3,7 +3,7 @@
 # Three surfaces carry the meta /usr mirror onto a session's PATH/LD_LIBRARY_PATH:
 #   1. bash/zsh        — `envctl env --toolchains` eval (shell-rc blocks)
 #   2. nushell/yazelix — the version-controlled overlay module
-#                        home/.config/nushell/meta-usr-path.nu (sourced from
+#                        home/.config/nushell/profile-path.nu (sourced from
 #                        config.nu + yazelix/shell_nu.nu)
 #   3. graphical login — THIS component: systemd user `environment.d`, which
 #                        .desktop launchers + GUI sessions read (they never source

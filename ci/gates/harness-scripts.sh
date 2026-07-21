@@ -30,22 +30,18 @@ bash "$root/scripts/tests/test-manifest-lock-gate.sh"
 # Guard the owner-critical publish contract. The harness must never regress to
 # committed-but-unpushed local work; every committed chunk is pushed, PR-backed,
 # and auto-merge armed immediately.
-if grep -RIn "push unless asked" "$root/.agents" "$root/.claude" "$root/.codex" >/tmp/envctl-publish-contract-grep.txt 2>/dev/null; then
+if grep -RIn "push unless asked" "$root/agent-skills" "$root/.agents" "$root/.codex" >/tmp/envctl-publish-contract-grep.txt 2>/dev/null; then
   cat /tmp/envctl-publish-contract-grep.txt >&2
   echo "FAIL: forbidden publish-contract wording found" >&2
   exit 1
 fi
 
-for skill in \
-  "$root/agent-skills/feature-forge/SKILL.md" \
-  "$root/.claude/skills/feature-forge/SKILL.md"; do
+for skill in "$root/agent-skills/feature-forge/SKILL.md"; do
   grep -q "gh pr create --fill" "$skill" || { echo "FAIL: $skill missing PR-create publish contract" >&2; exit 1; }
   grep -q "gh pr merge <PR> --auto --squash" "$skill" || { echo "FAIL: $skill missing auto-merge publish contract" >&2; exit 1; }
 done
 
-for skill in \
-  "$root/agent-skills/forge-loop/SKILL.md" \
-  "$root/.claude/skills/forge-loop/SKILL.md"; do
+for skill in "$root/agent-skills/forge-loop/SKILL.md"; do
   grep -q "Write-side (no post-arm push)" "$skill" || { echo "FAIL: $skill missing no-post-arm-push safeguard" >&2; exit 1; }
 done
 

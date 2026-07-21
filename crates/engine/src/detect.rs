@@ -365,23 +365,16 @@ struct ActiveProfileProvenance {
 
 impl ActiveProfileProvenance {
     /// Load the active real-home Nix profile only when the ownership chain has
-    /// the Yazelix shape: `~/.nix-profile` -> the XDG profile selector -> the
-    /// current numbered generation. A direct store link is deliberately not
-    /// accepted because it bypasses the profile-owned frontdoor.
+    /// the Yazelix shape: the direct profile selector names exactly one local
+    /// numbered generation, which resolves beneath the Nix store. A direct
+    /// store link is rejected because it bypasses generation ownership.
     fn from_home(home: &Path) -> Option<Self> {
         Self::from_home_with_store_root(home, Path::new("/nix/store"))
     }
 
     fn from_home_with_store_root(home: &Path, store_root: &Path) -> Option<Self> {
         let frontdoor = home.join(".nix-profile");
-        let profiles = home.join(".local/state/nix");
-        let selector = profiles.join("profile");
-        let frontdoor_target = symlink_target(&frontdoor)?;
-        if frontdoor_target != selector {
-            return None;
-        }
-
-        let generation_name = std::fs::read_link(&selector).ok()?;
+        let generation_name = std::fs::read_link(&frontdoor).ok()?;
         if generation_name.is_absolute()
             || generation_name.components().count() != 1
             || !is_profile_generation_name(generation_name.to_str()?)
@@ -390,7 +383,7 @@ impl ActiveProfileProvenance {
         }
 
         let store_root = std::fs::canonicalize(store_root).ok()?;
-        let generation = resolve_profile_generation(&profiles, &generation_name, &store_root)?;
+        let generation = resolve_profile_generation(home, &generation_name, &store_root)?;
         if std::fs::canonicalize(&frontdoor).ok()? != generation {
             return None;
         }
@@ -423,7 +416,7 @@ impl ActiveProfileProvenance {
 }
 
 fn is_profile_generation_name(value: &str) -> bool {
-    let Some(mut suffix) = value.strip_prefix("profile-") else {
+    let Some(mut suffix) = value.strip_prefix(".nix-profile-") else {
         return false;
     };
     loop {
@@ -465,15 +458,6 @@ fn resolve_profile_generation(
         link = profile_dir.join(target);
     }
     None
-}
-
-fn symlink_target(path: &Path) -> Option<PathBuf> {
-    let target = std::fs::read_link(path).ok()?;
-    if target.is_absolute() {
-        Some(target)
-    } else {
-        Some(path.parent()?.join(target))
-    }
 }
 
 fn resolve_meta_root() -> Option<PathBuf> {
@@ -891,11 +875,10 @@ mod tests {
     fn active_profile_provenance_accepts_only_current_generation_targets() {
         let root = temp_root("active-profile-current-generation");
         let home = root.join("home");
-        let profiles = home.join(".local/state/nix");
         let current_generation = root.join("nix/store/current-profile");
         let current_package = root.join("nix/store/current-meta");
         let stale_package = root.join("nix/store/stale-meta");
-        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::create_dir_all(&home).unwrap();
         std::fs::create_dir_all(current_generation.join("bin")).unwrap();
         std::fs::create_dir_all(current_generation.join("toolbin")).unwrap();
         std::fs::create_dir_all(current_package.join("bin")).unwrap();
@@ -912,10 +895,8 @@ mod tests {
             current_generation.join("toolbin/meta"),
         )
         .unwrap();
-        symlink(&current_generation, profiles.join("profile-2-link-1-link")).unwrap();
-        symlink("profile-2-link-1-link", profiles.join("profile-2-link")).unwrap();
-        symlink("profile-2-link", profiles.join("profile")).unwrap();
-        symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
+        symlink(&current_generation, home.join(".nix-profile-2-link")).unwrap();
+        symlink(".nix-profile-2-link", home.join(".nix-profile")).unwrap();
 
         let provenance =
             ActiveProfileProvenance::from_home_with_store_root(&home, &root.join("nix/store"))
@@ -944,25 +925,23 @@ mod tests {
     fn active_profile_provenance_rejects_non_numeric_or_non_store_generations() {
         let root = temp_root("active-profile-invalid-generation");
         let home = root.join("home");
-        let profiles = home.join(".local/state/nix");
         let store = root.join("nix/store");
         let outside = root.join("foreign/current-profile");
-        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::create_dir_all(&home).unwrap();
         std::fs::create_dir_all(&store).unwrap();
         std::fs::create_dir_all(&outside).unwrap();
-        symlink(&outside, profiles.join("profile-current-link")).unwrap();
-        symlink("profile-current-link", profiles.join("profile")).unwrap();
-        symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
+        symlink(&outside, home.join(".nix-profile-current-link")).unwrap();
+        symlink(".nix-profile-current-link", home.join(".nix-profile")).unwrap();
 
         assert!(
             ActiveProfileProvenance::from_home_with_store_root(&home, &store).is_none(),
             "a named-but-nonnumeric generation must not establish profile provenance"
         );
 
-        std::fs::remove_file(profiles.join("profile")).unwrap();
-        std::fs::remove_file(profiles.join("profile-current-link")).unwrap();
-        symlink(&outside, profiles.join("profile-9-link")).unwrap();
-        symlink("profile-9-link", profiles.join("profile")).unwrap();
+        std::fs::remove_file(home.join(".nix-profile")).unwrap();
+        std::fs::remove_file(home.join(".nix-profile-current-link")).unwrap();
+        symlink(&outside, home.join(".nix-profile-9-link")).unwrap();
+        symlink(".nix-profile-9-link", home.join(".nix-profile")).unwrap();
         assert!(
             ActiveProfileProvenance::from_home_with_store_root(&home, &store).is_none(),
             "a generation outside the Nix store must not establish profile provenance"
@@ -974,18 +953,16 @@ mod tests {
     fn active_profile_provenance_does_not_accept_a_tool_escaping_the_store() {
         let root = temp_root("active-profile-tool-store-escape");
         let home = root.join("home");
-        let profiles = home.join(".local/state/nix");
         let store = root.join("nix/store");
         let generation = store.join("abc-profile");
         let foreign_tool = root.join("foreign/meta");
         std::fs::create_dir_all(generation.join("bin")).unwrap();
         std::fs::create_dir_all(foreign_tool.parent().unwrap()).unwrap();
-        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::create_dir_all(&home).unwrap();
         std::fs::write(&foreign_tool, b"foreign").unwrap();
         symlink(&foreign_tool, generation.join("bin/meta")).unwrap();
-        symlink(&generation, profiles.join("profile-3-link")).unwrap();
-        symlink("profile-3-link", profiles.join("profile")).unwrap();
-        symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
+        symlink(&generation, home.join(".nix-profile-3-link")).unwrap();
+        symlink(".nix-profile-3-link", home.join(".nix-profile")).unwrap();
 
         let provenance = ActiveProfileProvenance::from_home_with_store_root(&home, &store).unwrap();
         assert!(!provenance.owns("meta", &foreign_tool));
@@ -1054,8 +1031,8 @@ mod tests {
         let store = root.join("nix/store");
         let store_bin = store.join("profile-generation/bin/meta");
         let profile_bin = profile.join("bin/meta");
-        let user_shadow = root.join("home/.local/bin/meta");
-        let second_profile = root.join("home/.local/state/nix/second/bin/meta");
+        let user_shadow = root.join("home/retired-user-bin/meta");
+        let second_profile = root.join("home/parallel-profile/bin/meta");
         std::fs::create_dir_all(store_bin.parent().unwrap()).unwrap();
         std::fs::create_dir_all(profile_bin.parent().unwrap()).unwrap();
         std::fs::create_dir_all(user_shadow.parent().unwrap()).unwrap();

@@ -145,7 +145,7 @@ fn socket_path(override_path: &Option<String>) -> anyhow::Result<PathBuf> {
         Ok(std::env::var_os("XDG_STATE_HOME")
             .filter(|v| !v.is_empty())
             .map(PathBuf::from)
-            .unwrap_or_else(|| fallback_root.join(".local/state"))
+            .unwrap_or_else(|| fallback_root.join("var/lib"))
             .join("env-ctl"))
     };
     let runtime = match std::env::var_os("XDG_RUNTIME_DIR") {
@@ -1110,7 +1110,7 @@ mod tests {
 
         assert_eq!(
             socket_path(&None).expect("socket path"),
-            PathBuf::from("/home/real-user/Desktop/meta/.local/state/env-ctl/secretd.sock")
+            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl/secretd.sock")
         );
 
         restore_socket_path_env(old);

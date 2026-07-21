@@ -33,7 +33,8 @@ Required target repos:
 Use the Nix/Yazelix RTK path for routine discovery:
 - /home/flexnetos/.nix-profile/bin/rtk
 
-Do not rely on ~/.local/bin/rtk. For raw verification evidence, run the command raw and preserve logs.
+Use no alternate per-user RTK path. For raw verification evidence, resolve the
+profile frontdoor first and preserve the command output in the proof logs.
 
 Start by running from execution-framework:
 1. python3 scripts/validate_task_graph.py generated/task_graph.csv

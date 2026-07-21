@@ -11,12 +11,10 @@ def n8n-down [...rest] { ^rtk proxy -- n8n-down ...$rest }
 # (`nushell/config/rtk_wrappers.nu`). Do not duplicate those defs in this
 # editable user hook.
 
-# === active-profile reset + optional workspace /usr mirror ================
-# This always removes stale Yazelix/Codex store paths inherited from an older
-# profile generation and restores ~/.nix-profile/{toolbin,bin} as the lexical
-# frontdoors. The META_ROOT-specific /usr mirror remains guarded and normally
-# inert in Yazelix sessions (owner ruling 2026-07-07).
-source ../nushell/meta-usr-path.nu
+# === strict active-profile reset ===========================================
+# This discards inherited command ownership and restores only the current
+# profile's toolbin/bin pair as lexical frontdoors.
+source ../nushell/profile-path.nu
 # =========================================================================
 
 # === rtk monitor pane (live coverage + savings) ==========================

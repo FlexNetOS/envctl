@@ -2,17 +2,15 @@
 #
 # Current policy (2026-06-26): envctl lifecycle hooks execute with HOME=$META_ROOT
 # and META_ROOT exported by the runner. Host-user/global installs are not a target.
-# Yazelix owns the active Nix profile under the real home:
-#   $ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile
-# Never replace the whole real-home .local tree. Envctl may only archive known
-# per-tool user-bin shadows after their profile/META_ROOT frontdoors are present. The same guard
-# archives the known retired META_ROOT/usr/bin/git-kb staging symlink only when it is byte-identical
-# to the exact current-profile GitKB 0.2.12; unknown or different frontdoor symlinks are refused.
+# Yazelix owns the one active Nix profile under the real home. The frontdoor
+# selects one direct generation ($ENVCTL_REAL_HOME/.nix-profile-N-link), which
+# resolves into the immutable Nix store. Envctl validates this chain but never
+# builds, switches, archives, or removes the profile.
 
 [[component]]
 id = "home-local-single-link"
 name = "Yazelix real-home Nix profile guard"
-description = "Compatibility id retained. Preserves the Yazelix-owned real-home Nix profile state, archives only proven real-home user-bin shadows, and removes only byte-identical known retired META_ROOT frontdoor symlinks instead of replacing the whole real-home .local tree."
+description = "Compatibility id retained. Validates the direct Yazelix-owned profile generation and refuses every parallel installed-runtime owner."
 [component.detect]
 kind = "command"
 command = "bash"
@@ -57,7 +55,6 @@ AUDIT="${ENVCTL_PORTABILITY_AUDIT:-$ROOT/scripts/audit-meta-local-paths.sh}"
 exec "$AUDIT" --profile-shadow-guard-only --require-yazelix-profile \
   --meta-root "$M" --real-home "$R" --envctl-home-source "$ROOT/home"
 ''']
-
 [[component]]
 id = "home-config-links"
 name = "META_ROOT config links"
@@ -98,7 +95,7 @@ link() {
 link .gitconfig
 link .config/ghostty/config.ghostty
 link .config/nushell/config.nu
-link .config/nushell/meta-usr-path.nu
+link .config/nushell/profile-path.nu
 link .config/kasetto/kasetto.yaml
 link .config/yazelix/settings.jsonc
 link .config/yazelix/shell_bash.sh
@@ -116,7 +113,7 @@ M="${META_ROOT:?META_ROOT required}"
 ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
 T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 ok=1
-for p in .gitconfig .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc; do
+for p in .gitconfig .config/nushell/config.nu .config/nushell/profile-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc; do
   [ "$(readlink -f "$M/$p" 2>/dev/null)" = "$(readlink -f "$T/$p" 2>/dev/null)" ] || { echo "NOT META_ROOT-LINKED: $p"; ok=0; }
 done
 [ $ok = 1 ]
@@ -125,7 +122,7 @@ done
 kind = "script"
 script = '''
 M="${META_ROOT:?META_ROOT required}"
-for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml; do
+for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/profile-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml; do
   [ -L "$M/$p" ] && rm "$M/$p"
 done
 '''
@@ -133,7 +130,7 @@ done
 [[component]]
 id = "home-bin-links"
 name = "retired per-tool home bin links"
-description = "Compatibility id only. Per-tool real-home bin links are retired; tools must install under the Yazelix profile or META_ROOT-owned prefixes."
+description = "Compatibility id only. Per-tool real-home bin links and alternate binary prefixes are retired; installed commands must resolve through the Yazelix-owned Nix profile."
 requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"
@@ -142,7 +139,7 @@ args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-echo "home-bin-links retired: use the Yazelix profile or META_ROOT/usr/bin"
+echo "home-bin-links retired: use only the Yazelix-owned Nix profile"
 '''
 [component.verify]
 kind = "command"
@@ -152,7 +149,7 @@ args = ["-lc", "true"]
 [[component]]
 id = "rtk-config-links"
 name = "RTK config -> META_ROOT home tree"
-description = "Links META_ROOT/.config/rtk to $META_ROOT/src/envctl/home/.config/rtk. RTK state remains under META_ROOT-local state."
+description = "Links META_ROOT/.config/rtk to $META_ROOT/src/envctl/home/.config/rtk. RTK state remains under META_ROOT/var/lib state."
 requires = ["home-config-links"]
 [component.detect]
 kind = "command"
@@ -258,7 +255,7 @@ M="${META_ROOT:?META_ROOT required}"
 [[component]]
 id = "meta-tool-links"
 name = "retired per-tool meta binary links"
-description = "Compatibility id only. The old per-tool real-home bin/cargo link farm is retired; binaries must be installed directly in META_ROOT-owned prefixes."
+description = "Compatibility id only. The old per-tool binary link farm and alternate toolchain prefixes are retired; installed commands must resolve through the Yazelix-owned Nix profile."
 requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"
@@ -267,7 +264,7 @@ args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-echo "meta-tool-links retired: install binaries into META_ROOT/usr/bin, META_ROOT/opt, or legacy META_ROOT/.toolchains"
+echo "meta-tool-links retired: use only the Yazelix-owned Nix profile"
 '''
 [component.verify]
 kind = "command"
@@ -275,69 +272,9 @@ command = "bash"
 args = ["-lc", "true"]
 
 [[component]]
-id = "claude-global-links"
-name = "Claude META_ROOT settings links"
-description = "Links Claude files inside the META_ROOT home view only. Real-home Claude paths are not mutated by envctl."
-requires = ["home-config-links"]
-[component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", '''
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-T="${ENVCTL_HOME_TREE:-$ROOT/home}"
-[ "$(readlink -f "$M/.claude/settings.json" 2>/dev/null)" = "$(readlink -f "$T/.claude/settings.json" 2>/dev/null)" ]
-''']
-[component.install]
-kind = "script"
-script = '''
-set -e
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-T="${ENVCTL_HOME_TREE:-$ROOT/home}"
-ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
-if [ -f "$T/.claude/settings.json.tmpl" ]; then
-  sed "s|\${META_ROOT}|$M|g" "$T/.claude/settings.json.tmpl" > "$T/.claude/settings.json"
-  echo "rendered .claude/settings.json from tmpl (META_ROOT=$M)"
-fi
-for p in .claude/settings.json .claude/CLAUDE.md .claude/RTK.md .claude/commands/recall.md .claude/commands/remember.md .claude/commands/speak.md; do
-  src="$T/$p"
-  dst="$M/$p"
-  [ -e "$src" ] || { echo "SKIP missing source: $p"; continue; }
-  [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] && continue
-  mkdir -p "$(dirname "$dst")"
-  if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-    mkdir -p "$ARCH/$(dirname "$p")"
-    mv "$dst" "$ARCH/$p"
-    echo "archived META_ROOT file: $p"
-  fi
-  [ -L "$dst" ] && rm "$dst"
-  ln -s "$src" "$dst"
-  echo "linked META_ROOT file: $p"
-done
-'''
-[component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", '''
-M="${META_ROOT:?META_ROOT required}"
-ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
-T="${ENVCTL_HOME_TREE:-$ROOT/home}"
-[ "$(readlink -f "$M/.claude/settings.json" 2>/dev/null)" = "$(readlink -f "$T/.claude/settings.json" 2>/dev/null)" ]
-''']
-[component.remove]
-kind = "script"
-script = '''
-M="${META_ROOT:?META_ROOT required}"
-for p in .claude/settings.json .claude/CLAUDE.md .claude/RTK.md .claude/commands/recall.md .claude/commands/remember.md .claude/commands/speak.md; do
-  [ -L "$M/$p" ] && rm "$M/$p"
-done
-'''
-
-[[component]]
 id = "usrlocal-script-links"
 name = "retired system-depth helper script links"
-description = "Compatibility id only. /usr/local/bin symlink creation is retired; helper scripts must be launched from META_ROOT or installed into META_ROOT/usr/bin."
+description = "Compatibility id only. System-depth helper links and alternate binary prefixes are retired; installed commands must resolve through the Yazelix-owned Nix profile."
 [component.detect]
 kind = "command"
 command = "bash"
@@ -355,19 +292,17 @@ args = ["-lc", "true"]
 [[component]]
 id = "group-portability"
 name = "META_ROOT portability layer"
-requires = ["home-local-single-link", "home-config-links", "rtk-config-links", "claude-global-links"]
+requires = ["home-local-single-link", "home-config-links", "rtk-config-links"]
 [component.detect]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
 R="${ENVCTL_REAL_HOME:-}"
-[ -L "$M/.gitconfig" ] && [ -L "$M/.config/rtk" ] && [ -L "$M/.claude/settings.json" ] || exit 1
-if [ -n "$R" ] && [ "$R" != "$M" ] && [ -L "$R/.nix-profile" ]; then
+[ -L "$M/.gitconfig" ] && [ -L "$M/.config/rtk" ] || exit 1
+if [ -n "$R" ] && [ "$R" != "$M" ]; then
   target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
-  case "$target" in
-    "$R/.local/state/nix/profile") ;;
-    *) exit 1 ;;
-  esac
+  printf '%s\n' "$target" | grep -Eq '^\.nix-profile-[1-9][0-9]*-link$' || exit 1
+  [ -L "$R/$target" ] || exit 1
 fi
 ''']
