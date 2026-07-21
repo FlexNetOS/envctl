@@ -1,0 +1,19 @@
+[package]
+name = "envctl-commit-worker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[features]
+default = []
+pg-integration = []
+
+[dependencies]
+postgres = "0.19"
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"

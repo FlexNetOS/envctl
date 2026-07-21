@@ -4,6 +4,7 @@ members = [
   "crates/agent-env",
   "crates/engine",
   "crates/cli",
+  "crates/commit-worker",
   "crates/gui",
   "crates/secrets-engine",
   "crates/secrets-proto",
