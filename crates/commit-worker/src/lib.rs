@@ -175,8 +175,8 @@ pub fn drain_and_commit(
 
     let mut committed = Vec::new();
     let mut skipped_existing = Vec::new();
-    let mut final_generation = 0i64;
-    let mut final_ack = 0i64;
+    let mut final_generation;
+    let mut final_ack;
     loop {
         let mut tx = client.transaction().map_err(internal)?;
         // The whole batch executes AS the committer role: the grants are
@@ -194,6 +194,7 @@ pub fn drain_and_commit(
         let mut previous_witness: String = cursor_row.get(2);
         final_generation = generation;
         final_ack = acknowledged;
+
         let staging = tx
             .query(
                 &format!(
@@ -270,8 +271,6 @@ pub fn drain_and_commit(
         tx.commit().map_err(internal)?;
         committed.extend(batch_committed);
         skipped_existing.extend(batch_skipped);
-        final_generation = batch_generation;
-        final_ack = batch_last_seq;
     }
     Ok(DrainReceipt {
         committed,
