@@ -19,7 +19,7 @@ state bundle and writes them to an app-owned log root:
 ```
 
 The portable launcher must set or translate runtime paths so log writes never
-fall back to `~/.codex`:
+fall back to `/run/user/1001/yazelix/profile-runtime/codex`:
 
 ```text
 CODEX_HOME=<portable-root>/data/codex-home
@@ -41,13 +41,13 @@ surface, the app wrapper owns the copy/sync boundary:
 | Mode | Log root |
 | --- | --- |
 | Portable Linux/AppImage-style | `<portable-root>/var/log/codex` |
-| Installed Linux | `${XDG_STATE_HOME:-$HOME/.local/state}/flexnetos/codex/logs` |
+| Installed Linux | `${XDG_STATE_HOME:-$HOME/var/lib}/flexnetos/codex/logs` |
 | macOS | `$HOME/Library/Logs/FlexNetOS/Codex` |
 | Windows | `%LOCALAPPDATA%\\FlexNetOS\\Codex\\Logs` |
 
 ## Current live log-like surfaces
 
-These live `~/.codex` paths are treated as logs or log-adjacent transcript
+These live `/run/user/1001/yazelix/profile-runtime/codex` paths are treated as logs or log-adjacent transcript
 state and are not copied into `private-codex-state/data`:
 
 ```text

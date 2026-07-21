@@ -51,60 +51,30 @@ fn openrouter_catalog_summary_rejects_missing_target_model() {
 }
 
 #[test]
-fn tracked_catalogs_and_profiles_expose_current_hy3_contract() {
-    for relative in [
-        "home/.codex/model-catalog.json",
-        "home/agent-env/codex-harness/model-catalog/model-catalog.json",
-    ] {
-        let catalog = read_json(relative);
-        let model = catalog["models"]
-            .as_array()
-            .expect("models array")
-            .iter()
-            .find(|model| model["slug"] == HY3)
-            .unwrap_or_else(|| panic!("{relative} lacks {HY3}"));
-        assert_eq!(model["provider"], "openrouter", "{relative}");
-        assert_eq!(model["context_window"], 262_144, "{relative}");
-        assert_eq!(model["max_context_window"], 262_144, "{relative}");
-        assert_eq!(model["free_route_expires_on"], "2026-07-21", "{relative}");
-        let efforts = model["supported_reasoning_levels"]
-            .as_array()
-            .expect("reasoning levels")
-            .iter()
-            .filter_map(|level| level["effort"].as_str())
-            .collect::<Vec<_>>();
-        assert_eq!(efforts, ["low", "high"], "{relative}");
-    }
-
-    for relative in [
-        "home/.codex/envctl-openrouter.config.toml",
-        "home/.codex/envctl-openrouter-gpt.config.toml",
-    ] {
-        let path = envctl_root().join(relative);
-        let profile: toml::Value = toml::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-        assert_eq!(profile["model"].as_str(), Some(HY3), "{relative}");
-        assert_eq!(
-            profile["model_provider"].as_str(),
-            Some("openrouter"),
-            "{relative}"
-        );
-        let provider = &profile["model_providers"]["openrouter"];
-        assert_eq!(
-            provider["base_url"].as_str(),
-            Some("https://openrouter.ai/api/v1"),
-            "{relative}"
-        );
-        assert_eq!(
-            provider["env_key"].as_str(),
-            Some("OPENROUTER_API_KEY"),
-            "{relative}"
-        );
-        assert_eq!(
-            provider["wire_api"].as_str(),
-            Some("responses"),
-            "{relative}"
-        );
-    }
+fn durable_harness_catalog_exposes_current_hy3_contract() {
+    let relative = "home/agent-env/codex-harness/model-catalog/model-catalog.json";
+    let catalog = read_json(relative);
+    let model = catalog["models"]
+        .as_array()
+        .expect("models array")
+        .iter()
+        .find(|model| model["slug"] == HY3)
+        .unwrap_or_else(|| panic!("{relative} lacks {HY3}"));
+    assert_eq!(model["provider"], "openrouter");
+    assert_eq!(model["context_window"], 262_144);
+    assert_eq!(model["max_context_window"], 262_144);
+    assert_eq!(model["free_route_expires_on"], "2026-07-21");
+    let efforts = model["supported_reasoning_levels"]
+        .as_array()
+        .expect("reasoning levels")
+        .iter()
+        .filter_map(|level| level["effort"].as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(efforts, ["low", "high"]);
+    assert!(
+        !envctl_root().join("profile-runtime").exists(),
+        "envctl must not project the profile-owned Codex runtime"
+    );
 }
 
 #[test]

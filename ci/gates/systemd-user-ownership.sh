@@ -32,7 +32,6 @@ def fail(message: str) -> None:
 expected = {
     "env-ctl.service": "manifest/env-ctl.toml",
     "sqld.service": "manifest/sqld.toml",
-    "kache.service": "manifest/components.d/epic-h-toolchains.toml",
 }
 owners: dict[str, set[str]] = {}
 imperative_owners: dict[str, set[str]] = {}

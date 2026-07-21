@@ -273,13 +273,13 @@ fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
     let fx = Fixture::new();
     let yazelix = fx.root.join("yazelix");
     std::fs::create_dir_all(yazelix.join("docs/generated")).unwrap();
-    std::fs::create_dir_all(yazelix.join(".local/share/yazelix")).unwrap();
+    std::fs::create_dir_all(yazelix.join("profile-runtime/yazelix")).unwrap();
     std::fs::write(
         yazelix.join("settings_default.jsonc"),
         r#"{"debug_mode":false}"#,
     )
     .unwrap();
-    std::fs::write(yazelix.join(".local/share/yazelix/state.json"), "{}\n").unwrap();
+    std::fs::write(yazelix.join("profile-runtime/yazelix/state.json"), "{}\n").unwrap();
     std::fs::write(
         yazelix.join("docs/generated/yazelix_file_target_inventory.json"),
         format!(
@@ -313,11 +313,11 @@ fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
     "import_mode": "metadata_only"
   }},
   {{
-    "target_id": "local_state",
+    "target_id": "volatile_runtime_state",
     "absolute_path": "{}",
-    "normalized_logical_path": "real_home_runtime_state:.local/share/yazelix/state.json",
-    "owner": "user",
-    "source_of_truth_class": "real_home_runtime_state",
+    "normalized_logical_path": "volatile_profile_runtime:yazelix/state.json",
+    "owner": "yazelix-profile-runtime",
+    "source_of_truth_class": "volatile_runtime_state",
     "exists": true,
     "file_kind": "regular_file",
     "parser_hint": "json",
@@ -329,7 +329,7 @@ fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
 ]
 "#,
             yazelix.join("settings_default.jsonc").display(),
-            yazelix.join(".local/share/yazelix/state.json").display(),
+            yazelix.join("profile-runtime/yazelix/state.json").display(),
         ),
     )
     .unwrap();
@@ -383,7 +383,7 @@ fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
                 && row.get("value").and_then(|v| v.as_str()) == Some("false")
         })));
 
-    for target_id in ["nix_store_runtime", "local_state"] {
+    for target_id in ["nix_store_runtime", "volatile_runtime_state"] {
         let row = rows
             .iter()
             .find(|row| row.get("target_id").and_then(|v| v.as_str()) == Some(target_id))
@@ -657,7 +657,7 @@ fn doctor_bootstraps_outside_a_manifest_cwd_from_root_or_explicit_manifest_dir()
 #[test]
 fn secret_wrapper_forwards_frozen_argv_without_live_daemon() {
     let fx = Fixture::new();
-    let bin_dir = fx.meta.join("usr/bin");
+    let bin_dir = fx.home.join(".nix-profile/toolbin");
     std::fs::create_dir_all(&bin_dir).unwrap();
     let log = fx.root.join("secretctl-argv.log");
     let fake = bin_dir.join("secretctl");
@@ -780,12 +780,9 @@ fn migration_scan_json_reports_meta_layout_and_legacy_manifest_debt() {
     let fx = Fixture::new();
     let components = fx.manifest.join("components.d");
     std::fs::create_dir_all(&components).unwrap();
-    let legacy_home_local = ["~", ".local/bin/foo"].join("/");
-    let legacy_usr_local = ["/usr", "local/bin/bar"].join("/");
     std::fs::write(
         components.join("legacy.toml"),
-        format!(
-            r#"
+        r#"
 [[component]]
 id = "legacy-paths"
 name = "Legacy Paths"
@@ -797,9 +794,8 @@ command = "true"
 [component.install]
 kind = "command"
 command = "sh"
-args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo {legacy_home_local} && echo {legacy_usr_local}"]
-"#
-        ),
+args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo /usr/local/bin/bar"]
+"#,
     )
     .unwrap();
 
@@ -825,13 +821,6 @@ args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo {legacy_home_local} &&
             .any(|item| item["kind"] == "manifest_legacy_token"
                 && item["status"] == "needs_migration"),
         "missing legacy token item: {v}"
-    );
-    assert!(
-        items
-            .iter()
-            .any(|item| item["kind"] == "user_global_path"
-                && item["action"] == "adopt_into_meta_local"),
-        "missing user-global adoption item: {v}"
     );
     assert!(
         items.iter().any(|item| {

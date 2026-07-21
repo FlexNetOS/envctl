@@ -14,7 +14,7 @@ args = ["-lc", "fc-list 2>/dev/null | grep -qiE 'JetBrainsMono Nerd|FiraCode Ner
 kind = "script"
 script = '''
 set -e
-FD="$META_ROOT/.local/share/fonts"; mkdir -p "$FD"; cd "$(mktemp -d)"
+FD="$META_ROOT/var/lib/fonts"; mkdir -p "$FD"; cd "$(mktemp -d)"
 base="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
 for f in JetBrainsMono FiraCode; do
   curl -fsSL -o "$f.zip" "$base/$f.zip"
@@ -29,7 +29,7 @@ args = ["-lc", "fc-list | grep -qiE 'JetBrainsMono Nerd Font|FiraCode Nerd Font'
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -rf \"$META_ROOT/.local/share/fonts/JetBrainsMono-NerdFont\" \"$META_ROOT/.local/share/fonts/FiraCode-NerdFont\"; fc-cache -f >/dev/null"]
+args = ["-lc", "rm -rf \"$META_ROOT/var/lib/fonts/JetBrainsMono-NerdFont\" \"$META_ROOT/var/lib/fonts/FiraCode-NerdFont\"; fc-cache -f >/dev/null"]
 
 
 [[component]]
@@ -67,8 +67,8 @@ bindir="$(cd -P "$(dirname "$self")" && pwd)"
 META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
-export HOME="${HOME:-$META_ROOT/.local}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+export HOME="${HOME:-$META_ROOT/var/lib/envctl/runtime-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/var/cache}"
 exec "$BUN_INSTALL/bin/bun" x "$@"
 BUNX
 chmod 755 "$META_ROOT/usr/bin/bunx"
@@ -90,8 +90,8 @@ bindir="$(cd -P "$(dirname "$self")" && pwd)"
 META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
-export HOME="${HOME:-$META_ROOT/.local}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+export HOME="${HOME:-$META_ROOT/var/lib/envctl/runtime-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/var/cache}"
 exec "$BUN_INSTALL/bin/bun" x "$@"
 BUNX
   chmod 755 "$META_ROOT/usr/bin/$b"
@@ -114,8 +114,8 @@ bindir="$(cd -P "$(dirname "$self")" && pwd)"
 META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
-export HOME="${HOME:-$META_ROOT/.local}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+export HOME="${HOME:-$META_ROOT/var/lib/envctl/runtime-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/var/cache}"
 exec "$BUN_INSTALL/bin/bun" "$@"
 BUNPM
   chmod 755 "$META_ROOT/usr/bin/$b"
@@ -152,8 +152,8 @@ bindir="$(cd -P "$(dirname "$self")" && pwd)"
 META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
-export HOME="${HOME:-$META_ROOT/.local}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+export HOME="${HOME:-$META_ROOT/var/lib/envctl/runtime-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/var/cache}"
 exec "$BUN_INSTALL/bin/bun" x "$@"
 BUNX
 chmod 755 "$META_ROOT/usr/bin/bunx"
@@ -175,8 +175,8 @@ bindir="$(cd -P "$(dirname "$self")" && pwd)"
 META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
-export HOME="${HOME:-$META_ROOT/.local}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+export HOME="${HOME:-$META_ROOT/var/lib/envctl/runtime-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/var/cache}"
 exec "$BUN_INSTALL/bin/bun" x "$@"
 BUNX
   chmod 755 "$META_ROOT/usr/bin/$b"
@@ -199,8 +199,8 @@ bindir="$(cd -P "$(dirname "$self")" && pwd)"
 META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
-export HOME="${HOME:-$META_ROOT/.local}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+export HOME="${HOME:-$META_ROOT/var/lib/envctl/runtime-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/var/cache}"
 exec "$BUN_INSTALL/bin/bun" "$@"
 BUNPM
   chmod 755 "$META_ROOT/usr/bin/$b"

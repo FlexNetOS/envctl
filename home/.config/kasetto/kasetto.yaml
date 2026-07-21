@@ -13,7 +13,7 @@
 #   A global `envctl agent sync` MANAGES the global MCP destination; before enabling any `mcps:`
 #   here, run `envctl agent sync --global --dry-run` and confirm it ADDS servers without REMOVING
 #   broker/repowire/weave. If it would remove them, list them here too (or keep mcps disabled
-#   and let the agent-env engine manage skills only). Skills install additively into ~/.claude/skills and
+#   and let the agent-env engine manage skills only). Skills install additively into /run/user/1001/yazelix/profile-runtime/claude/skills and
 #   are safe.
 
 scope: global
@@ -25,7 +25,7 @@ agent:
 # The current agent-skills are envctl-grounded, so they belong in envctl's project config,
 # not globally. Point this at the shared repo and curate which skills are global-worthy.
 # skills:
-#   - source: $META_ROOT/.local/share/agent-skills
+#   - source: $META_ROOT/var/lib/agent-skills
 #     skills:
 #       - <a-general-skill>
 

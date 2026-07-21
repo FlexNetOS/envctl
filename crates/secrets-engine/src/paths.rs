@@ -1,6 +1,6 @@
-//! XDG, env-ctl-namespaced paths. In envctl-managed shells, config/data/state live under
-//! `$META_ROOT/.config/env-ctl`, `$META_ROOT/.local/share/env-ctl`, and
-//! `$META_ROOT/.local/state/env-ctl`; runtime socket remains under `$XDG_RUNTIME_DIR`.
+//! Envctl-namespaced paths. In managed shells, config lives under
+//! `$META_ROOT/.config/env-ctl`, durable data/state under
+//! `$META_ROOT/var/lib/env-ctl`, and runtime sockets under `$XDG_RUNTIME_DIR`.
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -26,8 +26,8 @@ impl Paths {
                 .unwrap_or(default)
         };
         let config = base("XDG_CONFIG_HOME", fallback_root.join(".config")).join("env-ctl");
-        let data = base("XDG_DATA_HOME", fallback_root.join(".local/share")).join("env-ctl");
-        let state = base("XDG_STATE_HOME", fallback_root.join(".local/state")).join("env-ctl");
+        let data = base("XDG_DATA_HOME", fallback_root.join("var/lib")).join("env-ctl");
+        let state = base("XDG_STATE_HOME", fallback_root.join("var/lib")).join("env-ctl");
         let runtime = match std::env::var_os("XDG_RUNTIME_DIR") {
             Some(r) if !r.is_empty() => PathBuf::from(r).join("env-ctl"),
             None => state.clone(),
@@ -153,15 +153,15 @@ mod tests {
         );
         assert_eq!(
             p.data,
-            PathBuf::from("/home/real-user/Desktop/meta/.local/share/env-ctl")
+            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl")
         );
         assert_eq!(
             p.state,
-            PathBuf::from("/home/real-user/Desktop/meta/.local/state/env-ctl")
+            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl")
         );
         assert_eq!(
             p.runtime,
-            PathBuf::from("/home/real-user/Desktop/meta/.local/state/env-ctl")
+            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl")
         );
 
         restore_path_env(old);

@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "09dd5de174cb50ce"
+content_hash = "dd79e90714cb77fa"
 requires = []
 resolved = ""
 
@@ -56,27 +56,22 @@ requires = ["rustup"]
 resolved = ""
 
 [components.claude-code-cli]
-content_hash = "523fde14dc47d788"
-requires = []
-resolved = ""
-
-[components.claude-global-links]
-content_hash = "09fca5f218a51957"
-requires = ["home-config-links"]
+content_hash = "8e2550a16d3bf347"
+requires = ["yazelix"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "2fcdb7c229c97683"
+content_hash = "20b7db5d62016a03"
 requires = ["yazelix"]
 resolved = ""
 
 [components.codex-cli-alpha]
-content_hash = "0b48cc73082ddad4"
+content_hash = "5a1c5e910c3177ba"
 requires = ["codex-cli"]
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "5616798e03e88e90"
+content_hash = "369e793a6a2ca8c6"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -124,17 +119,17 @@ requires = [
 resolved = ""
 
 [components.desktop-app]
-content_hash = "c1d520a61d1b85f9"
+content_hash = "77b336898c8cbd99"
 requires = ["rustup"]
 resolved = ""
 
 [components.devin-cli]
-content_hash = "f5dac4b539d29934"
-requires = []
+content_hash = "5054c00500ebcaa8"
+requires = ["yazelix"]
 resolved = ""
 
 [components.env-ctl]
-content_hash = "0ad9cabe1bdd3385"
+content_hash = "69713a86a34ad9d1"
 requires = [
     "rustup",
     "sqld",
@@ -147,8 +142,8 @@ requires = ["rustup"]
 resolved = ""
 
 [components.gemini-cli]
-content_hash = "91ec2abea79b4737"
-requires = ["bun"]
+content_hash = "1ee567870977d146"
+requires = ["yazelix"]
 resolved = ""
 
 [components.gh]
@@ -195,7 +190,7 @@ requires = [
 resolved = ""
 
 [components.group-ai-clis]
-content_hash = "5dba47317b8f38e2"
+content_hash = "8e50c99a36b56ec2"
 requires = [
     "claude-code-cli",
     "codex-cli",
@@ -239,9 +234,8 @@ requires = [
 resolved = ""
 
 [components.group-portability]
-content_hash = "7b7f0e488cf7b265"
+content_hash = "06370a740baeee4d"
 requires = [
-    "claude-global-links",
     "home-config-links",
     "home-local-single-link",
     "rtk-config-links",
@@ -249,7 +243,7 @@ requires = [
 resolved = ""
 
 [components.handoff-hf]
-content_hash = "9a0261d9aa2afb17"
+content_hash = "ae081a1ebdfb1f06"
 requires = ["rustup"]
 resolved = ""
 
@@ -259,17 +253,17 @@ requires = []
 resolved = ""
 
 [components.home-bin-links]
-content_hash = "8b5a801ca46216ec"
+content_hash = "0c44dc62de6cb92e"
 requires = ["home-local-single-link"]
 resolved = ""
 
 [components.home-config-links]
-content_hash = "4ab6a9d39a998143"
+content_hash = "3a951eb1a1176792"
 requires = []
 resolved = ""
 
 [components.home-local-single-link]
-content_hash = "6797c947dd6395f4"
+content_hash = "9275d4381b2a83f2"
 requires = []
 resolved = ""
 
@@ -283,13 +277,18 @@ content_hash = "efd36cdd1fed18bf"
 requires = []
 resolved = ""
 
+[components.icm-config-links]
+content_hash = "9d83c5da7b364fc2"
+requires = ["home-config-links"]
+resolved = ""
+
 [components.just]
 content_hash = "12d7931bfb8138ab"
 requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "aa08c4442467d795"
+content_hash = "0a316b853885238a"
 requires = []
 resolved = ""
 
@@ -309,8 +308,8 @@ requires = []
 resolved = ""
 
 [components.kimi-cli]
-content_hash = "8ffcae34f9737bc8"
-requires = []
+content_hash = "62d60e9a9a2e43fa"
+requires = ["yazelix"]
 resolved = ""
 
 [components.libgccjit]
@@ -347,7 +346,7 @@ requires = []
 resolved = ""
 
 [components.meta-tool-links]
-content_hash = "e998b4aeae5c859b"
+content_hash = "b1c06d54b31adb25"
 requires = ["home-local-single-link"]
 resolved = ""
 
@@ -373,7 +372,7 @@ requires = [
 resolved = ""
 
 [components.nerd-fonts]
-content_hash = "0b555a03edfc4bab"
+content_hash = "acc3e90cfc6104df"
 requires = []
 resolved = ""
 
@@ -388,7 +387,7 @@ requires = []
 resolved = ""
 
 [components.nix-yazelix-cache]
-content_hash = "d4bc9aaba3eeb67b"
+content_hash = "b9eb116a445fb50f"
 requires = ["nix"]
 resolved = ""
 
@@ -426,7 +425,7 @@ requires = ["nvidia-cuda-repo"]
 resolved = ""
 
 [components.odysseus]
-content_hash = "86a370aea0f64d52"
+content_hash = "bd1abaa839b2e09a"
 requires = []
 resolved = ""
 
@@ -436,7 +435,7 @@ requires = []
 resolved = ""
 
 [components.podman]
-content_hash = "dc379af8dcb9af5e"
+content_hash = "b0f5e5797c7e541f"
 requires = []
 resolved = ""
 
@@ -465,7 +464,7 @@ requires = ["yazelix"]
 resolved = ""
 
 [components.rtk-config-links]
-content_hash = "9fee0fa2f285c10f"
+content_hash = "afdf10c17db65783"
 requires = ["home-config-links"]
 resolved = ""
 
@@ -490,7 +489,7 @@ requires = ["env-ctl"]
 resolved = ""
 
 [components.sqld]
-content_hash = "e1a165620b12896c"
+content_hash = "c8530caa3abf73a2"
 requires = [
     "llvm-clang",
     "rustup",
@@ -498,7 +497,7 @@ requires = [
 resolved = ""
 
 [components.usrlocal-script-links]
-content_hash = "12fd355957402e65"
+content_hash = "2a9a1cb2fe822877"
 requires = []
 resolved = ""
 
@@ -523,12 +522,12 @@ requires = []
 resolved = ""
 
 [components.wild-linker]
-content_hash = "cd61df8e88702a71"
+content_hash = "78f1703eef274382"
 requires = []
 resolved = ""
 
 [components.yazelix]
-content_hash = "09e08d4fc870eee6"
+content_hash = "481ed3b420f322d0"
 requires = [
     "nix",
     "nix-yazelix-cache",

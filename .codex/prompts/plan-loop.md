@@ -5,10 +5,10 @@ argument-hint: "[resume|budget=N|target=<slug>]"
 
 You are executing the Codex-native prompt mirror for the envctl Planning Engineer loop.
 
-Use `.agents/skills/plan-loop/SKILL.md` as the authoritative workflow and align it with
-`/home/flexnetos/FlexNetOS/prompt_hub/prompts/planning-engineer-loop.prompt.yml`. Also read
-`.agents/skills/planning-engineer/SKILL.md`, `AGENTS.md`, `.codex/AGENTS.md`, and
-`/home/flexnetos/FlexNetOS/.meta.yaml` before acting.
+Use `agent-skills/plan-loop/SKILL.md` as the authoritative workflow and align it with
+`/home/flexnetos/meta/src/prompt_hub/prompts/planning-engineer-loop.prompt.yml`. Also read
+`agent-skills/planning-engineer/SKILL.md`, `AGENTS.md`, `.codex/AGENTS.md`, and
+`/home/flexnetos/meta/.meta.yaml` before acting.
 
 Arguments supplied to this prompt: $ARGUMENTS
 

@@ -2979,11 +2979,11 @@ fn parity_dirs_xdg_resolution() {
     std::env::remove_var("XDG_DATA_HOME");
     assert_eq!(
         dirs_xdg_data_home().unwrap(),
-        PathBuf::from("/home/tester/.local/share")
+        PathBuf::from("/home/tester/var/lib")
     );
     assert_eq!(
         dirs_agent_env_data().unwrap(),
-        PathBuf::from("/home/tester/.local/share/agent-env")
+        PathBuf::from("/home/tester/var/lib/agent-env")
     );
     // Non-empty override honored.
     std::env::set_var("XDG_DATA_HOME", "/custom/data");

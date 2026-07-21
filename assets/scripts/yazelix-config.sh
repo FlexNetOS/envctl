@@ -39,11 +39,11 @@ say() { printf '  %s\n' "$*"; }
 find_default() {
   local c
   for c in \
-    "$META_ROOT/.local/share/yazelix/settings_default.jsonc" \
+    "$META_ROOT/var/lib/yazelix/settings_default.jsonc" \
     "$(readlink -f "$META_ROOT/.nix-profile" 2>/dev/null)/share/yazelix/settings_default.jsonc"; do
     [ -f "$c" ] && { echo "$c"; return 0; }
   done
-  c="$(find -L "$META_ROOT/.nix-profile" "$META_ROOT/.local/share/yazelix" \
+  c="$(find -L "$META_ROOT/.nix-profile" "$META_ROOT/var/lib/yazelix" \
         -name settings_default.jsonc 2>/dev/null | head -n1)"
   [ -n "$c" ] && { echo "$c"; return 0; }
   return 1

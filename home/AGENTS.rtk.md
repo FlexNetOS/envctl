@@ -1,6 +1,9 @@
 # Home RTK policy pointer
 
-The canonical RTK policy is `/home/flexnetos/.codex/AGENTS.rtk.md`.
+The canonical installed policy source is
+`/home/flexnetos/.nix-profile/share/yazelix/agent_configs/codex/RULES.md.src`;
+the profile materializes it at
+`/run/user/1001/yazelix/profile-runtime/codex/RULES.md`.
 
 Every Codex shell command must use the exact profile frontdoor
 `/home/flexnetos/.nix-profile/bin/rtk`. For gate and root-cause commands, retain
@@ -17,4 +20,5 @@ raw output through `/home/flexnetos/.nix-profile/bin/rtk proxy -- ...`:
 
 Routine exploratory commands use the same exact RTK binary without `proxy --`
 when summarized output is acceptable. Direct raw command invocation is not an
-alternate path.
+alternate path. Do not hide several independent diagnostics in one summarized
+command when separate raw receipts are needed.

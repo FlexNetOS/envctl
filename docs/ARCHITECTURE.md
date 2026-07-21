@@ -451,7 +451,7 @@ best-effort with refuse-on-ambiguity.
    specified.
 6. **install** — into meta-local roots: bins → `$META_ROOT/usr/bin`, libs →
    `$META_ROOT/usr/lib`, completions → the shell's XDG dir, `.desktop` →
-   `$META_ROOT/.local/share/applications`, man → `$META_ROOT/.local/share/man`.
+   `$META_ROOT/var/lib/applications`, man → `$META_ROOT/var/lib/man`.
    **Regular-wrapper-by-default** for binaries: `$META_ROOT/usr/bin/<name>` is an
    executable shell frontdoor that `exec`s the private meta-owned artifact, not a symlink or
    direct copy. Updates replace only byte-identical managed wrappers or legacy managed

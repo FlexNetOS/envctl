@@ -15,11 +15,11 @@ for path in \
   .codex/hooks.json.old \
   .codex/hooks/pre-cleanroom-hooks.zip \
   .claude.tar.xz \
-  home/.codex/hooks.json \
-  home/.claude/hooks \
+  profile-runtime/codex/hooks.json \
+  profile-runtime/claude/hooks \
   .codex/hooks \
   .codex/hooks.json \
-  home/.codex/mined-live/rules/default.rules
+  profile-runtime/codex/mined-live/rules/default.rules
 do
   [ ! -e "$path" ] && [ ! -L "$path" ] \
     || fail "retired hook payload remains: $path"

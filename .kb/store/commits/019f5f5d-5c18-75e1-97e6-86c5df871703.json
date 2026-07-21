@@ -1,0 +1,5 @@
+{
+  "commit": {"author":"drdave <flexnetos@de-flex.net>","changes":[{"change_type":"created","content_hash":"44b2e9a806f9dc2a6a4b74825f384e75e954e8c3f019270de5fdcf123d4f07e1","doc_type":"task","document_id":"019f5f5d-2abe-7202-89ab-9fa63f8326a5","new_version":1,"previous_version":null,"slug":"tasks/openrouter-agent-env","title":"Add OpenRouter to centralized agent-env"}],"created_at":"2026-07-14T06:43:01.726779995Z","id":"019f5f5d-5c18-75e1-97e6-86c5df871703","message":"Track centralized OpenRouter agent environment"},
+  "content_hash": "42c60f188ab0c4bdf2625a62a4241dfd48098630c485596b12d51800bcb24cac",
+  "hash_version": 3
+}

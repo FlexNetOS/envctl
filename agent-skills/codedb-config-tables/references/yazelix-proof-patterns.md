@@ -24,7 +24,7 @@ The existing Yazelix-enabled smoke path shows the intended proof lane:
 
 1. build `codedb` and `nu_plugin_codedb`
 2. create temporary `HOME` and XDG roots
-3. create a Yazelix-like `~/.local/share/yazelix/initializers/nushell/` directory
+3. create a Yazelix-like `~/var/lib/yazelix/initializers/nushell/` directory
 4. generate the bridge into that directory
 5. launch `nu --no-config-file` against a tiny probe script
 6. provide:

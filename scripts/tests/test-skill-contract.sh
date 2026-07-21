@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
-# Guard hand-authored harness skill metadata/mirror contracts.
-# The Claude and Codex-facing handoff-sync skills must stay byte-identical and
-# short enough for skill loaders that treat frontmatter description as a routing parameter.
+# Guard hand-authored harness skill metadata contracts.
+# `agent-skills/` is the maintained source. Runtime-specific projections are
+# generated outside this repository and must not become a second authority.
 set -euo pipefail
 root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 agents_skill="$root/agent-skills/handoff-sync/SKILL.md"
-claude_skill="$root/.claude/skills/handoff-sync/SKILL.md"
-
-cmp -s "$agents_skill" "$claude_skill" || fail "handoff-sync skill mirrors drifted (.agents != .claude)"
 
 python3 - "$agents_skill" <<'PY'
 from pathlib import Path
@@ -73,9 +70,7 @@ def description(path: Path) -> str:
     raise SystemExit(f"FAIL: {path} missing description")
 
 
-skill_paths = sorted(root.glob("agent-skills/*/SKILL.md")) + sorted(
-    root.glob(".claude/skills/*/SKILL.md")
-)
+skill_paths = sorted(root.glob("agent-skills/*/SKILL.md"))
 for path in skill_paths:
     desc = description(path)
     if len(desc) > 1024:
@@ -84,10 +79,6 @@ for path in skill_paths:
         )
 
 agents_rust = root / "agent-skills/rust-port/SKILL.md"
-claude_rust = root / ".claude/skills/rust-port/SKILL.md"
-if description(agents_rust) != description(claude_rust):
-    raise SystemExit("FAIL: rust-port frontmatter descriptions drifted (.agents != .claude)")
-
 rust_desc = description(agents_rust).lower()
 required = [
     "port <project> to rust",
@@ -122,9 +113,7 @@ PY
 # Stale doctrine that caused the failed skill must not reappear in active skill/agent config.
 if grep -RInE 'redirect the shared ledger|no per-repo ledger|forbidden per-repo|There is \*\*no `hf drift`|run hf from `\$META_ROOT`|\$META_ROOT/\.handoff/ledger\.db' \
   "$root/agent-skills/handoff-sync" \
-  "$root/.claude/skills/handoff-sync" \
   "$root/.agents/agents" \
-  "$root/.claude/agents" \
   "$root/.codex/agents" >/tmp/envctl-skill-contract-grep.txt 2>/dev/null; then
   cat /tmp/envctl-skill-contract-grep.txt >&2
   fail "stale handoff residency doctrine found in active skill/agent config"
@@ -135,13 +124,9 @@ fi
 # path-shape helper in scripts/reap-worktrees.sh.
 if grep -RInE '\[gone\].*\(merged\)|upstream is `\[gone\]` \(merged\)|meta git worktree status envctl' \
   "$root/agent-skills/forge-loop" \
-  "$root/.claude/skills/forge-loop" \
   "$root/agent-skills/session-relay-resume" \
-  "$root/.claude/skills/session-relay-resume" \
   "$root/agent-skills/session-relay-wrap-up" \
-  "$root/.claude/skills/session-relay-wrap-up" \
-  "$root/.codex/agents/continuity-steward.toml" \
-  "$root/.claude/agents/continuity-steward.md" >/tmp/envctl-worktree-contract-grep.txt 2>/dev/null; then
+  "$root/.codex/agents/continuity-steward.toml" >/tmp/envctl-worktree-contract-grep.txt 2>/dev/null; then
   cat /tmp/envctl-worktree-contract-grep.txt >&2
   fail "stale worktree slug or gone-equals-merged doctrine found in active config"
 fi

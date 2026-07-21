@@ -216,7 +216,7 @@ The remote-swap order is pinned (reuses CF-9 default-deny-by-construction):
 edge: mTLS/DPoP verify  →  per-client rate/quota admission  →  decide() == Allow
    →  durable append_audit + fsync_barrier confirmed  →  THEN fetch real key (inside Allow)  →  Upstream::send
 ```
-Any failure before the barrier maps to `InternalRefused` / 403 with a durable deny audit — never a fall-through to `Upstream::send`. For a remote `sqld`, a barrier timeout is a hard fail-closed deny, and the deny itself is durably auditable on a path that does not depend on the same stalled node (the operator-box-local audit mirror under `$META_ROOT/.local/state/env-ctl`). Forbidden state FS-S26: a remote swap returns Allowed before its audit row is durably committed.
+Any failure before the barrier maps to `InternalRefused` / 403 with a durable deny audit — never a fall-through to `Upstream::send`. For a remote `sqld`, a barrier timeout is a hard fail-closed deny, and the deny itself is durably auditable on a path that does not depend on the same stalled node (the operator-box-local audit mirror under `$META_ROOT/var/lib/env-ctl`). Forbidden state FS-S26: a remote swap returns Allowed before its audit row is durably committed.
 
 If audit appends are ever batched, FS-S26 applies to the batch as a single commit group: max 100 rows
 or 100 ms of waiting, whichever comes first; no response in the group may return until the shared

@@ -12,7 +12,7 @@
 --
 -- If SQL is ruled: PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON.
 -- All BLOB bodies are app-encrypted; NO plaintext secret, NO DEK, NO unlock key, NO hmac_key on disk.
--- file: $META_ROOT/.local/share/env-ctl/vault.db  (dir 0700, file 0600)
+-- file: $META_ROOT/var/lib/env-ctl/vault.db  (dir 0700, file 0600)
 --
 -- AAD discipline (REVIEW FIX HF-2): AEAD AAD is a fixed-width canonical encoding RECOMPUTED at decrypt
 -- time from each row's trusted identity columns; it is NEVER read from a stored column. The old

@@ -312,7 +312,7 @@ git     -> GIT_SSL_CAINFO=<ca.pem>
 generic -> REQUESTS_CA_BUNDLE, CURL_CA_BUNDLE, GIT_SSL_CAINFO, NODE_EXTRA_CA_CERTS, SSL_CERT_FILE
 ```
 
-`<ca.pem>` is the public CA cert at `$META_ROOT/.local/share/env-ctl/ca/ca.pem` (0644, public cert only —
+`<ca.pem>` is the public CA cert at `$META_ROOT/var/lib/env-ctl/ca/ca.pem` (0644, public cert only —
 ARCHITECTURE.md §11). The CA private key stays sealed under the DEK and never touches disk in clear
 (ARCHITECTURE.md §8).
 
@@ -324,7 +324,7 @@ monolithic bundle is NEVER hand-edited:
 ```bash
 # APPLY (--apply --confirm): backup, write an OWNED discrete file, regenerate.
 cp /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt.bak-$(date +%s)
-install -m 0644 $META_ROOT/.local/share/env-ctl/ca/ca.pem \
+install -m 0644 $META_ROOT/var/lib/env-ctl/ca/ca.pem \
   /usr/local/share/ca-certificates/env-ctl-local-mitm-ca.crt
 update-ca-certificates
 
@@ -379,7 +379,7 @@ NoNewPrivileges=true
 MemoryDenyWriteExecute=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl %h/Desktop/meta/var/lib/env-ctl
 PrivateTmp=true
 Restart=on-failure
 

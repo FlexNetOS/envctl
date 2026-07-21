@@ -23,10 +23,10 @@ fixture_source="$tmp/envctl-source"
 fixture_crate="$tmp/fixture-crate-1.0.0.crate"
 auth_key_sentinel='PUBLIC-KEY-SENTINEL-NOT-A-REAL-KEY'
 auth_token_sentinel='secret.jwt.token-sentinel'
-mkdir -p "$meta/.config/systemd/user" "$meta/.local/share/sqld" "$fake_bin" "$shadow_bin" \
+mkdir -p "$meta/.config/systemd/user" "$meta/var/lib/sqld" "$fake_bin" "$shadow_bin" \
   "$lifecycle_shadow_bin" "$fixture" "$auth_source"
-chmod 0700 "$meta/.local/share/sqld"
-printf 'preserve durable data\n' >"$meta/.local/share/sqld/data-marker"
+chmod 0700 "$meta/var/lib/sqld"
+printf 'preserve durable data\n' >"$meta/var/lib/sqld/data-marker"
 printf '%s\n' "$auth_key_sentinel" >"$auth_key_source"
 printf '%s\n' "$auth_token_sentinel" >"$auth_token_source"
 chmod 0600 "$auth_key_source" "$auth_token_source"
@@ -657,7 +657,7 @@ sqld_remove_sync() {
 unit = next(u for u in component["wiring"]["systemd_user"] if u["name"] == "sqld.service")
 content = unit["content"]
 assert 'Environment="META_ROOT=${META_ROOT}"' in content
-assert 'ExecStart="${META_ROOT}/usr/bin/sqld" --http-listen-addr 127.0.0.1:8080 --auth-jwt-key-file "${META_ROOT}/.config/sqld/auth-jwt-key.pem" -d "${META_ROOT}/.local/share/sqld"' in content
+assert 'ExecStart="${META_ROOT}/usr/bin/sqld" --http-listen-addr 127.0.0.1:8080 --auth-jwt-key-file "${META_ROOT}/.config/sqld/auth-jwt-key.pem" -d "${META_ROOT}/var/lib/sqld"' in content
 assert 'Type=exec' in content
 assert 'ExecStartPost=/usr/bin/sha256sum' not in content
 assert '/usr/bin/sha256sum' not in content
@@ -665,9 +665,9 @@ assert 'ExecStartPost="${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretct
 assert 'TimeoutStartSec=30' in content
 assert 'LimitCORE=0' in content
 assert 'ReadOnlyPaths="${META_ROOT}/.config/sqld/auth-jwt-key.pem" "${META_ROOT}/.config/sqld/client.jwt"' in content
-assert 'ReadWritePaths="${META_ROOT}/.local/share/sqld"' in content
+assert 'ReadWritePaths="${META_ROOT}/var/lib/sqld"' in content
 assert "0.0.0.0" not in content and "%h/Desktop/meta" not in content and "/home/" not in content
-assert component["wiring"]["data_paths"] == [{"path": "$META_ROOT/.local/share/sqld", "uuid": "runtime"}]
+assert component["wiring"]["data_paths"] == [{"path": "$META_ROOT/var/lib/sqld", "uuid": "runtime"}]
 assert component["wiring"]["config_paths"] == [{"path": "$META_ROOT/.config/sqld"}]
 assert "internal-sqld-auth-bootstrap" in component["install"]["script"]
 assert "internal-sqld-auth-bootstrap" in component["fix"]["script"]
@@ -724,8 +724,8 @@ if bash "$tmp/detect.sh"; then fail "detect passed before install"; fi
 meta_spoof="$tmp/meta-spoof"
 spoof_probe="$meta_spoof/usr/libexec/envctl/sqld/bin/current/secretctl"
 spoof_marker="$tmp/spoof-was-executed"
-mkdir -p "$(dirname "$spoof_probe")" "$meta_spoof/.local/share/sqld"
-chmod 0700 "$meta_spoof/.local/share/sqld"
+mkdir -p "$(dirname "$spoof_probe")" "$meta_spoof/var/lib/sqld"
+chmod 0700 "$meta_spoof/var/lib/sqld"
 seed_meta_toolchain "$meta_spoof"
 cat >"$spoof_probe" <<'SH'
 #!/usr/bin/env bash
@@ -787,8 +787,8 @@ chmod 0755 "$tmp/ambient-config-wrapper"
 printf '%s\n' '[build]' "rustc-wrapper = \"$tmp/ambient-config-wrapper\"" >"$source_parent/.cargo/config.toml"
 printf '%s\n' '[build]' "rustc-wrapper = \"$tmp/ambient-config-wrapper\"" >"$source_copy/.cargo/config.toml"
 meta_ancestor_config="$tmp/meta-ancestor-config"
-mkdir -p "$meta_ancestor_config/.local/share/sqld"
-chmod 0700 "$meta_ancestor_config/.local/share/sqld"
+mkdir -p "$meta_ancestor_config/var/lib/sqld"
+chmod 0700 "$meta_ancestor_config/var/lib/sqld"
 seed_meta_toolchain "$meta_ancestor_config"
 export META_ROOT="$meta_ancestor_config"
 export ENVCTL_SOURCE_ROOT="$source_copy"
@@ -816,8 +816,8 @@ if bash "$tmp/install.sh"; then fail "install accepted an ambient CARGO_HOME con
 # Environment-based compiler/linker injection is cleared before the absolute META-owned rustup
 # frontdoor is called. The fake rustup executes any surviving injection variable as a tripwire.
 meta_env_injection="$tmp/meta-env-injection"
-mkdir -p "$meta_env_injection/.local/share/sqld"
-chmod 0700 "$meta_env_injection/.local/share/sqld"
+mkdir -p "$meta_env_injection/var/lib/sqld"
+chmod 0700 "$meta_env_injection/var/lib/sqld"
 seed_meta_toolchain "$meta_env_injection"
 injection_marker="$tmp/compiler-injection-executed"
 cat >"$tmp/compiler-injector" <<SH
@@ -931,7 +931,7 @@ grep -Fq '71720fc8648c19efef416efebd47145ef59b62e198770533530a858e1336879f' "$SQ
   || fail "x86_64 release checksum was not verified"
 grep -Fq "$fixture_payload_sha256" "$SQLD_SHA_LOG" \
   || fail "installed x86_64 payload digest was not verified"
-[ -f "$meta/.local/share/sqld/data-marker" ] || fail "install deleted durable data"
+[ -f "$meta/var/lib/sqld/data-marker" ] || fail "install deleted durable data"
 if grep -R -Fq "$auth_token_sentinel" "$SQLD_CURL_LOG" "$SQLD_SYSTEMCTL_LOG" \
   "$SQLD_RUSTUP_LOG" "$SQLD_PROBE_LOG" "$manifest" "$meta/.config/systemd/user/sqld.service"; then
   fail "client JWT leaked into argv, logs, manifest, or systemd unit"
@@ -1118,7 +1118,7 @@ bash "$tmp/fix.sh"
 [ "$($private --version)" = 'sqld sqld 0.24.32 (40c272de 2025-02-14)' ] \
   || fail "fix did not replace the wrong sqld version"
 [ "$(download_count)" = "$((downloads + 1))" ] || fail "wrong-version fix did not fetch once"
-[ -f "$meta/.local/share/sqld/data-marker" ] || fail "fix deleted durable data"
+[ -f "$meta/var/lib/sqld/data-marker" ] || fail "fix deleted durable data"
 downloads="$((downloads + 1))"
 
 # Exact pinned bytes are still rejected through a symlink, and special mode bits are not masked
@@ -1172,12 +1172,12 @@ unset SQLD_SYSTEMCTL_QUERY_STATE
 [ "$(/usr/bin/sha256sum "$private" "$front" "$managed_probe" "$managed_probe_digest" "$managed_probe_source")" = "$query_failure_hash" ] \
   || fail "failed sqld service-state query mutated runtime bytes"
 
-stop_failure_hash="$(/usr/bin/sha256sum "$private" "$front" "$managed_key" "$managed_token" "$managed_probe" "$managed_probe_digest" "$managed_probe_source" "$meta/.local/share/sqld/data-marker")"
+stop_failure_hash="$(/usr/bin/sha256sum "$private" "$front" "$managed_key" "$managed_token" "$managed_probe" "$managed_probe_digest" "$managed_probe_source" "$meta/var/lib/sqld/data-marker")"
 restores_before="$(grep -Fc -- '--user enable --now sqld.service' "$SQLD_SYSTEMCTL_LOG" || true)"
 export SQLD_STOP_STATE=fail
 if bash "$tmp/remove.sh"; then fail "remove ignored a failed sqld stop/disable"; fi
 unset SQLD_STOP_STATE
-[ "$(/usr/bin/sha256sum "$private" "$front" "$managed_key" "$managed_token" "$managed_probe" "$managed_probe_digest" "$managed_probe_source" "$meta/.local/share/sqld/data-marker")" = "$stop_failure_hash" ] \
+[ "$(/usr/bin/sha256sum "$private" "$front" "$managed_key" "$managed_token" "$managed_probe" "$managed_probe_digest" "$managed_probe_source" "$meta/var/lib/sqld/data-marker")" = "$stop_failure_hash" ] \
   || fail "failed sqld stop mutated binary, auth material, or durable data"
 [ "$(grep -Fc -- '--user enable --now sqld.service' "$SQLD_SYSTEMCTL_LOG" || true)" = "$((restores_before + 1))" ] \
   || fail "partially failed sqld stop/disable did not restore prior service state"
@@ -1228,7 +1228,7 @@ grep -Fq foreign "$front" || fail "remove deleted a foreign frontdoor"
 if bash "$tmp/install.sh"; then fail "install clobbered a foreign frontdoor"; fi
 grep -Fq foreign "$front" || fail "install changed a foreign frontdoor"
 [ -e "$private" ] || fail "refused foreign-frontdoor install deleted the incumbent payload"
-[ -f "$meta/.local/share/sqld/data-marker" ] || fail "remove deleted durable data"
+[ -f "$meta/var/lib/sqld/data-marker" ] || fail "remove deleted durable data"
 
 rm -f "$front"
 bash "$tmp/install.sh"
@@ -1255,7 +1255,7 @@ PATH="$lifecycle_shadow_bin:$PATH" bash "$tmp/remove.sh"
 [ ! -e "$managed_probe" ] || fail "managed readiness helper survived remove"
 [ ! -e "$managed_probe_digest" ] || fail "managed readiness-helper digest survived remove"
 [ ! -e "$managed_probe_source" ] || fail "managed readiness-helper source identity survived remove"
-[ -f "$meta/.local/share/sqld/data-marker" ] || fail "managed remove deleted durable data"
+[ -f "$meta/var/lib/sqld/data-marker" ] || fail "managed remove deleted durable data"
 [ -f "$managed_key" ] && [ -f "$managed_token" ] || fail "managed remove deleted authentication material"
 rm -f "$meta/.config/systemd/user/sqld.service"
 export SQLD_LOAD_STATE=not-found SQLD_ACTIVE_STATE=inactive
@@ -1265,8 +1265,8 @@ unset SQLD_LOAD_STATE SQLD_ACTIVE_STATE
   || fail "second remove recreated or retained sqld runtime state"
 
 meta_aarch="$tmp/meta-aarch"
-mkdir -p "$meta_aarch/.local/share/sqld"
-chmod 0700 "$meta_aarch/.local/share/sqld"
+mkdir -p "$meta_aarch/var/lib/sqld"
+chmod 0700 "$meta_aarch/var/lib/sqld"
 seed_meta_toolchain "$meta_aarch"
 export META_ROOT="$meta_aarch"
 export SQLD_TEST_ARCH=aarch64
@@ -1280,8 +1280,8 @@ grep -Fq "$fixture_payload_sha256" "$SQLD_SHA_LOG" \
 
 # With no operator-supplied sources, the component must invoke the hidden pure-Rust generator.
 meta_bootstrap="$tmp/meta-bootstrap"
-mkdir -p "$meta_bootstrap/.local/share/sqld"
-chmod 0700 "$meta_bootstrap/.local/share/sqld"
+mkdir -p "$meta_bootstrap/var/lib/sqld"
+chmod 0700 "$meta_bootstrap/var/lib/sqld"
 seed_meta_toolchain "$meta_bootstrap"
 export META_ROOT="$meta_bootstrap"
 export SQLD_TEST_ARCH=x86_64
@@ -1312,8 +1312,8 @@ bash "$tmp/fix.sh"
 
 # A partial managed pair is ambiguous and must be preserved rather than filled or overwritten.
 meta_partial="$tmp/meta-partial"
-mkdir -p "$meta_partial/.config/sqld" "$meta_partial/.local/share/sqld"
-chmod 0700 "$meta_partial/.config/sqld" "$meta_partial/.local/share/sqld"
+mkdir -p "$meta_partial/.config/sqld" "$meta_partial/var/lib/sqld"
+chmod 0700 "$meta_partial/.config/sqld" "$meta_partial/var/lib/sqld"
 seed_meta_toolchain "$meta_partial"
 printf '%s\n' 'operator-owned-public-key' >"$meta_partial/.config/sqld/auth-jwt-key.pem"
 chmod 0600 "$meta_partial/.config/sqld/auth-jwt-key.pem"
@@ -1332,8 +1332,8 @@ if bash "$tmp/install.sh"; then fail "install filled a partial sqld auth pair"; 
 # The credential directory itself is a trust boundary: never follow a substituted symlink.
 meta_unsafe_dir="$tmp/meta-unsafe-dir"
 outside_auth="$tmp/outside-auth"
-mkdir -p "$meta_unsafe_dir/.config" "$meta_unsafe_dir/.local/share/sqld" "$outside_auth"
-chmod 0700 "$meta_unsafe_dir/.local/share/sqld"
+mkdir -p "$meta_unsafe_dir/.config" "$meta_unsafe_dir/var/lib/sqld" "$outside_auth"
+chmod 0700 "$meta_unsafe_dir/var/lib/sqld"
 seed_meta_toolchain "$meta_unsafe_dir"
 ln -s "$outside_auth" "$meta_unsafe_dir/.config/sqld"
 export META_ROOT="$meta_unsafe_dir"

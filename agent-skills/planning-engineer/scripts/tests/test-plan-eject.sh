@@ -12,16 +12,14 @@
 set -euo pipefail
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
-# Locate planning-engineer eject.sh from repo-local ejected mirrors first, then the packaged
-# harness_hub copy. Local-first prevents a stale sibling checkout from downgrading this PR
-# during envctl CI; package fallbacks keep the same test runnable in harness_hub.
+# Locate planning-engineer eject.sh from envctl's maintained `agent-skills/`
+# projection first, then the packaged harness_hub copy. A live `.claude/`
+# projection is output, never a source dependency.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; root="$here"
 repo_root="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null || true)"
-# Prefer the repo-local ejected copy first; a sibling harness_hub checkout can lag this PR and would
-# make the test validate stale package code instead of the version this repo is about to ship.
 EJECT=""
-if [ -n "$repo_root" ] && [ -f "$repo_root/.claude/skills/planning-engineer/scripts/eject.sh" ]; then
-  EJECT="$repo_root/.claude/skills/planning-engineer/scripts/eject.sh"
+if [ -n "$repo_root" ] && [ -f "$repo_root/agent-skills/planning-engineer/scripts/eject.sh" ]; then
+  EJECT="$repo_root/agent-skills/planning-engineer/scripts/eject.sh"
 fi
 # Fallback for harness_hub package CI (or a meta-worktree root that has only the packaged copy).
 REL="harness_hub/harness/skills/planning-engineer/scripts/eject.sh"
@@ -34,7 +32,11 @@ if [ -z "$EJECT" ] && [ -n "$repo_root" ] && [ -f "$repo_root/harness/skills/pla
   EJECT="$repo_root/harness/skills/planning-engineer/scripts/eject.sh"
 fi
 [ -n "$EJECT" ] && [ -f "$EJECT" ] || { echo "FAIL: planning-engineer eject.sh not found from $here" >&2; exit 1; }
-PLUGIN="$(cd "$(dirname "$EJECT")/../../.." && pwd)"   # harness/  — same root eject.sh computes
+if [[ "$EJECT" == */agent-skills/planning-engineer/scripts/eject.sh ]]; then
+  SKILLS_ROOT="$(cd "$(dirname "$EJECT")/../.." && pwd)"
+else
+  SKILLS_ROOT="$(cd "$(dirname "$EJECT")/../../.." && pwd)/skills"
+fi
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -87,10 +89,10 @@ grep -q "$SH_AG_SENT" "$TARGET/.claude/agents/evolution-steward.md" \
   || fail "SHARED agent was clobbered (sentinel lost — no-downgrade violated)"
 
 # 5. SHARED absent gets copied — into a FRESH target so the shared item is genuinely absent at eject.
-#    Pick a shared SKILL that EXISTS in the hub plugin (check the hub first); SKIP with a note if none.
+#    Pick a shared SKILL that EXISTS in the selected maintained source.
 SHARED_CAND=""
 for cand in session-relay-wrap-up session-relay-resume harness-loop-init harness-evolution icm-memory; do
-  [ -d "$PLUGIN/skills/$cand" ] && { SHARED_CAND="$cand"; break; }
+  [ -d "$SKILLS_ROOT/$cand" ] && { SHARED_CAND="$cand"; break; }
 done
 if [ -n "$SHARED_CAND" ]; then
   TARGET2="$tmp/target2"; mkdir -p "$TARGET2"

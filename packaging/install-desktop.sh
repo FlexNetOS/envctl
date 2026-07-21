@@ -5,7 +5,7 @@
 # The binary goes to the canonical frontdoor `$META_ROOT/usr/bin` (matching the
 # `desktop-app` manifest component's detect/verify, which key on `$META_ROOT/usr/bin`).
 # Override with ENVCTL_BIN_DIR; the data dir (.desktop + icon) stays under
-# $META_ROOT/.local/share (XDG data, per the install-locations ADR).
+# $META_ROOT/var/lib (XDG data, per the install-locations ADR).
 #
 #   bash packaging/install-desktop.sh           # build (release) + install for current user
 #   bash packaging/install-desktop.sh --no-build # install an already-built binary
@@ -15,9 +15,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_NAME="envctl-gui"
 META_ROOT="${META_ROOT:-$HOME/Desktop/meta}"
-ENVCTL_LOCAL="${ENVCTL_LOCAL:-$META_ROOT/.local}"
+ENVCTL_DATA_ROOT="${ENVCTL_DATA_ROOT:-$META_ROOT/var/lib/envctl}"
 BIN_DIR="${ENVCTL_BIN_DIR:-$META_ROOT/usr/bin}"
-SHARE_DIR="${ENVCTL_SHARE_DIR:-$ENVCTL_LOCAL/share}"
+SHARE_DIR="${ENVCTL_SHARE_DIR:-$META_ROOT/var/lib}"
 APP_DIR="$SHARE_DIR/applications"
 ICON_DIR="$SHARE_DIR/icons/hicolor/scalable/apps"
 ICON_THEME_DIR="$SHARE_DIR/icons/hicolor"

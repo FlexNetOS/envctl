@@ -1,0 +1,2 @@
+# Vendored dependency inputs are not envctl-owned source code.
+third_party/

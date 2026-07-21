@@ -3,10 +3,10 @@
 # One of two ICM embedding profiles on this host:
 #   • CODE profile (DEFAULT) → ~/.config/icm/config.toml
 #       jinaai/jina-embeddings-v2-base-code (768d, code-optimized)
-#       corpus: ~/.local/share/icm/memories.db   (plain `icm ...`)
+#       corpus: /home/flexnetos/meta/var/lib/icm/memories.db   (plain `icm ...`)
 #   • FAST profile (THIS FILE)
 #       Xenova/bge-small-en-v1.5 (384d, English-only, fastest)
-#       corpus: ~/.local/share/icm/memories-fast.db
+#       corpus: /home/flexnetos/meta/var/lib/icm/memories-fast.db
 #
 # ── HOW TO SELECT THIS PROFILE ────────────────────────────────────────────
 # This file supplies the *model*. The CLI resolves the *database* ONLY from
@@ -14,10 +14,10 @@
 # by icm 0.10.57 — verified). So the fast profile needs BOTH overrides:
 #
 #   ICM_CONFIG=~/.config/icm/config.fast.toml \
-#     icm --db ~/.local/share/icm/memories-fast.db recall "query"
+#     icm --db /home/flexnetos/meta/var/lib/icm/memories-fast.db recall "query"
 #
 #   ICM_CONFIG=~/.config/icm/config.fast.toml \
-#     icm serve --db ~/.local/share/icm/memories-fast.db      # MCP, fast corpus
+#     icm serve --db /home/flexnetos/meta/var/lib/icm/memories-fast.db      # MCP, fast corpus
 #
 # A 384d index cannot share the code profile's 768d store; each model owns its
 # own DB. Topics/memories do NOT sync between the two corpora.

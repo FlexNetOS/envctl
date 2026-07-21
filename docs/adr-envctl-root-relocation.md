@@ -7,15 +7,15 @@ envctl · **Builds on:** [adr-install-locations-and-local-state](adr-install-loc
 ## Context
 
 The install-location ADR kept `$META_ROOT/.toolchains` as "Root 2 — compatibility toolchain
-store … while manifests migrate", and the meta-home `.local/bin` plus real-home per-tool
-user-bin entries as compatibility executable bridges. ARCHBP-030 completes the relocation:
+store … while manifests migrate", and the retired meta/real-home user-bin entries as
+compatibility executable bridges. ARCHBP-030 completes the relocation:
 the envctl-owned portable prefix (`$META_ROOT/{usr,etc,var,opt}` + meta-XDG roots) is the
 **single canonical post-bootstrap runtime root**, and the compatibility surfaces are
 **retired** — typed noncanonical, no longer emitted by any default runtime seam, and
 relocatable/archivable only through receipted, reversible tooling.
 
 The one Yazelix-owned Nix profile (`$ENVCTL_REAL_HOME/.nix-profile ->
-$ENVCTL_REAL_HOME/.local/state/nix/profile`) remains the current install owner for
+$ENVCTL_REAL_HOME/var/lib/nix/profile`) remains the current install owner for
 profile-provided frontdoors during the transition. Envctl never mutates the profile, its
 generations, or profile-owned symlinks; there is exactly one canonical envctl root and one
 profile owner — never a second active envctl root.
@@ -43,7 +43,7 @@ profile owner — never a second active envctl root.
 2. **Default runtime seams are canonical-only.** `envctl env --toolchains` and the managed
    hook environment (`enforced_meta_env`) emit only the portable-prefix paths: PATH is
    `usr/bin : usr/sbin : usr/local/bin : usr/local/sbin : opt/toolchains/{.bun,cargo,uv/tools}/bin`.
-   No `.local/bin`, no `.toolchains`, no `ENVCTL_LOCAL_BIN`/`ENVCTL_LEGACY_TOOLCHAINS` in the
+   No user-bin compatibility path, no `.toolchains`, and no `ENVCTL_LOCAL_BIN`/`ENVCTL_LEGACY_TOOLCHAINS` in the
    canonical export set (`MetaLayout::env_exports`).
 
 3. **The compatibility bridge survives only as an explicit, noncanonical rollback surface.**
@@ -55,11 +55,11 @@ profile owner — never a second active envctl root.
 4. **Receipted, reversible relocation tooling** (`envctl migrate relocate …`, engine module
    `crates/engine/src/relocation.rs`), dry-run by default:
    - `plan` — stages the source-to-prefix migration: every active child of
-     `$META_ROOT/.toolchains` relocates to `opt/toolchains/<name>`; meta `.local/bin`
-     entries whose targets live inside meta promote to `usr/bin`; real-home `.local/bin`
-     shadows of canonically-provided commands are archived in place with a dated
+     `$META_ROOT/.toolchains` relocates to `opt/toolchains/<name>`; retired meta user-bin
+     entries whose targets live inside meta promote to `usr/bin`; real-home per-tool
+     shadows of canonically provided commands are archived in place with a dated
      `.archived-<UTC>` suffix (never deleted). Yazelix-profile-owned symlinks (targets under
-     `/nix/store`, `~/.nix-profile`, or `~/.local/state/nix`) are always `preserve`.
+     `/nix/store`, `~/.nix-profile`, or `~/var/lib/nix`) are always `preserve`.
      The plan also reports **split ownership**: a command name resolvable from both a
      canonical and a retired bin dir (binary split) or a manager home present under both
      roots (config split).
@@ -83,10 +83,10 @@ source only. At cutover, with checksum-backed backups:
 
 1. `envctl migrate relocate plan --json` — review entries + split-ownership report.
 2. `envctl migrate relocate apply --apply` — move `.toolchains/*` → `opt/toolchains/*`,
-   promote meta `.local/bin` meta-owned frontdoors → `usr/bin`, archive real-home shadows;
+   promote retired meta-owned user-bin frontdoors → `usr/bin`, archive real-home shadows;
    keep the receipt.
 3. Install the new envctl binary; regenerate every consumer of the env seam (shell-rc block,
-   `home/.config/nushell/meta-usr-path.nu`, `environment.d/10-meta.conf`).
+   `home/.config/nushell/profile-path.nu`, `environment.d/10-meta.conf`).
 4. Re-run component installs (or update manifests) so hooks land in `opt/toolchains` — the
    migration engine already tracks every manifest `.toolchains`/`ENVCTL_LEGACY_TOOLCHAINS`
    reference as `needs_migration` debt.

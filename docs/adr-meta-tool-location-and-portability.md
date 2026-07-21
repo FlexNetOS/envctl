@@ -6,8 +6,8 @@ containment mission (2026-06-12), owner architecture direction, ADR-0006 (meta-p
 ## Context
 
 The owner invariant: **every tool, dotfile, local data tree, `lib`, and `bin` resolves
-inside `meta`**. The real-home local tree is a single bridge to `$META_ROOT/.local`; no
-per-tool host-home link farm is allowed, and no active config may hardcode one machine's
+inside `meta`**. The real-home runtime has no executable bridge into meta; no per-tool
+host-home link farm is allowed, and no active config may hardcode one machine's
 absolute meta path. Live audit (2026-06-12) found the box far from this: real binaries and
 manager prefixes lived outside meta, and three hardcoded `/home/drdave/Desktop/meta` paths
 were present in the canonical `settings.json`.

@@ -4,9 +4,12 @@ This supplements the root `AGENTS.md` with the repo-local Codex baseline. The ro
 
 ## Repo Skill
 
-- Canonical envctl convention skill: `agent-skills/capability-packs/agent-env-config/SKILL.md` and `.codex/skills/agent-env-config/SKILL.md`.
-- Harness skills live under `agent-skills/capability-packs/*`; prompt shims live under `.codex/prompts/*`.
-- Keep user-specific credentials, provider redirects, and private MCP auth in `~/.codex/config.toml`, not in this repo.
+- Canonical envctl convention skill: `agent-skills/agent-env-config/SKILL.md`.
+- Maintained harness skills live under `agent-skills/*`; `.codex/skills/*` and
+  `.agents/skills/*` are repository-local projections selected by the locked
+  catalog. Prompt shims live under `.codex/prompts/*`.
+- Keep credentials and private MCP auth in the envctl vault; profile launch may
+  project only the minimum session material into volatile `CODEX_HOME`.
 
 ## MCP Baseline
 
@@ -29,7 +32,7 @@ restored just because they appear in catalog output or marketplace listings.
 
 ## Workflow Files
 
-- `/goal` - `.codex/prompts/goal.md` (canonical) and `.claude/commands/goal.md` (Claude Code shim)
+- `/goal` - `.codex/prompts/goal.md`
 - `/planning-engineer` - `.codex/prompts/planning-engineer.md`
 - `/plan-loop` - `.codex/prompts/plan-loop.md`
 - `/plan-engineering-loop` - `.codex/prompts/plan-engineering-loop.md` (compatibility alias to `/plan-loop`)
@@ -44,7 +47,7 @@ restored just because they appear in catalog output or marketplace listings.
 - `/session-relay-wrap-up` - `.codex/prompts/session-relay-wrap-up.md`
 
 Use these workflow files as thin shims only; the authoritative workflow bodies remain in
-`agent-skills/capability-packs/*/SKILL.md` and the durable state remains in `.handoff/`.
+`agent-skills/*/SKILL.md` and the durable state remains in `.handoff/`.
 
 ## Runtime Gates
 
@@ -53,12 +56,11 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
   without a separately approved owner contract.
 - `core.hooksPath` controls native Git hooks only. It does not enable, disable,
   or govern Codex or Claude lifecycle hooks.
-- Root lifecycle policy is owned by `/home/flexnetos/AGENTS.md`,
-  `/home/flexnetos/.codex/RULES.md`, and the active home/runtime config
-  `/home/flexnetos/.codex/config.toml`.
+- Root lifecycle policy is owned by `/home/flexnetos/AGENTS.md`, the canonical
+  Yazelix source inputs, and the profile-materialized volatile Codex runtime.
 - Runtime copies under `/home/flexnetos/workspace/.codex`,
   `/home/flexnetos/lifeos/.codex`, and `/home/flexnetos/FlexNetOS/.codex`
   are retired. They must not carry or grow independent hook, plugin, MCP,
   marketplace, or instruction policy. If one reappears, remove it and route
-  the update through envctl `agent-env.yaml`/`agent-skills` or the active
-  `/home/flexnetos/.codex` runtime config.
+  the update through envctl `agent-env.yaml`/`agent-skills` or the canonical
+  Yazelix source followed by a profile rebuild.

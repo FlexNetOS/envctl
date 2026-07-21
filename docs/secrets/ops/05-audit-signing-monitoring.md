@@ -53,7 +53,7 @@ reading the source/docs in this repo:
   synchronously before the RPC returns (`docs/DESIGN-NOTES.md:55`); the `SecretEvent` mpsc stream is
   cosmetic/best-effort (`DESIGN-NOTES.md:69`). On the remote edge, **FS-S26**: "a remote swap returns
   Allowed before its audit row is durably committed" is forbidden (`SERVER-MODE.md:219`).
-- **The on-disk log home already exists.** `$META_ROOT/.local/state/env-ctl/` (0700) holds `secretd.log` and the
+- **The on-disk log home already exists.** `$META_ROOT/var/lib/env-ctl/` (0700) holds `secretd.log` and the
   **operator-box-local audit mirror / `audit_head` second home** (`docs/ARCHITECTURE.md:126`,
   `SERVER-MODE.md:219`). NDJSON export belongs here — it is an extension of an existing artifact, not a
   new directory.
@@ -306,7 +306,7 @@ journalctl --user-unit=env-ctl-secretd.service -o json --output-fields=EVENT_TYP
 
 Append one JSON object per line to the **already-defined** audit mirror home:
 
-- Path: `$META_ROOT/.local/state/env-ctl/audit.ndjson` (dir is 0700, file 0600; matches
+- Path: `$META_ROOT/var/lib/env-ctl/audit.ndjson` (dir is 0700, file 0600; matches
   `ARCHITECTURE.md:126` / `SERVER-MODE.md:219`).
 - One line per durable row; each line is independently parseable even on truncation.
 
@@ -399,7 +399,7 @@ plugin** — keep the daemon lean.
 filebeat.inputs:
   - type: filestream
     id: envctl-audit
-    paths: ["/home/*/.local/state/env-ctl/audit.ndjson"]
+    paths: ["/home/*/var/lib/env-ctl/audit.ndjson"]
     parsers:
       - ndjson:
           target: ""
@@ -412,7 +412,7 @@ output.elasticsearch:
 ```toml
 [sources.envctl_audit]
 type = "file"
-include = ["/home/*/.local/state/env-ctl/audit.ndjson"]
+include = ["/home/*/var/lib/env-ctl/audit.ndjson"]
 [transforms.parse]
 type = "remap"
 inputs = ["envctl_audit"]
@@ -423,14 +423,14 @@ source = '. = parse_json!(.message)'
 ```yaml
 logs:
   - type: file
-    path: /home/*/.local/state/env-ctl/audit.ndjson
+    path: /home/*/var/lib/env-ctl/audit.ndjson
     service: env-ctl
     source: env-ctl-audit
 ```
 
 **Example detection (Splunk SPL):**
 ```spl
-source="*/.local/state/env-ctl/audit.ndjson" event_type=unlock outcome=refused
+source="*/var/lib/env-ctl/audit.ndjson" event_type=unlock outcome=refused
 | bucket _time span=10m | stats count by _time, actor_uid | where count > 3
 ```
 
@@ -456,7 +456,7 @@ ExecStart=%h/Desktop/meta/usr/bin/envctl secretd --foreground
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %h/Desktop/meta/.config/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/var/lib/env-ctl %h/Desktop/meta/var/lib/env-ctl %h/Desktop/meta/.config/env-ctl %t/env-ctl
 ProtectControlGroups=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
@@ -540,7 +540,7 @@ CREATE TABLE audit_tsa_anchor (
    unlock (§2.6); sign head in the durable head-update txn (§2.5).
 5. Phase 5: enable journald + NDJSON dual-sink export (§3) and alert rules (§4) in `secretd`.
 6. Publish the verification bundle (§2.7) to an off-box/air-gapped location periodically.
-7. Point a SIEM agent (Vector/Filebeat/Datadog) at `$META_ROOT/.local/state/env-ctl/audit.ndjson` (§4.3).
+7. Point a SIEM agent (Vector/Filebeat/Datadog) at `$META_ROOT/var/lib/env-ctl/audit.ndjson` (§4.3).
 8. Configure `$META_ROOT/.config/env-ctl/alerting.toml` (outbound webhook only; Telegram alerting = separate
    process per `SERVER-MODE.md:138`).
 
@@ -611,7 +611,7 @@ verifiability and operational visibility**:
 - **Ed25519 head signing** (key per `dek_generation`, sealed under the DEK, all pubkeys published) lets
   an air-gapped auditor verify the head with no ability to forge — the asymmetric anchor the DEK-keyed
   one cannot provide (RFC 8032). Signed in the same durable txn as the head update (HF-14 / FS-S26).
-- **Dual-sink export** (journald + NDJSON in the existing `$META_ROOT/.local/state/env-ctl/` mirror) and
+- **Dual-sink export** (journald + NDJSON in the existing `$META_ROOT/var/lib/env-ctl/` mirror) and
   **outbound-only alerting** give a SIEM an append-only off-box copy that owner-session malware cannot
   retroactively suppress — turning A2/A12's "bounded, not prevented" into "bounded *and visible*."
 - Everything stays **pure-Rust in the engine, I/O in `secretd`, fail-closed, no new listener, no

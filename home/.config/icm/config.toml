@@ -4,13 +4,13 @@
 # Two embedding profiles are configured on this host:
 #   • CODE profile (THIS FILE, default)
 #       jinaai/jina-embeddings-v2-base-code (768d, code-optimized)
-#       corpus: ~/.local/share/icm/memories.db
+#       corpus: /home/flexnetos/meta/var/lib/icm/memories.db
 #   • FAST profile → ~/.config/icm/config.fast.toml
 #       Xenova/bge-small-en-v1.5 (384d, English-only, fastest)
-#       corpus: ~/.local/share/icm/memories-fast.db
+#       corpus: /home/flexnetos/meta/var/lib/icm/memories-fast.db
 #       select with (needs BOTH — the CLI reads the DB only from --db):
 #         ICM_CONFIG=~/.config/icm/config.fast.toml \
-#           icm --db ~/.local/share/icm/memories-fast.db <cmd>
+#           icm --db /home/flexnetos/meta/var/lib/icm/memories-fast.db <cmd>
 #
 # This is a code-heavy deployment, so the DEFAULT uses the code-optimized model
 # instead of the general multilingual default.

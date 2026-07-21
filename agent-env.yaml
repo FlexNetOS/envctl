@@ -3,7 +3,7 @@
 # absorbed engine is now `envctl agent`. The absorbed CLI resolves this filename by default.)
 # Provisions a curated, locked agent toolkit (skills + MCP baseline) into the Codex environment.
 # The retired root `.claude/skills` projection is deliberately not an agent-env destination;
-# current Claude lifecycle settings are owned separately under `home/.claude/`. This is the source
+# current Claude lifecycle settings are owned separately under `profile-runtime/claude/`. This is the source
 # of truth for the agent config; it supersedes ECC-generated mirrors. Lock-of-record:
 # agent-env.lock (was kasetto.lock).
 #
@@ -15,11 +15,11 @@
 #   envctl agent lock --check --locked              # zero-network; exits 1 on drift
 #
 # Navigation invariant:
-#   /home/flexnetos/.codex/config.toml is the active runtime config.
-#   /home/flexnetos/.codex/RULES.md, /home/flexnetos/.codex/RTK.md,
-#   /home/flexnetos/.codex/AGENTS.rtk.md, /home/flexnetos/AGENTS.md, and
+#   /run/user/1001/yazelix/profile-runtime/codex/config.toml is the active runtime config.
+#   /run/user/1001/yazelix/profile-runtime/codex/RULES.md, /run/user/1001/yazelix/profile-runtime/codex/RTK.md,
+#   /run/user/1001/yazelix/profile-runtime/codex/AGENTS.rtk.md, /home/flexnetos/AGENTS.md, and
 #   /home/flexnetos/AGENTS.rtk.md are the active home instruction surfaces;
-#   their envctl-owned source copies live under home/.codex/ and home/.
+#   their envctl-owned source copies live under profile-runtime/codex/ and home/.
 #   /home/flexnetos/lifeos/.codex and /home/flexnetos/FlexNetOS/.codex are
 #   retired mirrors; do not use them as inputs or fallback outputs.
 

@@ -272,7 +272,7 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-ADDREPO-3 (dry-run)** — `--dry-run` prints the exact TOML that would be written and changes nothing.
 
-**REQ-ADDREPO-4 (full pipeline — Phase 4)** — The complete 9-stage pipeline: acquire (clone/fetch, record resolved SHA, snapshot local paths), detect build system (nix flake > cargo > meson > cmake > make > python/uv > bun/npm), best-effort dep resolution, build (kit CUDA/LLVM/PATH env sourced, SHA+flags-keyed cache), locate+classify artifacts, install (frontdoor wrapper-default into `$META_ROOT/.local`, backup-before-clobber), wire-in (guarded PATH/completions/desktop/systemd `--user`), register, verify. All user-scope, best-effort, refuse-on-ambiguity.
+**REQ-ADDREPO-4 (full pipeline — Phase 4)** — The complete 9-stage pipeline: acquire (clone/fetch, record resolved SHA, snapshot local paths), detect build system (nix flake > cargo > meson > cmake > make > python/uv > bun/npm), best-effort dep resolution, build (profile-owned toolchain, SHA+flags-keyed cache), locate+classify artifacts, package into the Yazelix/Nix foundation input, wire through the profile, register, and verify. All user-scope, best-effort, refuse-on-ambiguity; envctl never creates an alternate executable frontdoor.
 
 *Status:* hardened drop-in writer (validation, collision-refusal, atomic write, dry-run, clone into `$META_ROOT/var/lib/envctl/repos/<slug>` at 0700, escaped interpolation) shipped; full 9-stage build pipeline is Phase 4.
 
@@ -347,7 +347,7 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 
 **REQ-NFR-5 (deterministic & reproducible)** — Dependency order is a deterministic Kahn sort (declaration-order tie-break), so built-ins reproduce the wizard's proven sequence and runs are reproducible.
 
-**REQ-NFR-6 (meta-local layout)** — envctl is the path authority for meta installs. Repos: `$META_ROOT/var/lib/envctl/repos/<slug>` (0700). Binaries: `$META_ROOT/usr/bin`. Libraries: `$META_ROOT/usr/lib`. Shared data: `$META_ROOT/.local/share`. State/log: `$META_ROOT/var/lib/envctl/envctl.log`. Cache/tmp: `$META_ROOT/.local/{cache,tmp}`. Component prefixes: `$META_ROOT/opt/<component>`. `.toolchains/` remains a legacy compatibility prefix for existing manager homes while manifests migrate.
+**REQ-NFR-6 (strict profile layout)** — the Yazelix/Nix profile is the installed-runtime and PATH authority. Repos: `$META_ROOT/var/lib/envctl/repos/<slug>` (0700). Durable envctl state: `$META_ROOT/var/lib/envctl`. Cache: `$META_ROOT/var/cache/envctl`. Temp: `$META_ROOT/var/tmp`. Component source inputs: `$META_ROOT/opt/<component>`. Envctl may validate or project these inputs but may not expose a competing executable frontdoor.
 
 **REQ-NFR-7 (testability)** — The one behavioral seam (`HookRunner`) lets tests inject `DryRunRunner` / recording runners. Targets: golden runs, drift fixtures, wiring apply/revert round-trip, guard refusal cases, manifest serde round-trip.
 

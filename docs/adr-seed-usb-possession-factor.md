@@ -92,7 +92,7 @@ already linked via `mitm-ca`; `seed-factor` just enables the same optional deps)
 **Token-at-rest decision (the open ADR item from the plan, now locked):** the device-bound,
 revocable bearer token is resolved from `ENVCTL_SEED_TOKEN`, else a **0600 token file**
 (`ENVCTL_SEED_TOKEN_FILE`, default `$XDG_DATA_HOME/env-ctl/seed-token`) — deliberately inside the
-unit's `ReadWritePaths` (`%h/Desktop/meta/.local/share/env-ctl`) so the daemon can read it *and* refresh it
+unit's `ReadWritePaths` (`%h/Desktop/meta/var/lib/env-ctl`) so the daemon can read it *and* refresh it
 under `ProtectSystem=strict`. **Rotation = re-mint on demand:** on a missing/rejected token,
 `sign_hex` re-opens the **USB-only** `pair/window` (possession of the USB is the trust floor,
 ADR-057), re-pairs under the stable client `envctl-daemon` (replacing any prior token, so no

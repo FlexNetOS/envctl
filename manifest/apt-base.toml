@@ -28,12 +28,8 @@ description = "Rootless container stack from the static podman release, installe
 [component.detect]
 kind = "command"
 command = "bash"
-# Installed iff the meta-hosted podman binary exists AND a meta frontdoor bridge to it runs —
-# accepting EITHER the canonical $M/usr/bin (post-#271) OR the legacy $M/.local/bin compatibility
-# bridge. The old check hard-required a $M/usr/bin/podman *symlink*, so on a box that bridges via
-# .local/bin it falsely reported "not installed" → `envctl install` re-triggered the (formerly
-# destructive) podman reinstall. This is read-only and strictly more correct.
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"$M/.toolchains/podman/usr/local/bin/podman\"; [ -x \"$B\" ] || exit 1; for c in \"$M/usr/bin/podman\" \"$M/.local/bin/podman\"; do [ -x \"$c\" ] && \"$c\" --version >/dev/null 2>&1 && exit 0; done; exit 1"]
+# Installed iff the private payload and its one declared meta frontdoor both run.
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"$M/.toolchains/podman/usr/local/bin/podman\"; F=\"$M/usr/bin/podman\"; [ -x \"$B\" ] && [ -x \"$F\" ] && \"$F\" --version >/dev/null 2>&1"]
 [component.install]
 kind = "script"
 script = '''
@@ -96,10 +92,8 @@ done
 [component.verify]
 kind = "command"
 command = "bash"
-# Verify the META-LOCAL podman is the active engine: pinned version AND its conmon + OCI runtime
-# resolve under $M/.toolchains/podman. The old check also required the frontdoor to be a *symlink*
-# to the toolchains binary (`readlink -f` equality), which false-fails on a box whose bridge is a
-# copy at $M/.local/bin — the conmon/runtime-under-toolchains assertion already proves authenticity.
+# Verify the declared podman frontdoor: pinned version plus conmon and OCI runtime
+# resolution under the private component payload.
 args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; P=\"$(command -v podman 2>/dev/null || echo \"$M/.toolchains/podman/usr/local/bin/podman\")\"; \"$P\" --version 2>/dev/null | grep -q '5\\.8\\.3' && \"$P\" info --format '{{.Host.Conmon.Path}} {{.Host.OCIRuntime.Path}}' 2>/dev/null | grep -q \"$M/.toolchains/podman\""]
 [component.fix]
 kind = "script"

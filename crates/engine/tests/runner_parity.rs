@@ -133,7 +133,7 @@ fn long_multibyte_stderr_truncates_without_panic() {
 fn timeout_synthesizes_exit_124() {
     let _g = lock();
     let _t = TimeoutMs::set(300);
-    let (res, _) = run(&script("sleep 30", false), Phase::Verify);
+    let (res, _) = run(&script("/usr/bin/sleep 30", false), Phase::Verify);
     assert_eq!(res.status, OpStatus::Failed);
     assert_eq!(res.exit_code, Some(124), "timeout must synthesize exit 124");
     assert!(res.message.contains("timed out"), "got: {:?}", res.message);
@@ -148,7 +148,7 @@ fn process_group_reaps_the_whole_child_tree() {
     // After the per-phase timeout kills the GROUP, the grandchild must die too, so the
     // marker's mtime stops advancing.
     let body = format!(
-        "( while true; do touch '{mp}'; sleep 0.1; done ) & sleep 30",
+        "( while true; do /usr/bin/touch '{mp}'; /usr/bin/sleep 0.1; done ) & /usr/bin/sleep 30",
         mp = mp
     );
     let _t = TimeoutMs::set(500);
@@ -275,7 +275,7 @@ fn command_hook_is_argv_no_shell() {
     // Shell metacharacters in an arg must be passed literally (no shell expansion),
     // proving the Command path runs argv directly. `printf %s` echoes the arg verbatim.
     let hook = Hook::Command {
-        command: "printf".to_string(),
+        command: "/usr/bin/printf".to_string(),
         args: vec!["%s".to_string(), "a;b|c$(boom)".to_string()],
         env: BTreeMap::new(),
         needs_sudo: false,

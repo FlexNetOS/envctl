@@ -443,10 +443,9 @@ fn resolve_shipped_script_path(declared: &str) -> Result<String, String> {
 /// A large amount of legacy shell still spells exposure paths as
 /// a user-local prefix; envctl's contract is stricter than that: installs belong
 /// under `$META_ROOT`'s FHS/XDG layout (`usr`, `etc`, `var`, `opt`, and meta-XDG
-/// roots), never the operator's user-global real user-home local tree. Legacy
-/// scripts that use HOME land in `$META_ROOT`, with `$META_ROOT/.local` reserved
-/// for XDG compatibility and the real home exposed only as an explicit escape hatch
-/// for non-install host integration.
+/// roots), never the operator's real home. Legacy scripts that use HOME land in
+/// `$META_ROOT`; the real home is exposed only as an explicit escape hatch for
+/// non-install host integration.
 fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String)> {
     let layout = MetaLayout::from_env_or_default();
     let real_home = std::env::var("HOME").unwrap_or_default();
@@ -461,6 +460,24 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
     // itself receives a cleared environment; `sanitized_inherited_env` is the only compatibility
     // bridge for caller state and excludes shell/dynamic-loader execution controls.
     env.append(&mut hook_env);
+    // Package-manager homes and loader/search overrides would establish a
+    // second runtime owner alongside the profile. They are never inherited or
+    // accepted from manifests; profile packages must be self-contained.
+    for forbidden in [
+        "BUN_INSTALL",
+        "MISE_DATA_DIR",
+        "CARGO_HOME",
+        "RUSTUP_HOME",
+        "UV_TOOL_DIR",
+        "UV_PYTHON_INSTALL_DIR",
+        "OLLAMA_LIBRARY_PATH",
+        "LIBCLANG_PATH",
+        "GCC_PATH",
+        "HELIX_RUNTIME",
+        "LD_LIBRARY_PATH",
+    ] {
+        env.retain(|(key, _)| key != forbidden);
+    }
     if !real_home.is_empty() {
         env.push(("ENVCTL_REAL_HOME".to_string(), real_home.clone()));
     }
@@ -469,26 +486,6 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
         layout.meta_root().display().to_string(),
     ));
     env.push(("HOME".to_string(), layout.meta_root().display().to_string()));
-    // Rustup proxies derive both their payload lookup and Cargo state from these homes. They are
-    // layout outputs, not ambient caller preferences: without explicit values a cleared hook with
-    // HOME=$META_ROOT silently falls back to `$META_ROOT/.rustup` + `$META_ROOT/.cargo` instead of
-    // envctl's declared `.toolchains/{rustup,cargo}` generation.
-    env.push((
-        "CARGO_HOME".to_string(),
-        layout
-            .legacy_toolchains()
-            .join("cargo")
-            .display()
-            .to_string(),
-    ));
-    env.push((
-        "RUSTUP_HOME".to_string(),
-        layout
-            .legacy_toolchains()
-            .join("rustup")
-            .display()
-            .to_string(),
-    ));
     for (key, path) in layout.env_exports() {
         env.push((key.to_string(), path.display().to_string()));
     }
@@ -518,25 +515,17 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
         format!("unix:path={host_runtime}/bus"),
     ));
 
-    let meta_bin = layout.bin().display().to_string();
-    let compat_local_bin = layout.local_bin().display().to_string();
-    let legacy_cargo = layout
-        .legacy_toolchains()
-        .join("cargo/bin")
-        .display()
-        .to_string();
-    let path = [
-        meta_bin,
-        compat_local_bin,
-        legacy_cargo,
-        "/usr/local/bin".to_string(),
-        "/usr/bin".to_string(),
-        "/bin".to_string(),
-        "/usr/local/sbin".to_string(),
-        "/usr/sbin".to_string(),
-        "/sbin".to_string(),
-    ];
-    env.push(("PATH".to_string(), path.join(":")));
+    let profile_root = std::path::PathBuf::from(&real_home).join(".nix-profile");
+    let path = format!(
+        "{}:{}",
+        profile_root.join("toolbin").display(),
+        profile_root.join("bin").display()
+    );
+    env.push((
+        "ENVCTL_PROFILE_ROOT".to_string(),
+        profile_root.display().to_string(),
+    ));
+    env.push(("PATH".to_string(), path));
     env
 }
 
@@ -778,17 +767,14 @@ mod tests {
     }
 
     #[test]
-    fn enforced_meta_env_retargets_home_and_strips_host_global_path_entries() {
+    fn enforced_meta_env_retargets_home_and_uses_profile_only_path() {
         let _g = crate::test_env_lock();
         let prev_home = std::env::var("HOME").ok();
         let prev_meta = std::env::var("META_ROOT").ok();
         let prev_path = std::env::var("PATH").ok();
         std::env::set_var("HOME", "/home/alice");
         std::env::set_var("META_ROOT", "/workspace/meta");
-        std::env::set_var(
-            "PATH",
-            "/home/alice/.local/bin:/home/alice/.cargo/bin:/home/alice/.nix-profile/bin:/usr/bin",
-        );
+        std::env::set_var("PATH", "/tmp/untrusted-bin:/home/alice/.cargo/bin:/usr/bin");
 
         let env = enforced_meta_env(Vec::new());
 
@@ -809,26 +795,30 @@ mod tests {
         assert_eq!(env_value(&env, "HOME"), "/workspace/meta");
         let path = env_value(&env, "PATH");
         let entries = path.split(':').collect::<Vec<_>>();
-        assert_eq!(entries[0], "/workspace/meta/usr/bin");
-        assert_eq!(entries[1], "/workspace/meta/.local/bin");
-        assert_eq!(entries[2], "/workspace/meta/.toolchains/cargo/bin");
+        assert_eq!(
+            entries,
+            vec![
+                "/home/alice/.nix-profile/toolbin",
+                "/home/alice/.nix-profile/bin"
+            ]
+        );
+        assert_eq!(
+            env_value(&env, "ENVCTL_PROFILE_ROOT"),
+            "/home/alice/.nix-profile"
+        );
         assert_eq!(
             env_value(&env, "XDG_CONFIG_HOME"),
             "/workspace/meta/.config"
         );
+        assert_eq!(env_value(&env, "XDG_DATA_HOME"), "/workspace/meta/var/lib");
+        assert_eq!(env_value(&env, "XDG_STATE_HOME"), "/workspace/meta/var/lib");
         assert_eq!(
-            env_value(&env, "XDG_DATA_HOME"),
-            "/workspace/meta/.local/share"
+            env_value(&env, "XDG_CACHE_HOME"),
+            "/workspace/meta/var/cache"
         );
-        assert_eq!(
-            env_value(&env, "XDG_STATE_HOME"),
-            "/workspace/meta/.local/state"
-        );
-        assert_eq!(env_value(&env, "XDG_CACHE_HOME"), "/workspace/meta/.cache");
-        assert!(entries.contains(&"/usr/bin"));
-        assert!(!entries.contains(&"/home/alice/.local/bin"));
+        assert!(!entries.contains(&"/usr/bin"));
         assert!(!entries.contains(&"/home/alice/.cargo/bin"));
-        assert!(!entries.contains(&"/home/alice/.nix-profile/bin"));
+        assert!(!entries.contains(&"/tmp/untrusted-bin"));
     }
 
     #[test]
@@ -1097,10 +1087,11 @@ mod tests {
     }
 
     #[test]
-    fn inherited_environment_is_an_explicit_allowlist_and_manifest_env_wins() {
+    fn inherited_environment_is_allowlisted_and_profile_ownership_wins() {
         let _lock = crate::test_env_lock();
         let _restore = EnvRestore::set(&[
             ("META_ROOT", std::ffi::OsStr::new("/trusted/meta")),
+            ("HOME", std::ffi::OsStr::new("/trusted/home")),
             ("LANG", std::ffi::OsStr::new("C.UTF-8")),
             (
                 "HTTPS_PROXY",
@@ -1229,15 +1220,9 @@ mod tests {
         );
         assert_eq!(env_value(&env, "MANIFEST_ONLY"), "trusted");
         assert_eq!(env_value(&env, "META_ROOT"), "/trusted/meta");
-        assert_eq!(
-            env_value(&env, "CARGO_HOME"),
-            "/trusted/meta/.toolchains/cargo"
-        );
-        assert_eq!(
-            env_value(&env, "RUSTUP_HOME"),
-            "/trusted/meta/.toolchains/rustup"
-        );
-        assert_eq!(env_value(&env, "XDG_CACHE_HOME"), "/trusted/meta/.cache");
+        assert!(!env.iter().any(|(key, _)| key == "CARGO_HOME"));
+        assert!(!env.iter().any(|(key, _)| key == "RUSTUP_HOME"));
+        assert_eq!(env_value(&env, "XDG_CACHE_HOME"), "/trusted/meta/var/cache");
         let expected_runtime = format!("/run/user/{}", rustix::process::geteuid().as_raw());
         assert_eq!(env_value(&env, "XDG_RUNTIME_DIR"), expected_runtime);
         assert_eq!(
@@ -1245,8 +1230,8 @@ mod tests {
             format!("unix:path={expected_runtime}/bus")
         );
         assert_eq!(
-            env_value(&env, "PATH").split(':').next(),
-            Some("/trusted/meta/usr/bin")
+            env_value(&env, "PATH"),
+            "/trusted/home/.nix-profile/toolbin:/trusted/home/.nix-profile/bin"
         );
 
         for key in [
@@ -1343,17 +1328,18 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn login_shell_uses_meta_owned_cargo_and_rustup_homes() {
+    fn login_shell_uses_profile_frontdoor_without_manager_homes() {
         use std::os::unix::fs::{symlink, PermissionsExt};
 
         let _lock = crate::test_env_lock();
         let root = runner_test_dir("rust-homes");
-        let bin = root.join(".toolchains/cargo/bin");
+        let home = root.join("home");
+        let bin = home.join(".nix-profile/toolbin");
         std::fs::create_dir_all(&bin).unwrap();
         let rustup = bin.join("rustup");
         std::fs::write(
             &rustup,
-            "#!/bin/sh\nprintf '%s\\n%s\\n' \"$CARGO_HOME\" \"$RUSTUP_HOME\"\n",
+            "#!/bin/sh\nprintf '%s\\n%s\\n' \"${CARGO_HOME-unset}\" \"${RUSTUP_HOME-unset}\"\n",
         )
         .unwrap();
         std::fs::set_permissions(&rustup, std::fs::Permissions::from_mode(0o755)).unwrap();
@@ -1361,7 +1347,7 @@ mod tests {
         let observed = root.join("observed-rust-homes");
         let _restore = EnvRestore::set(&[
             ("META_ROOT", root.as_os_str()),
-            ("HOME", root.as_os_str()),
+            ("HOME", home.as_os_str()),
             ("CARGO_HOME", std::ffi::OsStr::new("/caller/cargo")),
             ("RUSTUP_HOME", std::ffi::OsStr::new("/caller/rustup")),
         ]);
@@ -1381,11 +1367,7 @@ mod tests {
         assert_eq!(result.status, OpStatus::Ok, "{}", result.message);
         assert_eq!(
             std::fs::read_to_string(&observed).unwrap(),
-            format!(
-                "{}\n{}\n",
-                root.join(".toolchains/cargo").display(),
-                root.join(".toolchains/rustup").display()
-            )
+            "unset\nunset\n"
         );
         let _ = std::fs::remove_dir_all(root);
     }

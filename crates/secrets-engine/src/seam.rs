@@ -186,7 +186,7 @@ impl UsbProbe for RealUsbProbe {
 /// `custody/sign` requires a bearer token minted by the **USB-only** pair window. The token is
 /// device-bound and revocable (not a master secret); it is resolved from `ENVCTL_SEED_TOKEN`, else
 /// the token file (`ENVCTL_SEED_TOKEN_FILE`, default `$XDG_DATA_HOME/env-ctl/seed-token`, else
-/// `$META_ROOT/.local/share/env-ctl/seed-token`, which is inside the unit's `ReadWritePaths`). If
+/// `$META_ROOT/var/lib/env-ctl/seed-token`, which is inside the unit's `ReadWritePaths`). If
 /// absent or rejected, the daemon **re-mints on demand** by
 /// re-opening the USB-only pair window (possession of the USB is the floor of trust — ADR-057), so
 /// a lost/expired token is self-healing as long as the Seed is present. Every device call is bound
@@ -252,7 +252,7 @@ pub(crate) mod seed_factor {
     const IO_TIMEOUT: Duration = Duration::from_secs(15);
 
     /// Device-bound bearer token at rest. Default lives in the unit's `ReadWritePaths`
-    /// (`$META_ROOT/.local/share/env-ctl`) so the daemon can both read and refresh it under the sandbox.
+    /// (`$META_ROOT/var/lib/env-ctl`) so the daemon can both read and refresh it under the sandbox.
     fn token_file() -> std::path::PathBuf {
         if let Ok(p) = std::env::var("ENVCTL_SEED_TOKEN_FILE") {
             return std::path::PathBuf::from(p);
@@ -267,7 +267,7 @@ pub(crate) mod seed_factor {
                     .filter(|p| !p.is_empty())
                     .or_else(|| std::env::var("HOME").ok().filter(|p| !p.is_empty()))
                     .unwrap_or_default();
-                std::path::PathBuf::from(root).join(".local/share")
+                std::path::PathBuf::from(root).join("var/lib")
             });
         base.join("env-ctl").join("seed-token")
     }
@@ -640,7 +640,7 @@ pub(crate) mod seed_factor {
         }
 
         #[test]
-        fn token_file_defaults_to_meta_local_share() {
+        fn token_file_defaults_to_meta_var_lib() {
             let _guard = env_lock();
             let old_token_file = std::env::var("ENVCTL_SEED_TOKEN_FILE").ok();
             let old_xdg_data = std::env::var("XDG_DATA_HOME").ok();
@@ -652,7 +652,7 @@ pub(crate) mod seed_factor {
             std::env::set_var("HOME", "/tmp/real-home");
             assert_eq!(
                 token_file(),
-                std::path::PathBuf::from("/tmp/meta-envctl-test/.local/share/env-ctl/seed-token")
+                std::path::PathBuf::from("/tmp/meta-envctl-test/var/lib/env-ctl/seed-token")
             );
             restore_var("ENVCTL_SEED_TOKEN_FILE", old_token_file);
             restore_var("XDG_DATA_HOME", old_xdg_data);

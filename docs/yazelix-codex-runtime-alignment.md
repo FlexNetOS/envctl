@@ -1,59 +1,45 @@
 # Yazelix/Codex Runtime Alignment Ledger
 
-Status: source gate validated locally; live shadow cleanup pending after source merge.
+Status: strict source contract. The installed-runtime cutover is owned only by
+the canonical `FlexNetOS/yazelix` repository after its change is merged and a
+clean checkout exactly matches `origin/main`.
 
-This ledger records the Yazelix ownership model that Codex runtime surfaces must
-mirror. Current state is evidence only. When current Codex state conflicts with
-Yazelix ownership, the conflict is repair work, not an alternate source of
-truth.
+## Authority and paths
 
-## Source Truth
-
-Upstream Yazelix source repository:
-`https://github.com/luccahuguet/yazelix`.
-
-The upstream README's everyday model says to edit
-`~/.config/yazelix/settings.jsonc` and treat generated runtime state under
-`~/.local/share/yazelix` as Yazelix-owned output. The upstream POSIX/XDG docs
-separate the managed config root from the generated state root, with
-`~/.config/yazelix` as the default config root and `~/.local/share/yazelix` as
-the default generated state root. The upstream Home Manager docs say `yzx`
-comes from the Home Manager profile, typically `~/.nix-profile/bin/yzx`, and
-that stale `~/.local/bin/yzx` plus old user-local desktop entries are migration
-shadows to remove or archive. The upstream runtime-root contract rejects path
-confusion: generated state is derived state, not handwritten config.
-
-## Required Model
-
-| Role | Required path |
+| role | authority/path |
 |---|---|
-| Editable input/config source | `/home/flexnetos/.config/yazelix/` |
-| Generated runtime/proof output | `/home/flexnetos/.local/share/yazelix/` |
-| Active profile frontdoor | `/home/flexnetos/.nix-profile/bin/yzx` |
-| Active profile layout | `/home/flexnetos/.nix-profile/configs/zellij/layouts/flexnetos_agent_workspace.kdl` |
-| Stale binary shadow | `/home/flexnetos/.local/bin/yzx` |
-| Stale launcher shadows | `/home/flexnetos/.local/share/applications/*` |
+| Canonical source repository | `git@github.com:FlexNetOS/yazelix.git` |
+| Editable Yazelix input | `/home/flexnetos/.config/yazelix/` |
+| Sole installed-runtime selector | `/home/flexnetos/.nix-profile` |
+| Yazelix frontdoor | `/home/flexnetos/.nix-profile/bin/yzx` |
+| Codex frontdoor | `/home/flexnetos/.nix-profile/bin/codex` |
+| Claude frontdoor | `/home/flexnetos/.nix-profile/bin/claude` |
+| RTK frontdoor | `/home/flexnetos/.nix-profile/bin/rtk` |
+| Volatile Codex materialization | `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/codex` |
+| Volatile Claude materialization | `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/claude` |
 
-Codex binary/runtime ownership must mirror this model. User-bin shadows,
-repo-cache materializations, temp plugin bundles, marketplace caches, and
-generated-output files are not alternate active locations.
+Raw Nix store targets and volatile runtime files are proof, never editable or
+parallel ownership surfaces. Change the owning Yazelix source/config input and
+rebuild through the profile owner.
 
-## Repair Ledger
+## Cutover boundary
 
-| surface | current_state | yazelix_model | violation | owner_path | action | proof |
-|---|---|---|---|---|---|---|
-| Codex command runner shell | `command -v codex` resolves to the Yazelix foundation `toolbin/codex`; `/home/flexnetos/.nix-profile/bin/codex` resolves to the packaged Codex store binary. `codex --version` reports `codex-cli 0.143.0-alpha.35`. The app-server daemon socket is not currently present. | Active frontdoors and runtime helpers must resolve through the profile-owned installed runtime, not a vanished store path or stale user-bin shadow. | The prior vanished-store shell path is not observed in current command resolution. A lower-priority `/home/flexnetos/.local/bin/codex` shadow still appears in `type -a` and remains live cleanup debt. | Yazelix foundation profile plus envctl `home-local-single-link` shadow archive component. | Source repair now preserves the Yazelix-owned Nix profile and makes the shadow cleanup archive-only/fail-closed after replacement frontdoors exist. Live apply remains pending until this source gate PR is merged. | `command -v codex`, `readlink -f /home/flexnetos/.nix-profile/bin/codex`, and `codex --version` pass; `codex app-server daemon version` reports missing control socket. |
-| Repo-local MCP baseline | Legacy local-launch MCPs used Meta `bunx` or repo-source scripts as active runtime paths. | Envctl's current generated baseline is remote `exa` only; retired local launchers return only after they have profile-owned Yazelix-mirrored frontdoors. | Rehydrating cached/local MCP launchers would recreate parallel runtime ownership. | `agent-skills/agent-env-config/`, `agent-env.yaml -> agent-env.lock`, and generated `.mcp.json` / `.codex/config.toml`. | Removed non-profile local launch entries and retained the remote URL baseline without widening global runtime config. | `bash ci/gates/yazelix-codex-runtime.sh` and `bash ci/gates/agent-env.sh` pass locally. |
-| Repo-local ownership regression checks | No focused gate existed for Yazelix/Codex ownership drift across MCP sources, manifest Codex shadows, and generated Yazelix runtime wording. | Regressions must fail closed at the declared source before they recreate non-Yazelix runtime ownership. | Drift could return through generated MCP assets, old workspace roots, or real-home Codex symlink logic. | `scripts/tests/test-yazelix-codex-ownership-gate.sh`. | Added source gate for retired MCPs, stale `/home/drdave/Desktop/meta` roots, real-home Codex shadows, and generated-runtime-as-input language. | `bash scripts/tests/test-yazelix-codex-ownership-gate.sh` passes locally. |
+Envctl validates profile identity, store identity, config-input presence, and
+volatile materialization. It must not run `nix build`, mutate a profile
+generation, switch the selector, or install an agent CLI. Its install/fix
+compatibility phases are read-only validation.
 
-## Verification Still Required
+A cutover is authorized only when all of the following are true:
 
-- After this source gate PR merges, run the guarded `home-local-single-link`
-  component to archive lower-priority real-home user-bin shadows without
-  replacing the Yazelix-owned real-home Nix profile state.
-- Re-check `codex app-server daemon version` when the app-server daemon is
-  expected to be running; current proof shows the control socket is absent, not
-  that the command resolves through the wrong binary.
-- Continue verifying `yzx`, `codex`, `rtk`, `claude`, `git-kb`, and relevant
-  toolchain binaries with `command -v`, `type -a`, and `readlink -f` during
-  runtime changes.
+1. The source checkout remote is exactly `git@github.com:FlexNetOS/yazelix.git`.
+2. The checkout branch is `main`, its tree is clean, and `HEAD == origin/main`.
+3. The strict-profile source and build checks pass from that checkout.
+4. The candidate profile output is verified before the selector changes.
+5. The resulting profile contains matching `bin` and `toolbin` frontdoors for
+   Yazelix, Codex, Claude, and RTK, all resolving into the immutable store.
+
+## Verification
+
+Use `command -v`, `readlink -f`, and version commands through the profile. Run
+`ci/gates/strict-profile-owner.sh` to reject maintained references or tracked
+home projections that would recreate an alternate runtime owner.

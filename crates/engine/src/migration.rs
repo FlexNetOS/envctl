@@ -167,7 +167,7 @@ pub enum MigrationAction {
     None,
     MaterializeCanonicalDir,
     UpdateManifestToCanonicalLayout,
-    AdoptIntoMetaLocal,
+    AdoptIntoMetaVar,
     PreserveConfig,
     ProtectSubstrate,
     ReportOnly,
@@ -518,20 +518,6 @@ fn classify_line(line: &str) -> Vec<LineHit> {
             detail: "manifest still points at the compatibility prefix; update hook/wiring to MetaLayout usr/var/opt/XDG paths",
         });
     }
-    if trimmed.contains("~/.local")
-        || trimmed.contains("$HOME/.local")
-        || trimmed.contains("${HOME}/.local")
-        || trimmed.contains("%h/.local")
-    {
-        hits.push(LineHit {
-            id: "home-local",
-            kind: MigrationKind::UserGlobalPath,
-            action: MigrationAction::AdoptIntoMetaLocal,
-            risk: MigrationRisk::Medium,
-            subject: "user-global .local reference",
-            detail: "the real-home .local tree carries Yazelix-owned Nix profile state; envctl-owned payloads belong under META_ROOT usr/var/opt or XDG roots",
-        });
-    }
     if trimmed.contains("/usr/local") || trimmed.contains("/opt/") {
         hits.push(LineHit {
             id: "system-global",
@@ -728,20 +714,16 @@ mod tests {
         let root = tempdir("migration-scan");
         let manifest = root.join("manifest");
         std::fs::create_dir_all(&manifest).unwrap();
-        let legacy_home_local = ["~", ".local/bin/foo"].join("/");
-        let legacy_usr_local = ["/usr/local/bin", "foo"].join("/");
         std::fs::write(
             manifest.join("base.toml"),
-            format!(
-                r#"
+            r#"
 [[component]]
 id = "legacy"
 name = "Legacy"
 [component.install]
 kind = "script"
-script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s {legacy_home_local} {legacy_usr_local}"
-"#
-            ),
+script = "mkdir -p $META_ROOT/.toolchains/legacy"
+"#,
         )
         .unwrap();
         std::fs::create_dir_all(root.join("crates/engine")).unwrap();
@@ -809,10 +791,8 @@ name = "Stub"
         assert!(root.join("var/cache/envctl").is_dir());
         assert!(root.join("opt").is_dir());
         assert!(root.join(".config").is_dir());
-        assert!(root.join(".local/share").is_dir());
-        assert!(root.join(".local/state").is_dir());
-        assert!(root.join(".cache").is_dir());
-        assert!(!root.join(".local/bin").exists());
+        assert!(root.join("var/lib").is_dir());
+        assert!(root.join("var/cache").is_dir());
         assert!(!root.join(".toolchains").exists());
         assert!(PathBuf::from(&report.ledger_path).is_file());
         std::env::remove_var("META_ROOT");
@@ -820,27 +800,10 @@ name = "Stub"
     }
 
     #[test]
-    fn classify_line_flags_all_real_home_local_spellings() {
-        for spelling in [
-            "~/.local/bin/foo",
-            "$HOME/.local/bin/foo",
-            "${HOME}/.local/bin/foo",
-            "%h/.local/bin/foo",
-        ] {
-            assert!(
-                classify_line(spelling)
-                    .iter()
-                    .any(|hit| hit.id == "home-local"),
-                "{spelling} should be migration debt"
-            );
-        }
-
+    fn classify_line_accepts_direct_profile_frontdoor() {
         assert!(
-            classify_line(
-                "$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile"
-            )
-            .is_empty(),
-            "the Yazelix Nix profile policy must not be classified as a per-tool install"
+            classify_line("$ENVCTL_REAL_HOME/.nix-profile/bin/yzx").is_empty(),
+            "the direct profile frontdoor must not be migration debt"
         );
     }
 

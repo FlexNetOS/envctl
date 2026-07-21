@@ -43,25 +43,24 @@ Absence of an API result is not proof a surface is empty. Distinguish `[]` from 
 
 ## ccboard and Claude/Codex implementation path
 
-Yazelix already owns the installed ccboard pane at `configs/zellij/layouts/flexnetos_agent_workspace.kdl`, and `packaging/runtime_release_contracts.nix` proves `__YAZELIX_RUNTIME_DIR__/libexec/ccboard`. Do not edit generated runtime under `~/.local/share/yazelix`.
+Yazelix already owns the installed ccboard pane at `configs/zellij/layouts/flexnetos_agent_workspace.kdl`, and `packaging/runtime_release_contracts.nix` proves `__YAZELIX_RUNTIME_DIR__/libexec/ccboard`. Do not edit generated runtime under `~/var/lib/yazelix`.
 
 Claude's current path is the compatibility model:
 
 ```text
-~/.claude settings/projects JSONL
+/run/user/1001/yazelix/profile-runtime/claude settings/projects JSONL
         |
         +-> ccboard DataStore + FileWatcher + live process/hook monitor
         |
-        +-> envctl home/.claude/settings.json(.tmpl)
-              +-> ccbrain-session-start.sh
-              +-> ccbrain-session-stop.sh -> ~/.ccboard/insights.db
+        +-> Yazelix profile settings.json.src -> volatile settings.json
+              +-> profile-owned session hooks
         |
         +-> codex-harness-claude-bridge -> supervised runner/provider receipt
 ```
 
 Codex is partially wired, not absent:
 
-- `ccboard-core/src/parsers/codex.rs` scans `~/.codex/sessions/YYYY/MM/DD/*.jsonl`.
+- `ccboard-core/src/parsers/codex.rs` scans `/run/user/1001/yazelix/profile-runtime/codex/sessions/YYYY/MM/DD/*.jsonl`.
 - `DataStore::scan_third_party_sessions` inserts Codex metadata at startup.
 - `SourceTool::Codex` and the TUI source badge already distinguish Codex sessions.
 

@@ -50,7 +50,7 @@ pub fn dirs_agent_env_config() -> Result<PathBuf> {
 pub fn dirs_xdg_data_home() -> Result<PathBuf> {
     match std::env::var("XDG_DATA_HOME") {
         Ok(p) if !p.is_empty() => Ok(PathBuf::from(p)),
-        _ => Ok(dirs_home()?.join(".local/share")),
+        _ => Ok(dirs_home()?.join("var/lib")),
     }
 }
 
@@ -138,11 +138,11 @@ mod tests {
         std::env::remove_var("XDG_CACHE_HOME");
         assert_eq!(
             dirs_xdg_data_home().unwrap(),
-            PathBuf::from("/home/tester/.local/share")
+            PathBuf::from("/home/tester/var/lib")
         );
         assert_eq!(
             dirs_agent_env_data().unwrap(),
-            PathBuf::from("/home/tester/.local/share/agent-env")
+            PathBuf::from("/home/tester/var/lib/agent-env")
         );
         assert_eq!(
             dirs_xdg_cache_home().unwrap(),

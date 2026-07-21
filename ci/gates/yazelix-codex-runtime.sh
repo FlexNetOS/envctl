@@ -8,11 +8,8 @@ bash "$ROOT/scripts/tests/test-nushell-rtk-ownership.sh"
 bash "$ROOT/scripts/tests/test-rtk-command-policy.sh"
 
 if matches="$(rg -n '/home/flexnetos/lifeos|/home/flexnetos/meta/lifeos' \
-  "$ROOT/home/.claude/settings.json" \
-  "$ROOT/home/.claude/settings.json.tmpl" \
-  "$ROOT/home/.claude/CLAUDE.md" \
-  "$ROOT/home/.claude/rules/laws.md" \
-  "$ROOT/home/.claude/skills/harness-ops/SKILL.md" \
+  "$ROOT/assets/scripts/envctl-claude-cleanup.sh" \
+  "$ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh" \
   "$ROOT/home/bin/harness-halt.sh")"; then
   printf '%s\n' "$matches" >&2
   printf '%s\n' "active Claude harness owners must not recreate retired LifeOS authority paths" >&2

@@ -71,7 +71,7 @@ postgres_profile_validate() {
   }
 
   POSTGRES_PROFILE="$real_home/.nix-profile"
-  selector="$real_home/.local/state/nix/profile"
+  selector="$real_home/var/lib/nix/profile"
   [[ -L "$POSTGRES_PROFILE" ]] || {
     postgres_error "profile front door is not a symlink: $POSTGRES_PROFILE"
     return 1

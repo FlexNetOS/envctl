@@ -1927,13 +1927,19 @@ command = "false"
         let _env = crate::test_env_lock();
         let root = temp_root("engine-process-runner-refresh");
         let meta = root.join("meta");
+        let home = root.join("home");
         let manifest = root.join("manifest");
         let state = meta.join("state/current");
-        let fake_bin = meta.join("usr/bin");
+        let fake_bin = home.join(".nix-profile/toolbin");
         std::fs::create_dir_all(&state).unwrap();
         std::fs::create_dir_all(&manifest).unwrap();
         std::fs::create_dir_all(&fake_bin).unwrap();
+        std::fs::create_dir_all(home.join(".nix-profile/bin")).unwrap();
         std::fs::create_dir_all(meta.join("var/lib/envctl")).unwrap();
+        for command in ["cat", "mkdir", "mv", "rm", "touch"] {
+            std::os::unix::fs::symlink(format!("/usr/bin/{command}"), fake_bin.join(command))
+                .unwrap();
+        }
         for leaf in ["secretctl", "secretctl.sha256", "secretctl.source.sha256"] {
             std::fs::write(state.join(leaf), format!("forged:{leaf}\n")).unwrap();
         }
@@ -2033,7 +2039,9 @@ rm -f "$META_ROOT/removable.bin"
         .unwrap();
 
         let old_meta = std::env::var_os("META_ROOT");
+        let old_home = std::env::var_os("HOME");
         std::env::set_var("META_ROOT", &meta);
+        std::env::set_var("HOME", &home);
         std::fs::write(meta.join("repair-success"), "1\n").unwrap();
         let engine = crate::Engine::load(manifest.clone()).unwrap();
         let repaired = engine
@@ -2081,6 +2089,7 @@ rm -f "$META_ROOT/removable.bin"
         assert!(second_remove.ok());
 
         restore_env("META_ROOT", old_meta);
+        restore_env("HOME", old_home);
         let _ = std::fs::remove_dir_all(root);
     }
 
