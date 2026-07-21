@@ -203,6 +203,59 @@ M="${META_ROOT:?META_ROOT required}"
 '''
 
 [[component]]
+id = "icm-config-links"
+name = "ICM config -> META_ROOT home tree"
+description = "Links META_ROOT/.config/icm to $META_ROOT/src/envctl/home/.config/icm. Two embedding profiles: config.toml (jinaai/jina-embeddings-v2-base-code, 768d, code) + config.fast.toml (Xenova/bge-small-en-v1.5, 384d, fast). ICM state/DBs remain under XDG-local state."
+requires = ["home-config-links"]
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
+[ "$(readlink -f "$M/.config/icm" 2>/dev/null)" = "$(readlink -f "$T/.config/icm" 2>/dev/null)" ]
+''']
+[component.install]
+kind = "script"
+script = '''
+set -e
+M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
+src="$T/.config/icm"
+dst="$M/.config/icm"
+ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
+[ -d "$src" ] || { echo "SKIP icm-config-links: missing $src"; exit 0; }
+[ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] && exit 0
+mkdir -p "$(dirname "$dst")"
+if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+  mkdir -p "$ARCH/.config"
+  mv "$dst" "$ARCH/.config/icm"
+  echo "archived META_ROOT .config/icm"
+elif [ -L "$dst" ]; then
+  rm "$dst"
+fi
+ln -s "$src" "$dst"
+echo "linked META_ROOT .config/icm"
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
+[ "$(readlink -f "$M/.config/icm" 2>/dev/null)" = "$(readlink -f "$T/.config/icm" 2>/dev/null)" ]
+''']
+[component.remove]
+kind = "script"
+script = '''
+M="${META_ROOT:?META_ROOT required}"
+[ -L "$M/.config/icm" ] && rm "$M/.config/icm"
+'''
+
+[[component]]
 id = "meta-tool-links"
 name = "retired per-tool meta binary links"
 description = "Compatibility id only. The old per-tool real-home bin/cargo link farm is retired; binaries must be installed directly in META_ROOT-owned prefixes."
