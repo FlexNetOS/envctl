@@ -95,6 +95,26 @@
       "document_id": "019f3c00-6edc-7381-94ed-7ed27e8970d8",
       "slug": "tasks/migration-db",
       "tip_commit_id": "019f3c00-6f50-7952-8088-299e0ad4f0bb"
+    },
+    {
+      "document_id": "019f5f5d-2abe-7202-89ab-9fa63f8326a5",
+      "slug": "tasks/openrouter-agent-env",
+      "tip_commit_id": "019f5f5d-5c18-75e1-97e6-86c5df871703"
+    },
+    {
+      "document_id": "019f8029-cffc-70c0-bfbe-e38ec4778467",
+      "slug": "incidents/envctl-hook-profile-cleanup-20260720",
+      "tip_commit_id": "019f8275-fdc9-78b3-b35f-b21e4f9625c9"
+    },
+    {
+      "document_id": "019f80b2-3c2c-7802-9e8f-d83ae732686c",
+      "slug": "envctl-skill-catalog-and-capability-packs",
+      "tip_commit_id": "019f80b2-3c50-7060-89d8-1e66bebcd59d"
+    },
+    {
+      "document_id": "019f8275-fd99-7412-a8ca-8ae9026f0481",
+      "slug": "tasks/strict-profile-path-owner-purge-20260721",
+      "tip_commit_id": "019f8275-fdc9-78b3-b35f-b21e4f9625c9"
     }
   ]
 }
