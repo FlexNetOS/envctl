@@ -97,9 +97,11 @@ fn grants_deny_every_non_envctl_write_at_the_database() {
     ));
     client.batch_execute("RESET ROLE").expect("reset role");
     let error = denied.expect_err("non-envctl write must be denied");
-    assert!(
-        error.to_string().contains("permission denied"),
-        "denial must come from PostgreSQL grants, got: {error}"
+    let db_error = error.as_db_error().expect("denial is a database error");
+    assert_eq!(
+        db_error.code(),
+        &postgres::error::SqlState::INSUFFICIENT_PRIVILEGE,
+        "denial must be SQLSTATE 42501 insufficient_privilege, got: {db_error:?}"
     );
 
     // The committer role itself is allowed.
