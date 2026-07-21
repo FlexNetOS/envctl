@@ -32,6 +32,32 @@
     "rust-analyzer-lsp@claude-plugins-official": true
   },
   "permissions": {
+    "allow": [
+      "Bash(/home/flexnetos/.nix-profile/bin/rtk:*)",
+      "Bash(rtk:*)",
+      "Bash(icm:*)",
+      "Bash(yazelix:*)",
+      "Bash(yzx:*)",
+      "Bash(grit:*)",
+      "Bash(gitnexus:*)",
+      "Bash(weave:*)",
+      "Bash(gitkb:*)",
+      "Bash(git kb:*)",
+      "Bash(ruflo:*)",
+      "Bash(prompt_hub:*)",
+      "Bash(prompt-hub:*)",
+      "Bash(omc:*)",
+      "Bash(nu_plugin:*)",
+      "Bash(teri:*)",
+      "Bash(rusty-idd:*)",
+      "Bash(handoff:*)",
+      "Bash(meta:*)",
+      "Bash(envctl:*)",
+      "Bash(beads:*)",
+      "Bash(br:*)",
+      "mcp__icm",
+      "mcp__icm__*"
+    ],
     "deny": [
       "Read(**/.env)",
       "Read(**/.env.*)",
