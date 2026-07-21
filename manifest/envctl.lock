@@ -277,6 +277,11 @@ content_hash = "efd36cdd1fed18bf"
 requires = []
 resolved = ""
 
+[components.icm-config-links]
+content_hash = "9d83c5da7b364fc2"
+requires = ["home-config-links"]
+resolved = ""
+
 [components.just]
 content_hash = "12d7931bfb8138ab"
 requires = []
