@@ -132,7 +132,7 @@ def env-var-row [row: record] {
 }
 
 def main [--json] {
-    let tables_root = "/home/flexnetos/FlexNetOS/var/lib/envctl/tables"
+    let tables_root = "/home/flexnetos/meta/var/lib/envctl/tables"
     let sensitive_files = (
         open $"($tables_root)/env_files.csv"
         | where sensitivity =~ "secret|sensitive"

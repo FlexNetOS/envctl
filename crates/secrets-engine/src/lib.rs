@@ -57,7 +57,7 @@ pub use startup::StartupRefusal;
 use std::collections::HashMap;
 #[cfg(feature = "provider-github")]
 use std::sync::Mutex;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use zeroize::Zeroizing;
 
 use event::AuditOutcome;
@@ -254,6 +254,18 @@ struct EngineInner {
     /// default builds keep the no-grace gate unchanged. See [`Engine::seed_presence_cached`].
     #[cfg(feature = "seed-factor")]
     presence_cache: std::sync::Mutex<Option<(bool, i64)>>,
+}
+
+fn read_lock<'a, T>(lock: &'a RwLock<T>) -> RwLockReadGuard<'a, T> {
+    lock.read().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+fn write_lock<'a, T>(lock: &'a RwLock<T>) -> RwLockWriteGuard<'a, T> {
+    lock.write().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+fn mutex_lock<'a, T>(lock: &'a std::sync::Mutex<T>) -> std::sync::MutexGuard<'a, T> {
+    lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Which unlock factor the operator is presenting.
@@ -560,7 +572,7 @@ impl Engine {
         // observed as an error while the vault silently stays unlocked, nor (b) grind a fresh
         // Argon2 derivation against a live DEK. The on-the-wire failure for a locked vault stays
         // the single generic UnlockFailed (no oracle).
-        if inner.vault.read().expect("vault lock").is_unlocked() {
+        if read_lock(&inner.vault).is_unlocked() {
             return Ok(VaultState::Unlocked);
         }
         let slots = inner.store.load_keyslots()?;
@@ -699,7 +711,7 @@ impl Engine {
             serde_json::json!({ "factor": factor_str(want_factor) }),
         )?;
         {
-            let mut v = inner.vault.write().expect("vault lock");
+            let mut v = write_lock(&inner.vault);
             *v = vault::Vault::Unlocked { dek };
         }
         // Now that the DEK is resident, advance the anchor to cover the just-appended
@@ -746,7 +758,7 @@ impl Engine {
         };
         let ca = ca::LocalCa::from_material(key_der, &ca_cert_der)?;
         {
-            let mut slot = inner.ca.write().expect("ca lock");
+            let mut slot = write_lock(&inner.ca);
             *slot = Some(ca);
         }
         Ok(())
@@ -778,10 +790,7 @@ impl Engine {
             &ca_cert_der,
         )?;
         {
-            let mut slot = inner
-                .remote_clients_ca
-                .write()
-                .expect("remote clients ca lock");
+            let mut slot = write_lock(&inner.remote_clients_ca);
             *slot = Some(ca);
         }
         Ok(())
@@ -805,7 +814,7 @@ impl Engine {
     #[cfg(feature = "mitm-ca")]
     fn open_sealed_ca_key(&self, key_name: &str) -> anyhow::Result<Option<Zeroizing<Vec<u8>>>> {
         let inner = &self.inner;
-        let v = inner.vault.read().expect("vault lock");
+        let v = read_lock(&inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -826,20 +835,16 @@ impl Engine {
     /// Zeroizes the DEK + CA issuer in RAM (the true panic stop). Idempotent when already Locked.
     pub fn lock(&self, sink: &EventSink) -> anyhow::Result<()> {
         {
-            let mut v = self.inner.vault.write().expect("vault lock");
+            let mut v = write_lock(&inner.vault);
             // Replacing Unlocked{dek} with Locked drops the old Dek => ZeroizeOnDrop wipes it.
             *v = vault::Vault::Locked;
         }
         {
-            let mut ca = self.inner.ca.write().expect("ca lock");
+            let mut ca = write_lock(&inner.ca);
             *ca = None; // drop the in-RAM CA issuer.
         }
         {
-            let mut ca = self
-                .inner
-                .remote_clients_ca
-                .write()
-                .expect("remote clients ca lock");
+            let mut ca = write_lock(&self.inner.remote_clients_ca);
             *ca = None;
         }
         // Drop any installed native sub-token minter (DD-1): reinstall NoMint so the locked vault
@@ -864,7 +869,7 @@ impl Engine {
         // racing pair could otherwise seal against the same id while the store stored distinct ids,
         // permanently de-authenticating the loser's ciphertext). The write lock also guarantees the
         // DEK can't be zeroized out from under us mid-op.
-        let v = inner.vault.write().expect("vault lock");
+        let v = write_lock(&inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -936,7 +941,7 @@ impl Engine {
         sink: &EventSink,
     ) -> anyhow::Result<Zeroizing<Vec<u8>>> {
         let inner = &self.inner;
-        let v = inner.vault.read().expect("vault lock");
+        let v = read_lock(&inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -1047,7 +1052,7 @@ impl Engine {
         // owner-only capability and we keep parity with `secret_get`'s gate. The DEK borrow is dropped
         // before the per-name store reads below.
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -1081,7 +1086,7 @@ impl Engine {
     pub fn secret_meta(&self, name: &str) -> anyhow::Result<Option<SecretMeta>> {
         let inner = &self.inner;
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -1105,7 +1110,7 @@ impl Engine {
         // Fail-closed: a locked vault cannot remove (consistent with the other mutating verbs). The
         // refusal writes a durable Refused row + GuardRefused event BEFORE returning.
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 drop(v);
                 self.refuse(sink, "secret_removed", name, "vault is locked")?;
@@ -1157,7 +1162,7 @@ impl Engine {
         let inner = &self.inner;
         // Fail-closed: rotation seals a new version, which requires the live DEK.
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 drop(v);
                 self.refuse(sink, "secret_rotated", name, "vault is locked")?;
@@ -1300,7 +1305,7 @@ impl Engine {
 
         // Hold the vault READ lock for the whole mint so the DEK cannot be zeroized out from under
         // us between the gate check and the MAC.
-        let v = inner.vault.read().expect("vault lock");
+        let v = read_lock(&inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -1648,12 +1653,7 @@ impl Engine {
         // regardless (we hold no live token after revoking, success or not).
         #[cfg(feature = "provider-github")]
         {
-            let cached = self
-                .inner
-                .native_token_cache
-                .lock()
-                .expect("native token cache")
-                .remove(relay_id);
+            let cached = mutex_lock(&self.inner.native_token_cache).remove(relay_id);
             if let Some(token) = cached {
                 match mint_github::revoke_installation_token(
                     self.inner.github_transport.as_ref(),
@@ -2176,7 +2176,7 @@ impl Engine {
     /// Idempotent: replaces any previously installed minter. Ungated (the `NoMint` default is always
     /// available); the daemon's call site is `#[cfg(feature = "provider-github")]`.
     pub fn install_provider(&self, provider: Box<dyn ProviderMint>) {
-        *self.inner.provider.write().expect("provider lock") = provider;
+        *write_lock(&self.inner.provider) = provider;
     }
 
     /// Reinstall the `NoMint` default, dropping any installed minter (and the `Zeroizing` App PEM it
@@ -2184,13 +2184,9 @@ impl Engine {
     /// must hold no live native-mint key. Idempotent. Also DROPS the native-token cache (TASK-0027):
     /// a locked/cleared vault holds no live engine-minted installation token.
     pub fn clear_provider(&self) {
-        *self.inner.provider.write().expect("provider lock") = Box::new(seam::NoMint);
+        *write_lock(&self.inner.provider) = Box::new(seam::NoMint);
         #[cfg(feature = "provider-github")]
-        self.inner
-            .native_token_cache
-            .lock()
-            .expect("native token cache")
-            .clear();
+        mutex_lock(&self.inner.native_token_cache).clear();
     }
 
     /// Read a native-mint provider's App credential from the UNLOCKED vault: the App private-key PEM
@@ -2203,7 +2199,7 @@ impl Engine {
     #[cfg(feature = "provider-github")]
     pub fn app_credential_pem(&self, secret_name: &str) -> anyhow::Result<Option<AppCredential>> {
         let inner = &self.inner;
-        let v = inner.vault.read().expect("vault lock");
+        let v = read_lock(&inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -2241,7 +2237,7 @@ impl Engine {
     ) -> anyhow::Result<()> {
         let inner = &self.inner;
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -2265,7 +2261,7 @@ impl Engine {
     #[cfg(feature = "provider-github")]
     pub fn put_github_app_id(&self, app_id: &str) -> anyhow::Result<()> {
         {
-            let v = self.inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -2307,7 +2303,7 @@ impl Engine {
         // read lock (the un-revealable broker-only path; `secret_get` would refuse a broker_only
         // reveal). A locked vault has no DEK ⇒ Err(Locked) ⇒ fail-closed (no key ⇒ no mint).
         let pem = {
-            let v = self.inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             let dek = match v.dek() {
                 Some(d) => d,
                 None => return Err(EngineError::Locked.into()),
@@ -2419,7 +2415,7 @@ impl Engine {
     ) -> anyhow::Result<bool> {
         // Auth floor: require the vault Unlocked (mirrors mint). A locked vault ⇒ Err(Locked).
         {
-            let v = self.inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -2525,11 +2521,10 @@ impl Engine {
                 perms,
                 ttl_secs: native_ttl_secs,
             };
-            self.inner
-                .provider
-                .read()
-                .expect("provider lock")
-                .mint_scoped(&req)
+            {
+                let provider = read_lock(&self.inner.provider);
+                provider.mint_scoped(&req)
+            }
         } else {
             Err(seam::MintError::Unsupported)
         };
@@ -2543,11 +2538,7 @@ impl Engine {
                 // revoke request's auth-header bearer.
                 #[cfg(feature = "provider-github")]
                 {
-                    self.inner
-                        .native_token_cache
-                        .lock()
-                        .expect("native token cache")
-                        .insert(relay.to_string(), scoped.token.clone());
+                    mutex_lock(&self.inner.native_token_cache).insert(relay.to_string(), scoped.token.clone());
                 }
                 // Inject the MINTED token (never the relay bearer) into the provider's key var(s).
                 // `expires_at` is GitHub's authoritative value (RFC3339 from epoch secs), surfaced
@@ -2899,7 +2890,7 @@ impl Engine {
         // DEK guard (mirror secret_put): CA keygen seals against the live DEK, so an unlocked vault
         // is required. Refusing on a locked vault is a setup-time error, not a guard refusal.
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -2953,7 +2944,7 @@ impl Engine {
         // Build the in-RAM issuer.
         let ca = ca::LocalCa::from_material(generated.key_der.clone(), &generated.cert_der)?;
         {
-            let mut slot = inner.ca.write().expect("ca lock");
+            let mut slot = write_lock(&inner.ca);
             *slot = Some(ca);
         }
 
@@ -2974,12 +2965,7 @@ impl Engine {
     #[cfg(feature = "mitm-ca")]
     fn ensure_remote_clients_ca_initialized(&self, sink: &EventSink) -> anyhow::Result<()> {
         let inner = &self.inner;
-        if inner
-            .remote_clients_ca
-            .read()
-            .expect("remote clients ca lock")
-            .is_some()
-        {
+        if read_lock(&inner.remote_clients_ca).is_some() {
             return Ok(());
         }
         if inner
@@ -2988,12 +2974,7 @@ impl Engine {
             .is_some()
         {
             self.rebuild_remote_clients_ca_if_initialized(sink)?;
-            if inner
-                .remote_clients_ca
-                .read()
-                .expect("remote clients ca lock")
-                .is_some()
-            {
+            if read_lock(&inner.remote_clients_ca).is_some() {
                 return Ok(());
             }
         }
@@ -3025,10 +3006,7 @@ impl Engine {
             &generated.cert_der,
         )?;
         {
-            let mut slot = inner
-                .remote_clients_ca
-                .write()
-                .expect("remote clients ca lock");
+            let mut slot = write_lock(&inner.remote_clients_ca);
             *slot = Some(ca);
         }
         self.audit_ok(
@@ -3053,7 +3031,7 @@ impl Engine {
         use std::io::Write;
         let inner = &self.inner;
         let pem = {
-            let ca = inner.ca.read().expect("ca lock");
+            let ca = read_lock(&inner.ca);
             match ca.as_ref() {
                 Some(c) => c.ca_cert_pem(),
                 None => return Err(EngineError::NoCa.into()),
@@ -3103,7 +3081,7 @@ impl Engine {
 
         // Unlocked guard.
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 self.refuse(sink, "leaf_minted", host, "vault locked")?;
                 return Err(EngineError::Locked.into());
@@ -3128,7 +3106,7 @@ impl Engine {
         // Issuer must be resident.
         let now_unix = inner.clock.now().timestamp();
         let result = {
-            let ca = inner.ca.read().expect("ca lock");
+            let ca = read_lock(&inner.ca);
             match ca.as_ref() {
                 Some(c) => c.issue_leaf(host, now_unix)?,
                 None => {
@@ -3219,7 +3197,7 @@ impl Engine {
 
         let inner = &self.inner;
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -3231,10 +3209,7 @@ impl Engine {
         let now_unix = inner.clock.now().timestamp();
         let leaf = {
             if operator_usage == ca::OperatorLeafUsage::ControlPlaneClient {
-                let ca = inner
-                    .remote_clients_ca
-                    .read()
-                    .expect("remote clients ca lock");
+                let ca = read_lock(&inner.remote_clients_ca);
                 match ca.as_ref() {
                     Some(ca) => ca.issue_operator_leaf(
                         cn,
@@ -3249,7 +3224,7 @@ impl Engine {
                     }
                 }
             } else {
-                let ca = inner.ca.read().expect("ca lock");
+                let ca = read_lock(&inner.ca);
                 match ca.as_ref() {
                     Some(ca) => ca.issue_operator_leaf(
                         cn,
@@ -3305,7 +3280,7 @@ impl Engine {
         }
         let inner = &self.inner;
         {
-            let v = inner.vault.read().expect("vault lock");
+            let v = read_lock(&inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -3344,10 +3319,7 @@ impl Engine {
         let now_unix = inner.clock.now().timestamp();
         self.ensure_remote_clients_ca_initialized(sink)?;
         let leaf = {
-            let ca = inner
-                .remote_clients_ca
-                .read()
-                .expect("remote clients ca lock");
+            let ca = read_lock(&inner.remote_clients_ca);
             match ca.as_ref() {
                 Some(ca) => ca.issue_operator_leaf(
                     cn,
@@ -3765,7 +3737,7 @@ impl Engine {
     /// tail, advancing the monotonic high-water. No-op when locked (no resident DEK to key the
     /// anchor with).
     fn advance_audit_anchor_if_unlocked(&self) -> anyhow::Result<()> {
-        let v = self.inner.vault.read().expect("vault lock");
+        let v = read_lock(&inner.vault);
         let Some(dek) = v.dek() else {
             return Ok(());
         };
@@ -3840,7 +3812,7 @@ impl Engine {
     /// Requires the vault to be unlocked (the anchor is DEK-keyed). See `verify_audit_anchor_with`
     /// for the verification rule. Returns `Err(EngineError::AuditChainBroken)` on any mismatch.
     pub fn verify_audit_anchor(&self, _sink: &EventSink) -> anyhow::Result<()> {
-        let v = self.inner.vault.read().expect("vault lock");
+        let v = read_lock(&inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -4358,6 +4330,13 @@ mod ca_tests {
             .audit_rows()
             .iter()
             .any(|r| r.event_type == event_type && r.outcome == outcome)
+    }
+
+    fn lock_no_panic<'a, T>(mutex: &'a Mutex<T>) -> std::sync::MutexGuard<'a, T> {
+        match mutex.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        }
     }
 
     #[test]
@@ -4986,7 +4965,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
     }
     impl ProviderMint for CountingMint {
         fn mint_scoped(&self, _p: &MintRequest) -> Result<ScopedToken, MintError> {
-            *self.calls.lock().unwrap() += 1;
+            *lock_no_panic(&self.calls) += 1;
             Ok(ScopedToken {
                 token: Zeroizing::new(self.token.clone().into_bytes()),
                 expires_at: 1_700_003_600,
@@ -5372,7 +5351,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
         struct CapturingMint(Mutex<Option<(Vec<String>, Vec<String>)>>);
         impl ProviderMint for CapturingMint {
             fn mint_scoped(&self, p: &MintRequest) -> Result<ScopedToken, MintError> {
-                *self.0.lock().unwrap() = Some((p.repos.clone(), p.perms.clone()));
+                *lock_no_panic(&self.0) = Some((p.repos.clone(), p.perms.clone()));
                 Ok(ScopedToken {
                     token: Zeroizing::new(b"ghs_scoped".to_vec()),
                     expires_at: 1_700_003_600,
@@ -5404,7 +5383,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
             )
             .unwrap()
             .expect("minted");
-        let seen = cap.0.lock().unwrap().clone().expect("mint_scoped called");
+        let seen = lock_no_panic(&cap.0).clone().expect("mint_scoped called");
         assert_eq!(seen.0, vec!["meta".to_string(), "envctl".to_string()]);
         assert_eq!(
             seen.1,
@@ -5724,7 +5703,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
         }
         impl HttpTransport for Shared {
             fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
-                self.seen.lock().unwrap().push(req.method.to_string());
+                lock_no_panic(&self.seen).push(req.method.to_string());
                 let (status, body) = match req.method {
                     "DELETE" => (self.delete_status, String::new()),
                     _ => (self.post_status, self.post_body.clone()),
@@ -5827,7 +5806,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
         // relay_revoke returns its bearer count (0 here — no bearers stored), and the tie-in fired.
         let _ = n;
         assert!(
-            seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            lock_no_panic(&seen).iter().any(|m| m == "DELETE"),
             "the best-effort DELETE was fired"
         );
         let events = drain(&rx);
@@ -5853,7 +5832,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
             "relay_revoke still returns Ok despite revoke failure"
         );
         assert!(
-            seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            lock_no_panic(&seen).iter().any(|m| m == "DELETE"),
             "the best-effort DELETE was attempted"
         );
         let events = drain(&rx);
@@ -5874,7 +5853,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
         let _ = drain(&rx);
         let _ = engine.relay_revoke("gh", false, &sink).expect("dry-run");
         assert!(
-            !seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            !lock_no_panic(&seen).iter().any(|m| m == "DELETE"),
             "dry-run fires no DELETE"
         );
     }
@@ -5886,7 +5865,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
         let (engine, sink, rx, seen) = unlocked_engine_with_method_transport(201, "", 204);
         mint_native_for_relay(&engine, &sink, "gh");
         engine.lock(&sink).expect("lock");
-        seen.lock().unwrap().clear();
+        lock_no_panic(&seen).clear();
         // Re-unlock so relay_revoke's own DEK-gated reseal path doesn't trip; the cache is empty.
         engine
             .unlock(
@@ -5899,7 +5878,7 @@ s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
             .relay_revoke("gh", true, &sink)
             .expect("relay revoke");
         assert!(
-            !seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            !lock_no_panic(&seen).iter().any(|m| m == "DELETE"),
             "lock() cleared the cache ⇒ no DELETE after re-unlock"
         );
     }

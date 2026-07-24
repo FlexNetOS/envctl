@@ -118,7 +118,10 @@ impl SyncConnection {
     /// A fresh handle to the current connection (a cheap clone of the libSQL connection handle).
     /// Used inside runtime-driven async blocks in `store` (e.g. the transaction methods).
     pub fn conn(&self) -> libsql::Connection {
-        self.conn.lock().expect("conn lock poisoned").clone()
+        self.conn
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
     }
 
     /// Re-establish the connection after a Hrana stream-expiry (a fresh `db.connect()`).
@@ -127,7 +130,9 @@ impl SyncConnection {
             .db
             .connect()
             .map_err(|e| Error::Connect(e.to_string()))?;
-        *self.conn.lock().expect("conn lock poisoned") = fresh;
+        *self.conn
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = fresh;
         Ok(())
     }
 

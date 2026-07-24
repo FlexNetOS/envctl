@@ -985,7 +985,7 @@ mod tests {
                 std::thread::sleep(Duration::from_millis(rand::random::<u8>().into()));
                 let api = ApiBuilder::new()
                     .with_progress(false)
-                    .with_cache_dir(tmp2.lock().unwrap().path.clone())
+                    .with_cache_dir(tmp2.lock().unwrap_or_else(std::sync::PoisonError::into_inner).path.clone())
                     .build()
                     .unwrap();
 

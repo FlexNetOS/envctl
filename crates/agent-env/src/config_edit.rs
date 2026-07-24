@@ -481,7 +481,9 @@ fn parse_items(lines: &[String], sec_start: usize, sec_end: usize) -> Vec<Parsed
     if dashes.is_empty() {
         return Vec::new();
     }
-    let item_indent = dashes.iter().map(|&i| indent_of(&lines[i])).min().unwrap();
+    let Some(item_indent) = dashes.iter().map(|&i| indent_of(&lines[i])).min() else {
+        return Vec::new();
+    };
     let starts: Vec<usize> = dashes
         .into_iter()
         .filter(|&i| indent_of(&lines[i]) == item_indent)

@@ -5229,9 +5229,9 @@ name = "nix-portable"
             NixProfileElement {
                 active: true,
                 attr_path: Some("packages.x86_64-linux.yazelix_flexnetos_foundation".to_string()),
-                original_url: Some("path:/home/flexnetos/FlexNetOS/src/yazelix".to_string()),
+                original_url: Some("path:/home/flexnetos/meta/src/yazelix".to_string()),
                 store_paths: vec![store_root.display().to_string()],
-                url: Some("path:/home/flexnetos/FlexNetOS/src/yazelix".to_string()),
+                url: Some("path:/home/flexnetos/meta/src/yazelix".to_string()),
             },
         );
 

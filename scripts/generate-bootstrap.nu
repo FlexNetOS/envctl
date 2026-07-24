@@ -11,16 +11,16 @@ def sh-quote [value: string] {
     $"($sq)($escaped)($sq)"
 }
 
-def source-rows [] {
-    open /home/flexnetos/FlexNetOS/var/lib/envctl/tables/bootstrap_env_vars.csv
+def source-rows [tables_root: string] {
+    open ($tables_root | path join "bootstrap_env_vars.csv")
     | where generated_target =~ "bootstrap"
     | where value_kind != "secret_ref"
     | where sensitivity != "secret_ref"
     | sort-by precedence name
 }
 
-def source-checksum [] {
-    open --raw /home/flexnetos/FlexNetOS/var/lib/envctl/tables/bootstrap_env_vars.csv | hash sha256
+def source-checksum [tables_root: string] {
+    open --raw ($tables_root | path join "bootstrap_env_vars.csv") | hash sha256
 }
 
 def header-lines [
@@ -92,12 +92,14 @@ def manifest-row [
 }
 
 def main [
-    --out-dir: string = "/home/flexnetos/FlexNetOS/artifacts/generated/T036"
+    --tables-root: string = "/home/flexnetos/meta/var/lib/envctl/tables"
+    --out-dir: string = "/home/flexnetos/meta/artifacts/generated/T036"
+    --manifest-out: string = ""
     --timestamp: string = "1970-01-01T00:00:00Z"
     --json
 ] {
-    let rows = (source-rows)
-    let checksum = (source-checksum)
+    let rows = (source-rows $tables_root)
+    let checksum = (source-checksum $tables_root)
     mkdir $out_dir
 
     let bootstrap_nu = $"($out_dir)/bootstrap.nu"
@@ -110,6 +112,10 @@ def main [
         (manifest-row "bootstrap_nu" $bootstrap_nu "nushell" $checksum $timestamp)
         (manifest-row "bootstrap_sh" $bootstrap_sh "posix_shell" $checksum $timestamp)
     ]
+
+    if ($manifest_out | is-not-empty) {
+        $manifest | to csv | save --force $manifest_out
+    }
 
     if $json {
         $manifest | to json

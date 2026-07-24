@@ -255,7 +255,7 @@ mod tests {
     struct TestClock(std::sync::Mutex<i64>);
     impl crate::seam::Clock for TestClock {
         fn now(&self) -> chrono::DateTime<chrono::Utc> {
-            chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap())
+            chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner))
                 .expect("valid timestamp")
         }
         fn boottime_ms(&self) -> i64 {
@@ -319,7 +319,7 @@ mod tests {
         struct SharedClock(std::sync::Arc<std::sync::Mutex<i64>>);
         impl crate::seam::Clock for SharedClock {
             fn now(&self) -> chrono::DateTime<chrono::Utc> {
-                chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap()).unwrap()
+                chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)).unwrap()
             }
             fn boottime_ms(&self) -> i64 {
                 0
@@ -328,7 +328,7 @@ mod tests {
         let gate = VpsPresenceGate::new(Box::new(SharedClock(clock_handle.clone())));
         gate.accept_token(2_000);
         assert_eq!(gate.resolve(), GateState::Present, "valid at t=1000");
-        *clock_handle.lock().unwrap() = 2_500; // advance past expiry
+        *clock_handle.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = 2_500; // advance past expiry
         assert_eq!(
             gate.resolve(),
             GateState::AbsentSince(2_000),

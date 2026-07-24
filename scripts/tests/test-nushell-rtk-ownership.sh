@@ -68,6 +68,7 @@ mkdir -p "$home/shadow/bin"
 
 export HOME="$home"
 export XDG_CONFIG_HOME="$home/.config"
+export XDG_RUNTIME_DIR="$tmp/run"
 export RTK_TEST_LOG="$tmp/rtk.log"
 export PATH="/nix/store/old-lifeos-foundation-yzx/toolbin:/nix/store/old-codex-cli-0.0.0/codex-path:$home/shadow/bin:$home/.nix-profile/bin:$PATH"
 export LD_LIBRARY_PATH="/tmp/foreign-loader"
@@ -91,6 +92,10 @@ fi
 nu -l -c 'if "LD_LIBRARY_PATH" in $env { exit 1 }'
 nu -l -c '$env.SHELL' >"$tmp/shell.out"
 grep -Fqx "$home/.nix-profile/toolbin/nu" "$tmp/shell.out"
+test "$(nu -l -c '$env.XDG_DATA_HOME')" = "$home/meta/var/lib"
+test "$(nu -l -c '$env.XDG_STATE_HOME')" = "$home/meta/var/lib"
+test "$(nu -l -c '$env.XDG_CACHE_HOME')" = "$tmp/run/yazelix/volatile/cache"
+test "$(nu -l -c '$env.YAZELIX_STATE_DIR')" = "$tmp/run/yazelix/profile-runtime/yazelix"
 
 nu -l -c 'cargo standalone-login' >"$tmp/login.out"
 grep -Fqx 'rtk-routed' "$tmp/login.out"

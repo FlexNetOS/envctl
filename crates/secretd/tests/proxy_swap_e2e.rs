@@ -45,8 +45,8 @@ impl Upstream for CapturingUpstream {
         req: EgressReq,
         real_key: &Zeroizing<Vec<u8>>,
     ) -> Result<EgressResp, UpstreamError> {
-        *self.seen_key.lock().unwrap() = Some(real_key.to_vec());
-        *self.seen_headers.lock().unwrap() = req.headers.clone();
+        *self.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
+        *self.seen_headers.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = req.headers.clone();
         Ok(EgressResp {
             status: 200,
             headers: vec![("content-type".to_string(), "application/json".to_string())],
@@ -180,7 +180,7 @@ async fn proxy_swap_delivers_real_key_only_and_bearer_never_leaks() {
 
     // 1. The REAL key reached Upstream::send.
     assert_eq!(
-        cap.seen_key.lock().unwrap().as_deref(),
+        cap.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
         Some(REAL_KEY),
         "the real key must reach the upstream (the swap happened)"
     );
@@ -188,7 +188,7 @@ async fn proxy_swap_delivers_real_key_only_and_bearer_never_leaks() {
     // 2. The BEARER never reached the upstream — neither the raw bearer nor its token_id appears in
     //    the forwarded headers the upstream saw.
     let raw = bearer.raw.to_string();
-    let headers = cap.seen_headers.lock().unwrap().clone();
+    let headers = cap.seen_headers.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
     let header_blob = headers
         .iter()
         .map(|(k, v)| format!("{k}: {v}"))
@@ -322,7 +322,7 @@ async fn proxy_denies_forged_bearer_with_bare_403() {
     );
     // The forged bearer never reached the upstream (no key fetched).
     assert!(
-        cap.seen_key.lock().unwrap().is_none(),
+        cap.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
         "a forged bearer must NOT reach the upstream"
     );
 

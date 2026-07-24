@@ -170,54 +170,22 @@ review fixes are listed in `docs/DESIGN-NOTES.md`.
 
 - pivoshenko/kasetto
 
-## Active-tool `~/.local/share` state — restart-gated migration to the Meta payload
+## Profile-owned active-tool state
 
-**Status (2026-07-21).** Sole remaining `.local` residual in the FlexNetOS operational
-environment. Meta-repo docs conformance and meta-root `.local` are already done
-(meta PR #110; ~1.7G of dev-host `.local`/shadow state relocated to `meta/var/archives/`;
-single nix-profile owner confirmed). This note records the one piece that a session-
-internal agent structurally cannot finish.
+**Status (2026-07-21): applied.** The profile frontdoors and the envctl-owned
+Nushell input now set `XDG_DATA_HOME` and `XDG_STATE_HOME` to
+`/home/flexnetos/meta/var/xdg-data` and `/home/flexnetos/meta/var/xdg-state`. Disposable cache and Yazelix session state are
+fixed beneath `/run/user/1001/yazelix`. The ICM frontdoor independently fixes
+its canonical corpus at `/home/flexnetos/meta/var/lib/icm/memories.db`.
 
-**Subject.** The FlexNetOS agent tools `icm`, `rtk`, `yazelix`, `weave`, `env-ctl` keep
-durable data under `~/.local/share/<tool>` because `XDG_DATA_HOME` is unset (→
-`~/.local/share`). Under the single-profile path law and the RuVector blueprint (files
-are projections; one canonical source), that durable tool state belongs in the Meta
-payload `meta/var/xdg-data/<tool>` — the tier already hosting
-`var/lib/{postgresql,ruvector,agentdb,envctl,gitkb}`.
+The canonical bootstrap rows are committed only through
+`scripts/profile-env-cutover.nu --apply`, which archives the exact prior table,
+publishes one verified candidate, and writes a hash receipt. Generated bootstrap
+artifacts are refreshed through `scripts/generate-bootstrap.nu`; they remain
+projections, not a competing authority.
 
-**Why it cannot be eliminated from inside a running session (empirically verified).**
-An agent running inside a yazelix session cannot remove the `.local` its own live
-toolchain is bound to:
-- Tools resolve their data dir from the session env at process start; the running
-  process's env is immutable mid-session.
-- `~/.local/share/yazelix` is written continuously by the **running zellij** that hosts
-  the session (`YAZELIX_STATUS_BAR_CACHE_PATH`, `STARSHIP_CONFIG`) — un-movable without
-  ending the session.
-- ICM's `[store].path` config key is parsed but **ignored** for the default DB (only
-  `--db` / `ICM_DB` / the XDG default apply — its docs say "the CLI reads the DB only
-  from `--db`"; tested: a probe with `[store].path` set still landed in `~/.local`).
-- `rtk` has no data-dir config (`[tracking]/[display]/[filters]/[tee]/[telemetry]/
-  [hooks]/[limits]` only).
-- envctl's `bootstrap_env_vars` table is inert without regeneration, and `envctl` is not
-  on PATH from an in-session shell — so its committer path is unreachable in-session.
-- Removing a dir → recreated on the next tool call (env still points there). Root
-  bind-mount and symlinks are disallowed; a session cannot restart itself.
-
-**The fix (owner action; one session restart).** Single lever = `XDG_DATA_HOME` /
-`XDG_STATE_HOME`, owned by envctl's agent-env engine
-(`meta/var/lib/envctl/tables/bootstrap_env_vars.csv`; rows currently point at
-`~/.local/share` / `~/.local/state`):
-1. `meta/var/ops/migrate-tool-state-off-dotlocal.sh migrate` — copy
-   `~/.local/share/{tools}` → `meta/var/xdg-data` (+ `xdg-state`); verifies icm db
-   integrity. (100M already staged; re-run to sync before restart.)
-2. Via **envctl's committer** (sole authoritative committer — do NOT hand-edit the live
-   table): `XDG_DATA_HOME` → `/home/flexnetos/meta/var/xdg-data`, `XDG_STATE_HOME` →
-   `/home/flexnetos/meta/var/xdg-state`; add
-   `ICM_DB=/home/flexnetos/meta/var/xdg-data/icm/memories.db`; leave `YAZELIX_STATE_DIR`
-   unset (yzx baked default `/run/user/1001/yazelix/profile-runtime/yazelix`).
-3. **Restart the yazelix session** so the agent env adopts the new roots.
-4. `migrate-tool-state-off-dotlocal.sh verify` → `finalize` (removes
-   `~/.local/share/{tools}` + `~/.local/state/env-ctl`; `finalize` refuses unless
-   `XDG_DATA_HOME` is already redirected).
-
-Full runbook: `meta/var/ops/README-migrate-tool-state.md`.
+Processes that predate the cutover can retain their original environment and
+open file descriptors until they exit. They are stale process evidence, not an
+approved ownership layer. Every newly launched `nu`, `rtk`, `rtk_nu`,
+`codex`, `claude`, or `icm` process receives the profile-owned roots before
+its immutable payload starts.

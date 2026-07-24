@@ -462,7 +462,12 @@ fn validate_raw_agent_targets(cfg: &Config, cfg_dir: &Path, scope: Scope) -> Res
         if cfg.destination.is_none() {
             let paths = match scope {
                 Scope::Project => agent.project_skill_paths(cfg_dir),
-                Scope::Global => vec![agent.global_path(home.as_deref().expect("global home"))],
+                Scope::Global => {
+                    let home = home
+                        .as_deref()
+                        .ok_or_else(|| err("global scope missing home path"))?;
+                    vec![agent.global_path(home)]
+                }
             };
             for path in paths {
                 claim("skill", path, format!("{agent:?}"))?;
@@ -471,8 +476,10 @@ fn validate_raw_agent_targets(cfg: &Config, cfg_dir: &Path, scope: Scope) -> Res
         let mcp = match scope {
             Scope::Project => agent.mcp_project_target(cfg_dir),
             Scope::Global => agent.mcp_settings_target(
-                home.as_deref().expect("global home"),
-                agent_env_config.as_deref().expect("global config"),
+                home.as_deref().ok_or_else(|| err("global scope missing home path"))?,
+                agent_env_config
+                    .as_deref()
+                    .ok_or_else(|| err("global scope missing config path"))?,
             ),
         };
         claim(
@@ -482,7 +489,12 @@ fn validate_raw_agent_targets(cfg: &Config, cfg_dir: &Path, scope: Scope) -> Res
         )?;
         let command = match scope {
             Scope::Project => agent.commands_project_path(cfg_dir),
-            Scope::Global => agent.commands_global_path(home.as_deref().expect("global home")),
+            Scope::Global => {
+                let home = home
+                    .as_deref()
+                    .ok_or_else(|| err("global scope missing home path"))?;
+                agent.commands_global_path(home)
+            }
         };
         if let Some(command) = command {
             claim(

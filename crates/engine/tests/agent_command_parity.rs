@@ -61,7 +61,7 @@ fn cwd_lock() -> &'static Mutex<()> {
 
 fn unique_dir(prefix: &str) -> PathBuf {
     static N: OnceLock<Mutex<u64>> = OnceLock::new();
-    let mut n = N.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let mut n = N.get_or_init(|| Mutex::new(0)).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     *n += 1;
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -829,7 +829,7 @@ fn c09_v2_lock_write_refuses_without_destroying_sync_migration_evidence() {
 /// and that an `--scope` override is honored (merged_scopes=false).
 #[test]
 fn c10_list_filters_by_kind_and_scope_readonly() {
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let pack = pack_dir();
     let yaml = format!(
         "agent: claude-code\nscope: project\nskills:\n  - source: {p}\n    skills: \"*\"\nmcps:\n  - source: {p}\n    mcps: \"*\"\n",
@@ -902,7 +902,7 @@ fn c10_list_filters_by_kind_and_scope_readonly() {
 /// are torn down; a pre-existing untracked server (broker/weave) survives apply (never-clobber).
 #[test]
 fn c11_c14_clean_preview_then_apply_removes_tracked_only() {
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let pack = pack_dir();
     let yaml = format!(
         "agent: claude-code\nscope: project\nskills:\n  - source: {p}\n    skills: \"*\"\nmcps:\n  - source: {p}\n    mcps: \"*\"\n",
@@ -1003,7 +1003,7 @@ fn c11_c14_clean_preview_then_apply_removes_tracked_only() {
 
 #[test]
 fn c13_init_writes_starter_template_and_refuses_overwrite() {
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let (engine, proj, _cfg) = project("agent: claude-code\n");
     // Remove the fixture config so init has a clean slate.
     std::fs::remove_file(proj.join("agent-env.yaml")).unwrap();
@@ -1062,7 +1062,7 @@ fn c13_init_writes_starter_template_and_refuses_overwrite() {
 
 #[test]
 fn c13_init_global_uses_agent_env_config_dir() {
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     sandbox_home();
     let (engine, _proj, _cfg) = project("agent: claude-code\n");
     let (s, _rx) = sink();
