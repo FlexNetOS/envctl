@@ -1874,6 +1874,7 @@ dependencies = [
 name = "envctl-commit-worker"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "postgres",
  "serde",
  "serde_json",

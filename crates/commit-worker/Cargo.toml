@@ -17,3 +17,7 @@ postgres = "0.19"
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10"
+# CLI entry point only (src/bin/envctl-commit-worker.rs); the library itself
+# stays CLI-agnostic. Already a pinned workspace dependency elsewhere, so this
+# adds zero new crates to the lockfile.
+clap = { workspace = true }
