@@ -213,8 +213,8 @@ def validate-ownership [tables_root: string] {
 }
 
 def validation-rows [
-    tables_root: string = "/home/flexnetos/FlexNetOS/var/lib/envctl/tables"
-    generated_dir: string = "/home/flexnetos/FlexNetOS/artifacts/generated/T036"
+    tables_root: string = "/home/flexnetos/meta/var/lib/envctl/tables"
+    generated_dir: string = "/home/flexnetos/meta/artifacts/generated/T036"
 ] {
     let required_rows = (validate-required-tables $tables_root)
     let bootstrap_rows = (validate-bootstrap-env $tables_root)
@@ -228,8 +228,8 @@ def validation-rows [
 def main [
     --json
     --strict
-    --tables-root: string = "/home/flexnetos/FlexNetOS/var/lib/envctl/tables"
-    --generated-dir: string = "/home/flexnetos/FlexNetOS/artifacts/generated/T036"
+    --tables-root: string = "/home/flexnetos/meta/var/lib/envctl/tables"
+    --generated-dir: string = "/home/flexnetos/meta/artifacts/generated/T036"
 ] {
     let rows = (validation-rows $tables_root $generated_dir)
     let blocking_errors = ($rows | where status == "error" and blocking == "true")

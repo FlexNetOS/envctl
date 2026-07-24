@@ -321,7 +321,13 @@ impl EnvctlApp {
 
         // THE worker spawn. Every captured value is Send + 'static => the closure
         // is Send + 'static => std::thread::spawn accepts it.
-        let engine = Engine::load_default().expect("manifest load");
+        let engine = match Engine::load_default() {
+            Ok(engine) => engine,
+            Err(error) => {
+                tracing::warn!(error = %error, "manifest load failed, starting detached");
+                Engine::detached()
+            }
+        };
         let geng = engine.clone(); // read-only clone for graph queries on the UI thread
         let tel = TelemetryControl::new();
         let tel_worker = tel.clone();
@@ -2992,7 +2998,7 @@ impl EnvctlApp {
                 ui.add(
                     egui::TextEdit::singleline(&mut self.catalog_target_root)
                         .desired_width(360.0)
-                        .hint_text("/home/flexnetos/FlexNetOS"),
+                        .hint_text("/home/flexnetos/meta"),
                 );
             });
             let render_btn = egui::Button::new(

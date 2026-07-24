@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 bash "$ROOT/scripts/tests/test-yazelix-codex-ownership-gate.sh"
 bash "$ROOT/scripts/tests/test-nushell-rtk-ownership.sh"
+bash "$ROOT/scripts/tests/test-profile-env-cutover.sh"
 bash "$ROOT/scripts/tests/test-rtk-command-policy.sh"
 
 if matches="$(rg -n '/home/flexnetos/lifeos|/home/flexnetos/meta/lifeos' \

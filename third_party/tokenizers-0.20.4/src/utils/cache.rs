@@ -62,7 +62,7 @@ where
 
     /// Clear the cache.
     pub(crate) fn clear(&self) {
-        self.map.write().unwrap().clear();
+        self.map.write().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
     }
 
     #[allow(dead_code)]

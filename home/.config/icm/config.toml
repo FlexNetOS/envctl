@@ -1,9 +1,16 @@
-# ICM — CODE profile (DEFAULT). Per-machine overrides merged over baked
-# config/default.toml. Loaded whenever ICM_CONFIG is unset.
+# ICM — CODE profile (DEFAULT). Loaded whenever ICM_CONFIG is unset.
+#
+# Config semantics (verified against load_config() in icm-cli/src/config.rs):
+# icm reads exactly ONE file — this one (or $ICM_CONFIG). There is NO merge
+# with the repo's config/default.toml; that file is a documentation template
+# only and is never loaded. Keys absent here fall back to the binary's
+# built-in Rust Default impls (embeddings ENABLED, model
+# multilingual-e5-base upstream — overridden below).
 #
 # Two embedding profiles are configured on this host:
 #   • CODE profile (THIS FILE, default)
-#       jinaai/jina-embeddings-v2-base-code (768d, code-optimized)
+#       Xenova/all-MiniLM-L12-v2 (384d) + jinaai/jina-embeddings-v2-base-code
+#       (768d), normalized and concatenated as a 1152d cascade
 #       corpus: /home/flexnetos/meta/var/lib/icm/memories.db
 #   • FAST profile → ~/.config/icm/config.fast.toml
 #       Xenova/bge-small-en-v1.5 (384d, English-only, fastest)
@@ -17,6 +24,12 @@
 
 [embeddings]
 model = "jinaai/jina-embeddings-v2-base-code"  # 768d, code-optimized
+
+# Two-model cascade (FlexNetOS/icm#16, activated after the profile rebuild
+# shipped the cascade-capable icm via yazelix#104):
+# all-MiniLM-L12-v2 runs first, jina-code second; parts L2-normalized and
+# concatenated — 1152d ensemble.
+fast_model = "Xenova/all-MiniLM-L12-v2"  # 384d English, runs first
 
 # Full-feature: enable the async LLM extraction + consolidation summarizers.
 # Providers only fire on explicit `icm extract-pending` / `icm consolidate`

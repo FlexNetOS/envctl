@@ -63,7 +63,7 @@ impl Upstream for RecordingUpstream {
         _req: EgressReq,
         real_key: &Zeroizing<Vec<u8>>,
     ) -> Result<EgressResp, UpstreamError> {
-        *self.seen_key.lock().unwrap() = Some(real_key.to_vec());
+        *self.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
         envctl_secretd::proxy::__test_pump_response_body(hyper::body::Bytes::from_static(
             UPSTREAM_BODY,
         ))
@@ -442,7 +442,7 @@ async fn edge_nonce_and_anti_abuse() {
         .await;
         assert_eq!(status, 200, "a nonce'd retry must be 200");
         assert_eq!(
-            rec.seen_key.lock().unwrap().as_deref(),
+            rec.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
             Some(SENTINEL),
             "the real key reaches the upstream on the nonce'd accept"
         );
@@ -546,7 +546,7 @@ async fn edge_rate_limit_sheds_before_decide() {
 
     // The bucket is now empty (refill 0). Reset the upstream observation: a THIRD request must be SHED
     // at admission (429) BEFORE the verify ladder / decide() / the recording upstream is reached.
-    *rec.seen_key.lock().unwrap() = None;
+    *rec.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
     let (mut tls2, ekm2) = connect_and_ekm(&connector, addr).await;
     let p2 = make_proof(&kp, &htu, &ekm2, "jti-rl2", now_secs, "phone", None);
     let (s2, _) = post_swap(&mut tls2, Some(&raw_bearer), Some(&p2), b"{\"q\":1}", None).await;
@@ -555,7 +555,7 @@ async fn edge_rate_limit_sheds_before_decide() {
         "a third request from the same IP is rate-limited (429)"
     );
     assert!(
-        rec.seen_key.lock().unwrap().is_none(),
+        rec.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
         "a rate-shed request must NEVER reach decide()/the recording upstream"
     );
 

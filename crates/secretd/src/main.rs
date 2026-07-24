@@ -303,27 +303,28 @@ async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
             url: profile
                 .operator_authorizer_url
                 .clone()
-                .expect("Profile B guarantees a URL"),
+                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but operator_authorizer_url is missing"))?,
             vps_instance_id: profile
                 .vps_instance_id
                 .clone()
-                .expect("Profile B guarantees an instance id"),
+                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but vps_instance_id is missing"))?,
             vps_cert_fp,
             operator_pubkey: profile
                 .operator_pubkey
-                .expect("Profile B guarantees a pubkey"),
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but operator_pubkey is missing"))?,
             operator_ca_path: profile
                 .operator_ca_path
                 .clone()
-                .expect("Profile B guarantees a CA path"),
+                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but operator_ca_path is missing"))?,
             client_cert_path: profile
                 .client_cert_path
                 .clone()
-                .expect("Profile B guarantees a client cert"),
+                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but client_cert_path is missing"))?,
             client_key_path: profile
                 .client_key_path
                 .clone()
-                .expect("Profile B guarantees a client key"),
+                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but client_key_path is missing"))?,
         };
         let (asink, _arx) = envctl_secrets::EventSink::channel();
         let handle = envctl_secretd::edge::authorizer::spawn_authorizer_link(
@@ -349,9 +350,9 @@ async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
             let _ = state.client_revocations_path.set(path);
         }
         if edge_cfg.enabled {
-            let bind_addr = edge_cfg
-                .bind_addr
-                .expect("EdgeSettings guarantees a bind_addr when enabled");
+            let bind_addr = edge_cfg.bind_addr.ok_or_else(|| {
+                anyhow::anyhow!("edge settings enabled but bind_addr is missing")
+            })?;
             let cfg = envctl_secretd::edge::EdgeConfig {
                 enabled: true,
                 bind_addr,
@@ -451,7 +452,11 @@ async fn build_engine(
         config::Backend::LibSql => {
             let url = cfg
                 .url
-                .expect("resolve() guarantees a URL for the libSQL backend");
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "libSQL backend selected but backend URL is missing (set [store].url in secretd.toml)"
+                    )
+                })?;
             tracing::info!(url = %url, "store backend = libSQL remote (durable)");
             let token = cfg.auth_token; // Zeroizing; moved into + dropped by the blocking task
             tokio::task::spawn_blocking(move || -> anyhow::Result<(Engine, ProfileBSeams)> {

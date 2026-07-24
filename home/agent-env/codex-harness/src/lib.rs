@@ -3223,7 +3223,7 @@ danger_full_access = "keep"
 
     #[test]
     fn ledger_hash_chain_roundtrip() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         fs::create_dir_all(dir.path().join("codex-harness/ledger")).unwrap();
@@ -3266,7 +3266,7 @@ danger_full_access = "keep"
 
     #[test]
     fn policy_delegates_exact_codex_full_access_frontdoor_to_live_permissions() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         let d = policy_decision(&[
@@ -3280,7 +3280,7 @@ danger_full_access = "keep"
 
     #[test]
     fn arbitrary_danger_text_does_not_bypass_normal_policy() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         let d = policy_decision(&[
@@ -3295,7 +3295,7 @@ danger_full_access = "keep"
 
     #[test]
     fn policy_denies_github_mutation_without_guard() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         let d = policy_decision(&["gh".into(), "pr".into(), "merge".into(), "1".into()]);
@@ -3342,7 +3342,7 @@ danger_full_access = "keep"
 
     #[test]
     fn redb_index_integrity_uses_jsonl_source() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         fs::create_dir_all(dir.path().join("codex-harness/ledger")).unwrap();
@@ -3407,7 +3407,7 @@ danger_full_access = "keep"
 
     #[test]
     fn codex_permission_profile_is_informational_not_a_duplicate_gate() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         write_full_policy(dir.path());
@@ -3432,7 +3432,7 @@ danger_full_access = "keep"
 
     #[test]
     fn missing_permission_profile_does_not_recreate_full_access_deadlock() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::remove_var("CODEX_PERMISSION_PROFILE");
@@ -3452,7 +3452,7 @@ danger_full_access = "keep"
 
     #[test]
     fn corrupt_session_capability_state_fails_closed() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::set_var("CODEX_THREAD_ID", "corrupt-session-state");
@@ -3477,7 +3477,7 @@ danger_full_access = "keep"
 
     #[test]
     fn session_toggle_narrows_optional_routing_without_claiming_os_authority() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::set_var("CODEX_THREAD_ID", "test-session-toggle");
@@ -3497,7 +3497,7 @@ danger_full_access = "keep"
 
     #[test]
     fn local_model_tasks_route_to_ollama() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::set_var("CODEX_PERMISSION_PROFILE", "harness-local-models");
@@ -3525,7 +3525,7 @@ danger_full_access = "keep"
 
     #[test]
     fn openai_task_classes_route_to_sol_terra_and_luna() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         write_full_policy(dir.path());
@@ -3551,7 +3551,7 @@ danger_full_access = "keep"
 
     #[test]
     fn explicit_provider_routing_precedes_sol_terra_luna_task_classes() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
 
@@ -3580,7 +3580,7 @@ danger_full_access = "keep"
 
     #[test]
     fn network_toggle_blocks_native_codex_routes_and_children() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::set_var("CODEX_THREAD_ID", "network-off-native-codex");
@@ -3604,7 +3604,7 @@ danger_full_access = "keep"
 
     #[test]
     fn network_toggle_blocks_remote_git_operations_and_push() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::set_var("CODEX_THREAD_ID", "network-off-git");
@@ -3638,7 +3638,7 @@ danger_full_access = "keep"
 
     #[test]
     fn github_guard_never_allows_force_push() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         write_full_policy(dir.path());
@@ -3673,7 +3673,7 @@ danger_full_access = "keep"
 
     #[test]
     fn github_guard_reuses_enabled_session_intent_without_extra_id_gate() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         env::set_var("CODEX_THREAD_ID", "github-default-decision");
@@ -3843,7 +3843,7 @@ danger_full_access = "keep"
 
     #[test]
     fn provider_contract_fingerprint_is_provider_specific_and_source_bound() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
         let harness = dir.path().join("codex-harness");

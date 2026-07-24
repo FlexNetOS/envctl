@@ -371,7 +371,12 @@ impl Store for LibSqlStore {
         // read-tail + insert so two concurrent appends can't seal the same `seq` from a stale tail
         // and drop a row. Each store call still routes through run_retry (reconnect-on-expiry); the
         // `SELECT 1` fsync_barrier confirms the server APPLIED the insert (durability is server-side).
-        let _guard = self.append_lock.lock().expect("append_lock poisoned");
+        // Recoverable fallback: a poisoned lock is still usable here (no shared mutable state
+        // beyond serialization, and the lock itself is only used to serialize sequence computation).
+        let _guard = self
+            .append_lock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let tail = self.last_audit()?;
         let sealed = audit::link_row(tail.as_ref(), rec.clone());
         let seq = sealed.seq;

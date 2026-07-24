@@ -128,7 +128,7 @@ def declared-output-table-row [
 }
 
 def table-registry [] {
-    let tables_root = "/home/flexnetos/FlexNetOS/var/lib/envctl/tables"
+    let tables_root = "/home/flexnetos/meta/var/lib/envctl/tables"
     let generated_this_task = [envctl_tables generated_file_guards table_persistence_parser]
     let scanned = (
         ls $tables_root
@@ -194,7 +194,7 @@ def generated-target-row [
 }
 
 def generated-file-guards [] {
-    let tables_root = "/home/flexnetos/FlexNetOS/var/lib/envctl/tables"
+    let tables_root = "/home/flexnetos/meta/var/lib/envctl/tables"
     let env_files = (open $"($tables_root)/env_files.csv")
     let runtime_targets = (
         open $"($tables_root)/bootstrap_generated_files.csv"
