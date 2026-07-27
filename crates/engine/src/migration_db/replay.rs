@@ -849,6 +849,7 @@ fn select_operations(
     let missing: Vec<_> = operation_ids
         .iter()
         .filter(|id| !found.contains(id.as_str()))
+        .map(String::as_str)
         .collect();
     if !missing.is_empty() {
         return Err(MigrationDbError::Validation(format!(
@@ -893,7 +894,7 @@ fn is_blocked_reference(raw_uri: &str) -> bool {
     let part_hit = normalized
         .split('/')
         .filter(|part| !part.is_empty())
-        .any(|part| REPLAY_BLOCKED_REF_PARTS.iter().any(|blocked| part == blocked));
+        .any(|part| REPLAY_BLOCKED_REF_PARTS.iter().any(|blocked| part == *blocked));
     let suffix_hit = REPLAY_BLOCKED_REF_SUFFIXES
         .iter()
         .any(|suffix| normalized.ends_with(suffix));
@@ -980,7 +981,7 @@ fn file_hash_check(uri: &str, expected: Option<&str>, base: &Path, verify_files:
     } else {
         None
     };
-    let status = match actual {
+    let status = match actual.as_deref() {
         Some(actual_hash) => {
             if actual_hash == expected_hash {
                 "match"
