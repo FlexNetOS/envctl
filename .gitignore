@@ -76,3 +76,10 @@ scripts/__pycache__/
 
 # GitNexus auto-regenerates these repo-root helper skills on every analyze — untracked.
 /.claude/skills/gitnexus/
+
+# GitKB runtime mutexes -- transient, never part of the tree
+.kb/store/refs/*.lock
+.kb/store/refs/workspace-doc-locks/
+
+# Python bytecode
+__pycache__/
