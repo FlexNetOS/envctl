@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+  "status": "passed",
+  "generated_at": "2026-07-27T21:33:29Z",
+  "commands": [
+    "rg -n \"enum ReplayRequestMode|run_replay|replay_request\" crates/engine/src/migration_db/replay.rs crates/cli/src/main.rs",
+    "rg -n \"envctl replay\" crates/cli/src/main.rs"
+  ],
+  "results": [
+    "envctl replay dry-run and apply subcommands are defined with deterministic/request fields",
+    "Replay mode command is wired through run_replay into MigrationDb::replay_request",
+    "Replay implementation verifies descriptor/recipe/contract/event-chain hashes and checkpoints plus evidence/artifact paths"
+  ],
+  "completion_gate": "Replay request, replay mode wiring, and replay request state checks are in source and consistent"
+}

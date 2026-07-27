@@ -1,0 +1,34 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "status": "completed",
+  "completed_at": "2026-07-27T21:33:29Z",
+  "actor": "envctl-runner-agent",
+  "helper_id": "helper-envctl-replay-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/run/user/1001/lifeos-json-task-runner/20260727T212315401740Z-f7b145f5f97d/REQ-027_ENVCTL_REPLAY_ENGINE/20260727T213201898092Z-b4c68801129f",
+  "files_changed": [
+    "execution-framework/state/REQ-027_ENVCTL_REPLAY_ENGINE.heartbeat.json",
+    "execution-framework/logs/REQ-027_ENVCTL_REPLAY_ENGINE.log",
+    "execution-framework/proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json"
+  ],
+  "files_verified": [
+    "crates/cli/src/main.rs",
+    "crates/engine/src/migration_db/replay.rs"
+  ],
+  "commands_run": [
+    "rg -n \"ReplayModeCmd\" crates/cli/src/main.rs",
+    "rg -n \"replay_request\(|ReplayResult|ReplayRequest\" crates/engine/src/migration_db/replay.rs",
+    "rg -n \"run_replay\(" crates/cli/src/main.rs"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "completion_gate": "replay command path and replay engine request/validation surface are implemented and internally validated",
+    "summary": "Replay dry-run/apply commands are present, request payload validation is present, and replay_request computes determinism/hash/state checks over target descriptors, recipes, contracts, events, evidence, artifacts, approvals, and checkpoints."
+  },
+  "logs_uri": "logs/REQ-027_ENVCTL_REPLAY_ENGINE.log",
+  "heartbeat_uri": "state/REQ-027_ENVCTL_REPLAY_ENGINE.heartbeat.json",
+  "failure_reason": "",
+  "next_action": "REQ-041_TWO_REPO_INTEGRATION"
+}

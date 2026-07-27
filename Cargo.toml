@@ -4,6 +4,7 @@ members = [
   "crates/agent-env",
   "crates/engine",
   "crates/cli",
+  "crates/commit-worker",
   "crates/gui",
   "crates/secrets-engine",
   "crates/secrets-proto",
@@ -101,6 +102,7 @@ argon2 = { version = "0.5", features = ["zeroize"] }
 hkdf = "0.12"
 # SHA-256 primitives used by the vault and agent-env identity paths.
 sha2 = "0.10"
+sha3 = "0.10"
 # GitHub App JWT RS256 signer. This is a young fork/backend line, so exact pins, the fail-closed
 # feature gate, the 2048..=8192 test matrix, and independent ring verification are compensating
 # controls. `rsa_heapless` is intentionally pinned to its fixed-width, no-alloc `modmath` backend:
