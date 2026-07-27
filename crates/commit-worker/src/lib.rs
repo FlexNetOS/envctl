@@ -13,7 +13,10 @@
 
 use postgres::{Client, NoTls};
 use serde::Serialize;
-use sha2::{Digest, Sha256};
+use sha3::{
+    digest::{ExtendableOutput, Update, XofReader},
+    Shake256,
+};
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::path::Path;
@@ -32,6 +35,10 @@ pub const COMMITTER_ROLE: &str = "lifeos_envctl";
 pub const OWNER_PROTOCOL_VERSION: &str = "flexnetos.redb-owner.v0";
 /// Version stamped on the return projection keys.
 pub const RETURN_PROJECTION_VERSION: &str = "envctl.return-projection.v0";
+/// Blueprint-mandated domain separator for canonical witness records.
+const WITNESS_DOMAIN: &[u8] = b"lifeos-witness-v1";
+/// SHAKE256 witness size in bytes, matching the canonical PostgreSQL schema.
+const WITNESS_BYTES: usize = 32;
 
 #[derive(Debug)]
 pub struct CommitError(String);
@@ -101,13 +108,28 @@ fn connect(conn: &str) -> Result<Client, CommitError> {
     })
 }
 
+fn absorb_framed(hasher: &mut Shake256, value: &[u8]) {
+    hasher.update(&(value.len() as u64).to_be_bytes());
+    hasher.update(value);
+}
+
 fn witness_link(previous: &str, seq: i64, blob_sha256: &str, job_json: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(previous.as_bytes());
-    hasher.update(seq.to_be_bytes());
-    hasher.update(blob_sha256.as_bytes());
-    hasher.update(job_json.as_bytes());
-    format!("{:x}", hasher.finalize())
+    let mut hasher = Shake256::default();
+    absorb_framed(&mut hasher, WITNESS_DOMAIN);
+    absorb_framed(&mut hasher, previous.as_bytes());
+    absorb_framed(&mut hasher, &seq.to_be_bytes());
+    absorb_framed(&mut hasher, blob_sha256.as_bytes());
+    absorb_framed(&mut hasher, job_json.as_bytes());
+
+    let mut output = [0_u8; WITNESS_BYTES];
+    hasher.finalize_xof().read(&mut output);
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut witness = String::with_capacity(WITNESS_BYTES * 2);
+    for byte in output {
+        witness.push(HEX[usize::from(byte >> 4)] as char);
+        witness.push(HEX[usize::from(byte & 0x0f)] as char);
+    }
+    witness
 }
 
 /// Apply the envctl-exclusive role and grant policy: the authoritative
@@ -404,4 +426,31 @@ pub fn return_projection(
         }
     }
     Ok(pairs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::witness_link;
+
+    #[test]
+    fn shake256_witness_matches_independent_known_vector() {
+        let witness = witness_link(
+            "",
+            42,
+            "abababababababababababababababababababababababababababababababab",
+            r#"{"model_name":"m","seq":42}"#,
+        );
+        assert_eq!(
+            witness,
+            "89391fba07cf80ee211febfbbdb6f8ae6f268a34a5c4690defa59ecc4a9ea252"
+        );
+    }
+
+    #[test]
+    fn witness_framing_prevents_field_boundary_ambiguity() {
+        assert_ne!(
+            witness_link("a", 1, "bc", "d"),
+            witness_link("ab", 1, "c", "d")
+        );
+    }
 }

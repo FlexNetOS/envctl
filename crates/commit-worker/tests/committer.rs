@@ -144,7 +144,11 @@ fn drain_is_ordered_idempotent_and_restart_safe_with_exact_identity() {
         assert!(!record.commit_txid.is_empty(), "txid missing on {}", record.seq);
         assert!(!record.commit_lsn.is_empty(), "lsn missing on {}", record.seq);
         assert!(record.generation >= 1);
-        assert_eq!(record.witness.len(), 64, "witness must be a sha256 digest");
+        assert_eq!(
+            record.witness.len(),
+            64,
+            "witness must be a 32-byte SHAKE256 digest"
+        );
     }
     // Rows in one batch share a transaction; batches differ.
     assert_eq!(records[0].commit_txid, records[1].commit_txid);
