@@ -1,5 +1,0 @@
-{
-  "commit": {"author":"drdave <flexnetos@de-flex.net>","changes":[{"change_type":"modified","content_hash":"9685f1e3f3c30ef7a44aedc5456411ba5f9e8471597c0501767e4bc98d4e8b89","doc_type":"task","document_id":"019f2588-5a5e-7420-b390-22040e0af7fd","new_version":2,"previous_commit_id":"019f2589-0827-7fa2-9674-f6b02f4f26cb","previous_hash":"9685f1e3f3c30ef7a44aedc5456411ba5f9e8471597c0501767e4bc98d4e8b89","previous_version":1,"slug":"tasks/catalog-runtime-closure-and-toolchain-proof","title":"Close Catalog Runtime and Toolchain Proof Gaps"}],"created_at":"2026-07-03T02:10:40.883839830Z","id":"019f25be-1090-7090-a9dc-8b5c6bb10b64","message":"Update task: refresh catalog runtime proof status"},
-  "content_hash": "8e572eb846293a05622b244cb93d20c49252ead8e6eac46f735640a6ce6334e8",
-  "hash_version": 3
-}

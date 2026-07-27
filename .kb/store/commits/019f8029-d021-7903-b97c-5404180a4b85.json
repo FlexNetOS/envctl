@@ -1,5 +1,0 @@
-{
-  "commit": {"author":"drdave <flexnetos@de-flex.net>","changes":[{"change_type":"created","content_hash":"b52646f03e8c690fb1e4c077a09f1e4f2d08ce86c6fd57bf4e7cea89cd08824d","doc_type":"incident","document_id":"019f8029-cffc-70c0-bfbe-e38ec4778467","new_version":1,"previous_version":null,"slug":"incidents/envctl-hook-profile-cleanup-20260720","title":"Envctl hook cleanup blocked by legacy Yazelix profile"}],"created_at":"2026-07-20T15:34:11.739689592Z","id":"019f8029-d021-7903-b97c-5404180a4b85","message":"Record Envctl hook and profile cleanup incident"},
-  "content_hash": "c70bfc47e356f98acf457e662ca1834d2db3c1117a4347d717ea39772fc2ba72",
-  "hash_version": 3
-}

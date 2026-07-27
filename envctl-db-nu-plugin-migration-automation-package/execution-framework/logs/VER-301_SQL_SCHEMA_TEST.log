@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "VER-301_SQL_SCHEMA_TEST",
   "status": "pass",
-  "generated_at": "2026-07-27T19:27:32+00:00",
+  "generated_at": "2026-07-27T22:21:08+00:00",
   "packet_summary": {
     "goal": "Apply schema migrations to test DB and validate views/indexes/seed data",
     "repo_target": "repo_a",
@@ -124,9 +124,9 @@
   ],
   "sha256": {
     "proof_records/VER-300_UNIT_VALIDATION.proof.json": "sha256:9809ca14ae7af78e4d6229ad2cf71825739242eb42b62cd862c47cb3bad64054",
-    "generated/envctl_migration_db_validation_report.json": "sha256:362c6ac57138953b41789ffe889e66649f3a3415d5da374b80d4285e58b76934",
-    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "sha256:24aeb7eb9d6fe5a24b06d90c8b05570c8bb6236243f3db399838a10ba12c3460",
-    "generated/envctl_migration_db_model.json": "sha256:00dab1062dbc85db54117f5174549b36fb6e766aa1261da4482a0b1e822476f6",
-    "docs/ENVCTL_DB_SCHEMA.md": "sha256:4bd54c959280fae09367421621378096bdc4179d6c865131d025ec7c66dec7e2"
+    "generated/envctl_migration_db_validation_report.json": "sha256:da207f26f2d2786ab471085749feaa7dccbaeb474ebc1b6cedbd7686a1fd20b5",
+    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "sha256:004f04405ae68a3e376428783824d788d5e69a04c24ff7651946f83a8ffa0a76",
+    "generated/envctl_migration_db_model.json": "sha256:617d978971fd8ad850d7da297f6f698e9624471908630a50009723eebea3e8f7",
+    "docs/ENVCTL_DB_SCHEMA.md": "sha256:7563f097fcc6f29c04993f480a7a3784934a714a48064b16ac7ddd111ad7c8da"
   }
 }

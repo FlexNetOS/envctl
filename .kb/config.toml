@@ -1,6 +1,11 @@
 [identity]
 
-[sync.remotes]
+[sync.remotes.origin]
+url = "http://127.0.0.1:8479"
+
+[slug_authority]
+default_reservation = "local"
+families = []
 
 [apps]
 enabled = []
@@ -11,6 +16,10 @@ index_threads = 0
 default_branch = "master"
 
 [code.repo_default_branch_map]
+
+[daemon.worktrees]
+reconcile_budget = 1
+refresh_backstop_secs = 10
 
 [embeddings]
 enabled = false

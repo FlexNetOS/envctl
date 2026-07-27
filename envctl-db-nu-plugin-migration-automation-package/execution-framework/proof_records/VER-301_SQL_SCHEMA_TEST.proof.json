@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "VER-301_SQL_SCHEMA_TEST",
   "status": "completed",
-  "started_at": "2026-07-27T19:27:32+00:00",
-  "completed_at": "2026-07-27T19:27:32+00:00",
+  "started_at": "2026-07-27T22:21:08+00:00",
+  "completed_at": "2026-07-27T22:21:08+00:00",
   "actor": "sql-test-agent",
   "helper_id": "helper-sql-test-01",
   "model_tag": "gpt-5.3-spark",
@@ -25,7 +25,7 @@
     "schema_version": "1.0",
     "task_id": "VER-301_SQL_SCHEMA_TEST",
     "status": "pass",
-    "generated_at": "2026-07-27T19:27:32+00:00",
+    "generated_at": "2026-07-27T22:21:08+00:00",
     "packet_summary": {
       "goal": "Apply schema migrations to test DB and validate views/indexes/seed data",
       "repo_target": "repo_a",
@@ -147,10 +147,10 @@
     ],
     "sha256": {
       "proof_records/VER-300_UNIT_VALIDATION.proof.json": "sha256:9809ca14ae7af78e4d6229ad2cf71825739242eb42b62cd862c47cb3bad64054",
-      "generated/envctl_migration_db_validation_report.json": "sha256:362c6ac57138953b41789ffe889e66649f3a3415d5da374b80d4285e58b76934",
-      "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "sha256:24aeb7eb9d6fe5a24b06d90c8b05570c8bb6236243f3db399838a10ba12c3460",
-      "generated/envctl_migration_db_model.json": "sha256:00dab1062dbc85db54117f5174549b36fb6e766aa1261da4482a0b1e822476f6",
-      "docs/ENVCTL_DB_SCHEMA.md": "sha256:4bd54c959280fae09367421621378096bdc4179d6c865131d025ec7c66dec7e2"
+      "generated/envctl_migration_db_validation_report.json": "sha256:da207f26f2d2786ab471085749feaa7dccbaeb474ebc1b6cedbd7686a1fd20b5",
+      "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "sha256:004f04405ae68a3e376428783824d788d5e69a04c24ff7651946f83a8ffa0a76",
+      "generated/envctl_migration_db_model.json": "sha256:617d978971fd8ad850d7da297f6f698e9624471908630a50009723eebea3e8f7",
+      "docs/ENVCTL_DB_SCHEMA.md": "sha256:7563f097fcc6f29c04993f480a7a3784934a714a48064b16ac7ddd111ad7c8da"
     },
     "secret_scan": {
       "paths": [
@@ -163,11 +163,11 @@
   },
   "checksums": {
     "execution-framework/scripts/verify_ver301_sql_schema_test.py": "176376071c873ab7a453d9ccf19a8ee1e97f8a96457cbd0724ef445932edb402",
-    "execution-framework/generated/ver301_sql_schema_test_report.json": "8ec3e8d307adfeff5f3d540cc1add62c6d226e451cae73f8f4567deabcf63970",
-    "execution-framework/state/VER-301_SQL_SCHEMA_TEST.heartbeat.json": "8dde3f79237eb51edb84f958b01213c866f161d9ffb154d6e4de5a016a48d113",
-    "execution-framework/logs/VER-301_SQL_SCHEMA_TEST.log": "8ec3e8d307adfeff5f3d540cc1add62c6d226e451cae73f8f4567deabcf63970",
-    "execution-framework/proof_records/VER-301_SQL_SCHEMA_TEST.proof.json": "0b04d55ac3c03d4ac5a5a102004bfe9224583a5e46b96ba552729a4a92e619ca",
-    "execution-framework/proof_records/proof_ledger.jsonl": "b6b5f189bfa918f29d71443d24360fdac8c9df4a294f3c116b6973ae37767173"
+    "execution-framework/generated/ver301_sql_schema_test_report.json": "f0ff1decb3a224a92efb2fbb5ea7761d06f448b22ed9f04f532b473dfd375b34",
+    "execution-framework/state/VER-301_SQL_SCHEMA_TEST.heartbeat.json": "f5c541b534c020661cb1a440af3223467cf83d531ddbbcf5aa8414839b76b45a",
+    "execution-framework/logs/VER-301_SQL_SCHEMA_TEST.log": "f0ff1decb3a224a92efb2fbb5ea7761d06f448b22ed9f04f532b473dfd375b34",
+    "execution-framework/proof_records/VER-301_SQL_SCHEMA_TEST.proof.json": "d949a8802ca901318e6b4d950fa6a3448944d4b00675922da0f470544f318cc2",
+    "execution-framework/proof_records/proof_ledger.jsonl": "07393ffb9e75969dd5a4d3ec29e3d89fd81c23ac56c688140000887cb98f3861"
   },
   "logs_uri": "logs/VER-301_SQL_SCHEMA_TEST.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

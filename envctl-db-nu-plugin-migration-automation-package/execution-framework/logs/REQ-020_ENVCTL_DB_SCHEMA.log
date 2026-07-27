@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
   "status": "passed",
-  "generated_at": "2026-07-27T19:27:32+00:00",
+  "generated_at": "2026-07-27T22:21:08+00:00",
   "summary": {
     "required_table_count": 16,
     "actual_table_count": 16,

@@ -1,5 +1,0 @@
-{
-  "commit": {"author":"drdave <revenaugh.david@gmail.com>","changes":[{"change_type":"created","content_hash":"4ceafc457b7026e5a95faff8dc10e904c56bc24e9e949c12a6ec883ee0788ba4","doc_type":"reference","document_id":"019f007d-bec7-76e3-9dec-63aae2a24022","new_version":1,"previous_version":null,"slug":"reference/meta-kb-policy","title":"Meta KB policy (inherited)"},{"change_type":"created","content_hash":"0787b0cfddf829577b4d7ca36be60ae4b9cc6cf7e3421ee97c3e97950bfef3d1","doc_type":"reference","document_id":"019f007d-bed9-7373-86e7-34a622a7849d","new_version":1,"previous_version":null,"slug":"reference/meta-org-policy","title":"Meta org policy — envctl Tier-B obligations (inherited)"}],"created_at":"2026-06-25T20:34:28.733249954Z","id":"019f007d-bf0e-75a0-9b05-de909bdc9694","message":"Vendor inherited meta policy as durable reference docs (kb-policy, org-policy)"},
-  "content_hash": "236714fcd80a04fb84e0c6f23bda88bef35eced7ae84cfaf4161f34d527b9f4a",
-  "hash_version": 3
-}
