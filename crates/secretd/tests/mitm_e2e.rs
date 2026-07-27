@@ -56,8 +56,14 @@ impl Upstream for RecordingUpstream {
         req: EgressReq,
         real_key: &Zeroizing<Vec<u8>>,
     ) -> Result<EgressResp, UpstreamError> {
-        *self.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
-        *self.seen_headers.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = req.headers.clone();
+        *self
+            .seen_key
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
+        *self
+            .seen_headers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = req.headers.clone();
         // Stream the known body back to the proxy exactly as a real upstream's pump would.
         envctl_secretd::proxy::__test_pump_response_body(hyper::body::Bytes::from_static(
             UPSTREAM_BODY,
@@ -296,18 +302,28 @@ async fn mitm_terminates_tls_and_swaps_through_relay() {
     //    inbound auth header from the FORWARDED request is `DaemonUpstream::send`'s job, exercised by
     //    the plain-ingress swap test; the recording upstream here only inspects the swap's key.)
     assert_eq!(
-        rec.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
+        rec.seen_key
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_deref(),
         Some(SENTINEL),
         "the upstream must receive the REAL key (the swap happened)"
     );
     assert_ne!(
-        rec.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
+        rec.seen_key
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_deref(),
         Some(raw_bearer.as_bytes()),
         "the upstream must NOT receive the bearer as the key"
     );
     // The child carried ONLY the bearer in its auth header — confirm the ingress snapshot saw exactly
     // that bearer (and the engine swapped it for the real key before send).
-    let headers = rec.seen_headers.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    let headers = rec
+        .seen_headers
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
     let header_blob = headers
         .iter()
         .map(|(k, v)| format!("{k}: {v}"))

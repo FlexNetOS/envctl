@@ -1,0 +1,17 @@
+REQ-053_SYMBOL_INDEX verification
+2026-07-27T12:31:20Z
+
+PASS cargo test -p envctl-engine db_symbols
+     4 passed; 0 failed; 347 filtered out
+PASS cargo check -p envctl-engine
+PASS rustfmt --edition 2021 --check crates/engine/src/db_symbols.rs
+PASS git diff --check -- crates/engine/src/db_symbols.rs
+
+BLOCKED cargo run -q -p envctl -- db symbols --help
+        crates/engine/src/db_watch.rs:140:34 E0408
+        `_event` is not bound in all OR-pattern alternatives.
+        This file is outside REQ-053's target and was not modified.
+
+Implemented exact whole-file byte_start/byte_end values for env-var occurrence
+and symbol rows, including CRLF input and UTF-8 text before a match. Added a
+regression test asserting each stored span slices back to match_text.

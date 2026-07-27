@@ -124,7 +124,7 @@ async fn drain(mut s: Streaming<v1::Event>, buf: &Arc<Mutex<Vec<u8>>>) -> Vec<v1
     while let Some(ev) = s.message().await.expect("stream message") {
         // Capture every byte the client receives from the event stream (wire-secrecy assertion).
         buf.lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .extend_from_slice(format!("{ev:?}").as_bytes());
         out.push(ev);
     }
@@ -249,7 +249,9 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
             .await
             .expect("get meta")
             .into_inner();
-        wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner).extend_from_slice(&r.value);
+        wire.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend_from_slice(&r.value);
         assert!(!r.revealed, "metadata-only get must not reveal");
         assert!(
             r.value.is_empty(),
@@ -279,7 +281,9 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
             .await
             .expect("reveal normal")
             .into_inner();
-        wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner).extend_from_slice(&r.value);
+        wire.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend_from_slice(&r.value);
         assert!(r.revealed, "owner reveal of a normal secret must succeed");
         assert_eq!(r.value, b"normal-value", "revealed value must round-trip");
     }
@@ -303,7 +307,7 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
         );
         // The refusal carries no key material, but capture the status text into the wire buffer too.
         wire.lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .extend_from_slice(err.message().as_bytes());
     }
 
@@ -321,7 +325,7 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
             .expect_err("dry-run reveal MUST be refused by the engine");
         assert_eq!(err.code(), tonic::Code::PermissionDenied);
         wire.lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .extend_from_slice(err.message().as_bytes());
     }
 
@@ -344,9 +348,11 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
             .await
             .expect("mint")
             .into_inner();
-        wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner).extend_from_slice(r.bearer.as_bytes());
         wire.lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .extend_from_slice(r.bearer.as_bytes());
+        wire.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .extend_from_slice(r.token_id.as_bytes());
         assert!(!r.bearer.is_empty(), "minted bearer must be non-empty");
         assert!(
@@ -456,8 +462,12 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
         assert!(!r.entries.is_empty(), "audit log must have rows");
         // Capture every audit byte for the wire-secrecy assertion below.
         for e in &r.entries {
-            wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner).extend_from_slice(e.detail.as_bytes());
-            wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner).extend_from_slice(e.action.as_bytes());
+            wire.lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .extend_from_slice(e.detail.as_bytes());
+            wire.lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .extend_from_slice(e.action.as_bytes());
         }
         assert!(
             r.entries
@@ -470,7 +480,10 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
     // 5. THE LOAD-BEARING ASSERTION: the broker_only plaintext sentinel never appeared in ANY byte
     //    the client received (reveal was refused, so its bytes never left the daemon), and the
     //    minted bearer is a random authenticator, not the key.
-    let received = wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    let received = wire
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
     assert!(
         !contains(&received, SENTINEL),
         "broker_only plaintext sentinel leaked onto the wire!"

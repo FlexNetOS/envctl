@@ -1,0 +1,18 @@
+REQ-060_NOC_GATES_TESTS verification summary
+completed_at=2026-07-27T13:03:15Z
+
+PASS cargo fmt --check
+PASS cargo test --workspace
+  1269 passed; 0 failed; 9 ignored; 51 suites; 557.86s
+PASS bash ci/gates/no-c.sh
+  GitHub RS256 graph clean: rsa_heapless=0.4.1[modmath]
+  Store crate ships remote-only; embedded C-SQLite remains an unbuilt placeholder
+  rustls=['0.23.40'] on ring=['0.17.14']
+  zero aws-lc/openssl/C-SQLite
+  NO-C GATE PASS
+
+REPAIRS REQUIRED BY THE AUTHORITATIVE RUN
+  Applied workspace rustfmt output.
+  Corrected stale EngineInner references and shared the poison-tolerant test mutex helper.
+  Corrected catalog test fixture bindings.
+  Isolated the db scaffold's empty index fixture and updated its implemented roots-query expectation.

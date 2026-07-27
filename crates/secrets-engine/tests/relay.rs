@@ -39,16 +39,25 @@ impl FakeClock {
         FakeClock(Arc::new(Mutex::new(ms)))
     }
     fn set(&self, ms: i64) {
-        *self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = ms;
+        *self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = ms;
     }
 }
 impl Clock for FakeClock {
     fn now(&self) -> chrono::DateTime<chrono::Utc> {
-        let ms = *self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let ms = *self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         chrono::DateTime::<chrono::Utc>::from_timestamp_millis(ms).expect("valid epoch ms")
     }
     fn boottime_ms(&self) -> i64 {
-        *self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        *self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 }
 
@@ -61,11 +70,19 @@ struct SplitClock {
 }
 impl Clock for SplitClock {
     fn now(&self) -> chrono::DateTime<chrono::Utc> {
-        chrono::DateTime::<chrono::Utc>::from_timestamp_millis(*self.wall.lock().unwrap_or_else(std::sync::PoisonError::into_inner))
-            .expect("valid epoch ms")
+        chrono::DateTime::<chrono::Utc>::from_timestamp_millis(
+            *self
+                .wall
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        )
+        .expect("valid epoch ms")
     }
     fn boottime_ms(&self) -> i64 {
-        *self.boot.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        *self
+            .boot
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 }
 
@@ -105,7 +122,10 @@ impl Upstream for CapturingUpstream {
         _req: EgressReq,
         real_key: &Zeroizing<Vec<u8>>,
     ) -> Result<EgressResp, UpstreamError> {
-        *self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
+        *self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
         Ok(EgressResp {
             status: 200,
             headers: Vec::new(),
@@ -596,7 +616,10 @@ fn relay_swap_allow_delivers_real_key_only_to_upstream() {
 
     // The real key reached Upstream::send EXACTLY.
     assert_eq!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_deref(),
         Some(REAL),
         "the real key must reach Upstream::send"
     );
@@ -716,7 +739,10 @@ fn relay_mint_remote_binds_client_and_cross_kind_denied_locally() {
         ),
     }
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "the real key must NOT be fetched for a cross-kind deny"
     );
 }
@@ -786,7 +812,10 @@ fn relay_swap_remote_unverified_dpop_denied_no_dpop() {
         ),
     }
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "the real key must NOT be fetched for an unverified-DPoP remote deny"
     );
 }
@@ -873,7 +902,10 @@ fn relay_swap_deny_never_reaches_upstream() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "send must NEVER be awaited on a Deny: captured key slot stays None"
     );
     let ev = drain(&rx);
@@ -943,7 +975,10 @@ fn relay_swap_forged_bearer_is_unknown() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "forged bearer must not reach the upstream"
     );
 
@@ -953,7 +988,11 @@ fn relay_swap_forged_bearer_is_unknown() {
         outcome2,
         SwapOutcome::Denied(DenyReason::UnknownBearer)
     ));
-    assert!(cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none());
+    assert!(cap
+        .0
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .is_none());
 }
 
 /// Advancing the clock past `expires_at` yields BearerExpired; the upstream is never reached.
@@ -1004,7 +1043,10 @@ fn relay_swap_expired_bearer_is_denied() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "expired bearer must not reach the upstream"
     );
 }
@@ -1076,7 +1118,10 @@ fn relay_swap_revoked_bearer_is_denied() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "revoked bearer must not reach the upstream"
     );
 }
@@ -1146,7 +1191,10 @@ fn relay_revoke_whole_relay_fails_closed() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "a revoked relay must not reach the upstream"
     );
 }
@@ -1197,7 +1245,11 @@ fn relay_swap_peer_mismatch_is_denied() {
         "expected PeerMismatch, got {:?}",
         outcome_kind(&outcome)
     );
-    assert!(cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none());
+    assert!(cap
+        .0
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .is_none());
 }
 
 /// A swap against a LOCKED vault is `InternalRefused` (never a send), so an internal error can't
@@ -1248,7 +1300,10 @@ fn relay_swap_locked_vault_is_internal_refused() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "a locked vault must not reach the upstream"
     );
 }
@@ -1351,7 +1406,10 @@ fn relay_swap_tampered_unrevoke_is_unknown_bearer() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "tampered bearer must not reach the upstream"
     );
 }
@@ -1375,7 +1433,10 @@ fn relay_swap_tampered_expiry_is_unknown_bearer() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "tampered bearer must not reach the upstream"
     );
 }
@@ -1398,7 +1459,10 @@ fn relay_swap_tampered_peer_binding_is_unknown_bearer() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "tampered bearer must not reach the upstream"
     );
 }
@@ -1461,8 +1525,12 @@ fn relay_swap_wall_rollback_within_window_is_denied_by_boottime() {
     let _ = drain(&rx);
 
     // Monotonic time advances 30 min (within the 1h TTL); wall clock is rewound back to T0.
-    *boot.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = 30 * 60 * 1000;
-    *wall.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = T0; // unchanged wall, but mint saw wall=T0 too => wall delta 0
+    *boot
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = 30 * 60 * 1000;
+    *wall
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = T0; // unchanged wall, but mint saw wall=T0 too => wall delta 0
     let outcome = block_on(eng.relay_swap(&bearer.raw, &post_req(Some(1000)), &sink));
     assert!(
         matches!(outcome, SwapOutcome::Denied(DenyReason::ClockRollback)),
@@ -1470,7 +1538,10 @@ fn relay_swap_wall_rollback_within_window_is_denied_by_boottime() {
         outcome_kind(&outcome)
     );
     assert!(
-        cap.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none(),
+        cap.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none(),
         "a rolled-back clock must not reach the upstream"
     );
 }

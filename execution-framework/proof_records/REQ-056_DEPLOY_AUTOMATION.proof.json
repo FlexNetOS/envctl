@@ -1,0 +1,40 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-056_DEPLOY_AUTOMATION",
+  "parent_id": "GH-414",
+  "status": "completed",
+  "completed_at": "2026-07-27T12:46:49Z",
+  "actor": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-056_deploy_automation",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/meta/src/envctl",
+  "branch": "codex/profile-xdg-owner-20260721",
+  "head_commit": "dbcc8374a9502773670ba6cb40f6cdb08c337750",
+  "files_verified": [
+    "crates/engine/src/db_deploy.rs",
+    "crates/cli/src/main.rs"
+  ],
+  "commands_run": [
+    "cargo test -p envctl-engine db_deploy",
+    "cargo test -p envctl --test db_docs_contract",
+    "cargo check -p envctl",
+    "cargo clippy -p envctl-engine --lib -- -D warnings",
+    "rustfmt --edition 2021 --check crates/engine/src/db_deploy.rs crates/cli/src/main.rs",
+    "git diff --check -- crates/engine/src/db_deploy.rs crates/cli/src/main.rs"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "tests": "db_deploy: 4 passed; db_docs_contract: 2 passed",
+    "completion_gate": "deploy --plan previews; --apply never overwrites an executing script without staged atomic promotion",
+    "summary": "Deploy planning classifies ready, queued, and refused targets without writing. Gated apply rechecks process liveness immediately before every promotion, skips a target that started executing after planning, and uses the shared backup/temp-fsync/atomic-rename/reread/hash verification primitive.",
+    "workspace_note": "The checkout contained pre-existing concurrent changes, including changes in crates/cli/src/main.rs; they were preserved. Workspace-wide cargo fmt --check reports unrelated pre-existing formatting drift, while targeted rustfmt checks pass."
+  },
+  "checksums": {
+    "crates/engine/src/db_deploy.rs": "b9b96432e3e138c8e351051b8807a80172c821da594a8a08b3892dc4848551e9",
+    "crates/cli/src/main.rs": "c8e3d66474927a400cf26824458066e9a932b8dc296458c55f66ad976c010dc6"
+  },
+  "logs_uri": "execution-framework/logs/REQ-056_DEPLOY_AUTOMATION.log",
+  "heartbeat_uri": "execution-framework/heartbeats/REQ-056_DEPLOY_AUTOMATION.heartbeat",
+  "failure_reason": "",
+  "next_action": "GH-414 dependents may consume the safe envctl db deploy plan/apply surface."
+}

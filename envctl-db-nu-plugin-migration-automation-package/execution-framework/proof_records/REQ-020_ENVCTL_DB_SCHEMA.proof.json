@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
   "status": "completed",
-  "started_at": "2026-07-05T05:51:29+00:00",
-  "completed_at": "2026-07-05T05:51:29+00:00",
+  "started_at": "2026-07-27T19:27:32+00:00",
+  "completed_at": "2026-07-27T19:27:32+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-envctl-db-01",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/verify_envctl_db_schema.py",
     "execution-framework/generated/envctl_migration_db_model.json",
@@ -24,7 +24,7 @@
     "schema_version": "1.0",
     "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
     "status": "passed",
-    "generated_at": "2026-07-05T05:51:29+00:00",
+    "generated_at": "2026-07-27T19:27:32+00:00",
     "summary": {
       "required_table_count": 16,
       "actual_table_count": 16,
@@ -43,12 +43,12 @@
   },
   "checksums": {
     "execution-framework/scripts/verify_envctl_db_schema.py": "68828eca9d152b4033e0fb5969c0c011886b73d688616a9f30b7de351a14fe00",
-    "execution-framework/generated/envctl_migration_db_model.json": "428bdb55eb14f34f5d0e5ddc360ea1deb4d441b2713c2a91335f09e358abd456",
-    "execution-framework/generated/envctl_migration_db_validation_report.json": "1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
-    "execution-framework/docs/ENVCTL_DB_SCHEMA.md": "5688a8b9d3f3a2955b15a92d362ca8f74dd9e0a65a370008fd19d2b746e9b112",
-    "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log": "1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
-    "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "99c881f1199484b312bc3487d8b023b1725d427be7fa47f62474c1f80ec72bd5",
-    "execution-framework/proof_records/proof_ledger.jsonl": "c3547d389e67447938b5851d5d69af5556091303080c17137d29ddb50f8aacb9"
+    "execution-framework/generated/envctl_migration_db_model.json": "00dab1062dbc85db54117f5174549b36fb6e766aa1261da4482a0b1e822476f6",
+    "execution-framework/generated/envctl_migration_db_validation_report.json": "362c6ac57138953b41789ffe889e66649f3a3415d5da374b80d4285e58b76934",
+    "execution-framework/docs/ENVCTL_DB_SCHEMA.md": "4bd54c959280fae09367421621378096bdc4179d6c865131d025ec7c66dec7e2",
+    "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log": "362c6ac57138953b41789ffe889e66649f3a3415d5da374b80d4285e58b76934",
+    "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "511472c8fcb71cf31e489e98f99062bc2169e87790c9e028db111c4bf543e2d6",
+    "execution-framework/proof_records/proof_ledger.jsonl": "31d7d5b4a46776cfdfd1d1fbf9f048ee6a5017f189051a339e56a2cf9afe2c96"
   },
   "logs_uri": "logs/REQ-020_ENVCTL_DB_SCHEMA.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

@@ -228,7 +228,9 @@ impl Db {
             root_id: "root-lifeos".into(),
             kind: EnvRootKind::LifeOsRoot,
             role: EnvRootRole::ReleaseTarget,
-            var_names: vec![EnvRootKind::LifeOsRoot.canonical_var().to_string()],
+            // Canonical spelling first so generators never emit the legacy
+            // alias, while catalog/query consumers can resolve either name.
+            var_names: vec!["LIFE_OS_ROOT".into(), "LIFEOS_ROOT".into()],
             absolute_path: release,
             token_forms: token_forms("LIFE_OS_ROOT"),
             source: "release-profile".into(),
@@ -274,12 +276,20 @@ mod tests {
         assert_eq!(db.roots()[0].kind, EnvRootKind::MetaRoot);
 
         // Index seams return empty, well-formed values (not panics).
-        let files = db_index::FileIndex::scan(&db_index::ScanScope::default()).unwrap();
+        let empty_root =
+            std::env::temp_dir().join(format!("envctl-db-empty-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&empty_root);
+        let files = db_index::FileIndex::scan(&db_index::ScanScope {
+            root: empty_root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
         let symbols = db_symbols::SymbolIndex::build(&files).unwrap();
         assert!(files.files().is_empty());
         assert!(symbols.symbols().is_empty());
 
-        // Query seam returns an empty, well-formed result.
+        // The roots query always returns the observed and release-target model rows,
+        // even when neither path is currently resolved from the environment.
         let q = db_query::QuerySpec {
             table: Some(db_query::QueryTable::Roots),
             filters: vec![],
@@ -288,7 +298,7 @@ mod tests {
             explain: true,
         };
         let res = db_query::evaluate(&q, &files, &symbols).unwrap();
-        assert_eq!(res.row_count, 0);
+        assert_eq!(res.row_count, 2);
 
         // Mutating seams default to the fail-closed Plan mode.
         let rplan = db_refactor::plan(
@@ -334,6 +344,10 @@ mod tests {
         let lifeos = db.root_by_var("LIFE_OS_ROOT").expect("lifeos root");
         assert_eq!(lifeos.role, EnvRootRole::ReleaseTarget);
         assert_eq!(lifeos.target_profile.as_deref(), Some("lifeos-release"));
+        assert_eq!(
+            lifeos.var_names,
+            vec!["LIFE_OS_ROOT".to_string(), "LIFEOS_ROOT".to_string()]
+        );
 
         // Alias-aware: LIFEOS_ROOT resolves to the same LifeOsRoot row.
         assert_eq!(
@@ -363,10 +377,13 @@ mod tests {
 #[cfg(test)]
 mod json_contract {
     use super::*;
-    use crate::db_deploy::DeployDisposition;
+    use crate::db_deploy::{DeployDisposition, DeployPlan, DeployStep};
     use crate::db_query::{QueryPreset, QueryResult};
-    use crate::db_refactor::ApplyMode;
-    use crate::db_symbols::{ReplacePolicy, SymbolConfidence};
+    use crate::db_refactor::{ApplyMode, RefactorChange, RefactorPlan};
+    use crate::db_symbols::{
+        DbOccurrenceRow, DbSymbolKind, DbSymbolRow, ImpactFile, ImpactReport, ReplacePolicy,
+        SymbolConfidence,
+    };
 
     fn keys_sorted(v: &serde_json::Value) -> Vec<String> {
         let mut k: Vec<String> = v.as_object().unwrap().keys().cloned().collect();
@@ -463,5 +480,194 @@ mod json_contract {
         // Round-trips losslessly — the agent contract is stable both ways.
         let back: QueryResult = serde_json::from_value(v).unwrap();
         assert_eq!(back.row_count, 1);
+    }
+
+    #[test]
+    fn symbol_and_impact_json_shapes_are_stable() {
+        let symbol = DbSymbolRow {
+            symbol_id: "sym:env_var:META_ROOT".into(),
+            kind: DbSymbolKind::EnvVar,
+            name: "META_ROOT".into(),
+            normalized_name: "META_ROOT".into(),
+            file_id: "file:wrapper.sh".into(),
+            absolute_path: "/repo/wrapper.sh".into(),
+            line_start: 1,
+            line_end: 1,
+            byte_start: 3,
+            byte_end: 13,
+            value: None,
+            scope: None,
+            owner_component: Some("envctl".into()),
+            target_profile: None,
+            confidence: SymbolConfidence::Parsed,
+            mutable_policy: MutablePolicy::OwnedApply,
+        };
+        let occurrence = DbOccurrenceRow {
+            occurrence_id: "occ:file:wrapper.sh:1:3:META_ROOT".into(),
+            symbol_id: symbol.symbol_id.clone(),
+            file_id: symbol.file_id.clone(),
+            match_text: "$META_ROOT".into(),
+            normalized_text: "META_ROOT".into(),
+            line: 1,
+            column: 4,
+            byte_start: 3,
+            byte_end: 13,
+            context_before: "cd ".into(),
+            context_after: "/bin".into(),
+            replace_candidate: true,
+            replace_policy: ReplacePolicy::Safe,
+        };
+        let symbols_envelope = serde_json::json!({
+            "symbols": [&symbol],
+            "occurrences": [&occurrence],
+        });
+        assert_eq!(
+            keys_sorted(&symbols_envelope),
+            vec!["occurrences", "symbols"]
+        );
+        assert_eq!(
+            keys_sorted(&serde_json::to_value(&symbol).unwrap()),
+            vec![
+                "absolute_path",
+                "byte_end",
+                "byte_start",
+                "confidence",
+                "file_id",
+                "kind",
+                "line_end",
+                "line_start",
+                "mutable_policy",
+                "name",
+                "normalized_name",
+                "owner_component",
+                "scope",
+                "symbol_id",
+                "target_profile",
+                "value",
+            ]
+        );
+        assert_eq!(
+            keys_sorted(&serde_json::to_value(&occurrence).unwrap()),
+            vec![
+                "byte_end",
+                "byte_start",
+                "column",
+                "context_after",
+                "context_before",
+                "file_id",
+                "line",
+                "match_text",
+                "normalized_text",
+                "occurrence_id",
+                "replace_candidate",
+                "replace_policy",
+                "symbol_id",
+            ]
+        );
+
+        let report = ImpactReport {
+            symbol: "META_ROOT".into(),
+            normalized_symbol: "META_ROOT".into(),
+            files: vec![ImpactFile {
+                file_id: symbol.file_id.clone(),
+                absolute_path: symbol.absolute_path.clone(),
+                repo_relative_path: Some("wrapper.sh".into()),
+                mutable_policy: MutablePolicy::OwnedApply,
+                occurrence_count: 1,
+                safe: 1,
+                refused: 0,
+            }],
+            files_affected: 1,
+            occurrences_total: 1,
+            safe_occurrences: 1,
+            refused_occurrences: 0,
+            definitions: vec![symbol],
+        };
+        assert_eq!(
+            keys_sorted(&serde_json::to_value(report).unwrap()),
+            vec![
+                "definitions",
+                "files",
+                "files_affected",
+                "normalized_symbol",
+                "occurrences_total",
+                "refused_occurrences",
+                "safe_occurrences",
+                "symbol",
+            ]
+        );
+    }
+
+    #[test]
+    fn refactor_and_deploy_envelopes_are_stable() {
+        let refactor = RefactorPlan {
+            mode: ApplyMode::Plan,
+            changes: vec![RefactorChange {
+                file_id: "file:wrapper.sh".into(),
+                absolute_path: "/repo/wrapper.sh".into(),
+                repo_relative_path: Some("wrapper.sh".into()),
+                occurrence_count: 1,
+                unified_diff: "--- a/wrapper.sh\n+++ b/wrapper.sh\n".into(),
+                safe: true,
+                refused_reason: String::new(),
+            }],
+            files_touched: 1,
+            occurrences_total: 1,
+            refused: 0,
+            approved: false,
+        };
+        let refactor_envelope = serde_json::json!({
+            "plan": refactor,
+            "rendered": Option::<Vec<String>>::None,
+            "mutated": Option::<Vec<String>>::None,
+        });
+        assert_eq!(
+            keys_sorted(&refactor_envelope),
+            vec!["mutated", "plan", "rendered"]
+        );
+        assert_eq!(
+            keys_sorted(&refactor_envelope["plan"]),
+            vec![
+                "approved",
+                "changes",
+                "files_touched",
+                "mode",
+                "occurrences_total",
+                "refused",
+            ]
+        );
+
+        let deploy = DeployPlan {
+            steps: vec![DeployStep {
+                target_path: "/target/hooks/a".into(),
+                source_path: "/stage/hooks/a".into(),
+                disposition: DeployDisposition::Ready,
+                reason: "safe to promote".into(),
+                rollback_ref: None,
+            }],
+            ready: 1,
+            queued: 0,
+            refused: 0,
+            approved: false,
+        };
+        let deploy_envelope = serde_json::json!({
+            "plan": deploy,
+            "promoted": Option::<Vec<String>>::None,
+        });
+        assert_eq!(keys_sorted(&deploy_envelope), vec!["plan", "promoted"]);
+        assert_eq!(
+            keys_sorted(&deploy_envelope["plan"]),
+            vec!["approved", "queued", "ready", "refused", "steps"]
+        );
+        assert_eq!(
+            keys_sorted(&deploy_envelope["plan"]["steps"][0]),
+            vec![
+                "disposition",
+                "reason",
+                "rollback_ref",
+                "source_path",
+                "target_path",
+            ]
+        );
     }
 }

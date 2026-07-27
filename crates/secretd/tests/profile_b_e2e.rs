@@ -326,7 +326,13 @@ async fn fs_s23_token_expiry_between_swaps_flips_gate_absent() {
     struct SharedClock(Arc<std::sync::Mutex<i64>>);
     impl Clock for SharedClock {
         fn now(&self) -> chrono::DateTime<chrono::Utc> {
-            chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)).unwrap()
+            chrono::DateTime::from_timestamp_millis(
+                *self
+                    .0
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner),
+            )
+            .unwrap()
         }
         fn boottime_ms(&self) -> i64 {
             0
@@ -339,7 +345,9 @@ async fn fs_s23_token_expiry_between_swaps_flips_gate_absent() {
         envctl_secrets::GateState::Present,
         "valid at t=1000"
     );
-    *clock.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = 2_500;
+    *clock
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = 2_500;
     assert_eq!(
         gate.resolve(),
         envctl_secrets::GateState::AbsentSince(2_000),

@@ -1,0 +1,37 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-058_AGENT_JSON_CONTRACT",
+  "parent_id": "GH-414",
+  "status": "completed",
+  "completed_at": "2026-07-27T12:43:33Z",
+  "actor": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-058_agent_json_contract",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/meta/src/envctl",
+  "branch": "codex/profile-xdg-owner-20260721",
+  "head_commit": "dbcc8374a9502773670ba6cb40f6cdb08c337750",
+  "files_verified": [
+    "crates/engine/src/db.rs",
+    "docs/DB-AUTOMATION.md"
+  ],
+  "commands_run": [
+    "cargo test -p envctl-engine json_contract",
+    "rustfmt --edition 2021 --check crates/engine/src/db.rs",
+    "git diff --check -- crates/engine/src/db.rs docs/DB-AUTOMATION.md"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "tests": "5 passed; 0 failed; 352 filtered out",
+    "completion_gate": "json output snapshot-stable across the db command surface",
+    "summary": "Exact field-name and enum-tag assertions cover roots, query results, symbols, occurrences, impact reports, refactor envelopes, and deploy envelopes. The public documentation records every stable top-level schema and nullability rule.",
+    "workspace_fmt_note": "Workspace-wide cargo fmt --check reports pre-existing formatting drift outside the target files; crates/engine/src/db.rs passes targeted rustfmt and both target files pass git diff --check."
+  },
+  "checksums": {
+    "crates/engine/src/db.rs": "cbe33ec7c3a138baf05a086f8e302af6af6ee58f8810d006b7154c5a67534c3b",
+    "docs/DB-AUTOMATION.md": "41174dabb776053cba102b6f6bf95bc3615e04a0384ea59f45898a098bdc681b"
+  },
+  "logs_uri": "execution-framework/logs/REQ-058_AGENT_JSON_CONTRACT.log",
+  "heartbeat_uri": "execution-framework/heartbeats/REQ-058_AGENT_JSON_CONTRACT.heartbeat",
+  "failure_reason": "",
+  "next_action": "Downstream db CLI and Nushell plugin surfaces may consume the documented v1 JSON shapes."
+}

@@ -230,7 +230,7 @@ fn ruvector_integrity_validate(
     let manager = get_integrity_manager();
     let result = manager
         .read()
-        .unwrap()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
         .validate(contract_id, recall, latency_ms as u64, mincut);
     pgrx::JsonB(serde_json::json!(result))
 }

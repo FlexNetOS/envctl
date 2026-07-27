@@ -152,7 +152,8 @@ pub fn plan_with(
             .find(|f| f.absolute_path == target_path);
         let protected = existing
             .is_some_and(|f| f.protected || f.mutable_policy == crate::db::MutablePolicy::Never);
-        let rollback_ref = existing.map(|_| format!("{target_path}.envctl-bak"));
+        let rollback_ref =
+            existing.map(|_| format!("{target_path}{}", crate::db_atomic::BAK_SUFFIX));
 
         let (disposition, reason) = if protected {
             refused += 1;
@@ -196,6 +197,22 @@ pub fn plan_with(
 /// are skipped (a running or protected target is never overwritten). Returns the
 /// promoted target paths.
 pub fn apply(plan: &DeployPlan, confirm: bool, approval: Option<&Approval>) -> Result<Vec<String>> {
+    apply_with(plan, confirm, approval, &ProcRunningProbe)
+}
+
+/// Promote with an injectable liveness probe.
+///
+/// Liveness is checked again immediately before every promotion. A process can
+/// start after [`plan`] returns, so trusting only the planned disposition would
+/// leave a time-of-check/time-of-use window in which an executing hook could be
+/// overwritten. Steps that became active are skipped (queued for a later
+/// plan/apply invocation); no process is signalled or otherwise disturbed.
+pub fn apply_with(
+    plan: &DeployPlan,
+    confirm: bool,
+    approval: Option<&Approval>,
+    probe: &dyn RunningProbe,
+) -> Result<Vec<String>> {
     if !confirm {
         return Err(DbError::DeployBlocked(
             "apply requires --confirm (R3): refusing promotion".into(),
@@ -215,15 +232,14 @@ pub fn apply(plan: &DeployPlan, confirm: bool, approval: Option<&Approval>) -> R
         .iter()
         .filter(|s| s.disposition == DeployDisposition::Ready)
     {
+        if probe.is_running(&step.target_path) {
+            continue;
+        }
         let target = std::path::Path::new(&step.target_path);
         let bytes = std::fs::read(&step.source_path)?;
-        // Back up an existing target for rollback before clobbering.
-        if target.exists() {
-            if let Some(bak) = &step.rollback_ref {
-                std::fs::copy(target, bak)?;
-            }
-        }
-        atomic_write(target, &bytes)?;
+        // Backup, temp+fsync+rename, reread, and hash verification are one
+        // shared primitive. Existing targets retain `<target>.bak` for rollback.
+        crate::db_atomic::atomic_backup_write(target, &bytes)?;
         promoted.push(step.target_path.clone());
     }
     promoted.sort();
@@ -255,17 +271,6 @@ fn collect_staged(
             out.push((path.display().to_string(), rel));
         }
     }
-    Ok(())
-}
-
-/// Write `bytes` to `dest` atomically: temp sibling then rename. Creates parents.
-fn atomic_write(dest: &std::path::Path, bytes: &[u8]) -> Result<()> {
-    if let Some(parent) = dest.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    let tmp = dest.with_extension("envctl-deploy-tmp");
-    std::fs::write(&tmp, bytes)?;
-    std::fs::rename(&tmp, dest)?;
     Ok(())
 }
 
@@ -401,6 +406,44 @@ mod tests {
         assert_eq!(fs::read_to_string(target.join("hook.sh")).unwrap(), "NEW\n");
         let bak = step.rollback_ref.clone().unwrap();
         assert_eq!(fs::read_to_string(&bak).unwrap(), "OLD\n");
+
+        let _ = fs::remove_dir_all(&stage);
+        let _ = fs::remove_dir_all(&target);
+    }
+
+    #[test]
+    fn apply_rechecks_liveness_and_never_overwrites_a_newly_running_target() {
+        let stage = tmp("race-stage");
+        let target = tmp("race-target");
+        fs::write(stage.join("hook.sh"), b"NEW\n").unwrap();
+        fs::write(target.join("hook.sh"), b"OLD\n").unwrap();
+
+        let target_index = FileIndex::scan(&ScanScope {
+            root: target.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let spec = DeploySpec {
+            kind: "hooks".into(),
+            target: target.display().to_string(),
+            stage_dir: Some(stage.display().to_string()),
+        };
+        let initially_idle = StaticProbe(HashSet::new());
+        let p = plan_with(&spec, &target_index, &initially_idle).unwrap();
+        assert_eq!(p.steps[0].disposition, DeployDisposition::Ready);
+
+        // The hook starts after planning but before apply. Apply must re-probe.
+        let target_path = target.join("hook.sh").display().to_string();
+        let now_running = StaticProbe(HashSet::from([target_path]));
+        let ok = Approval {
+            approver: "op".into(),
+            approved: true,
+            note: None,
+        };
+        let promoted = apply_with(&p, true, Some(&ok), &now_running).unwrap();
+        assert!(promoted.is_empty());
+        assert_eq!(fs::read_to_string(target.join("hook.sh")).unwrap(), "OLD\n");
+        assert!(!target.join("hook.sh.bak").exists());
 
         let _ = fs::remove_dir_all(&stage);
         let _ = fs::remove_dir_all(&target);

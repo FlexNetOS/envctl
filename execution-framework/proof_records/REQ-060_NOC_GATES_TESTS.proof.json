@@ -1,0 +1,43 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-060_NOC_GATES_TESTS",
+  "parent_id": "GH-414",
+  "status": "completed",
+  "completed_at": "2026-07-27T13:03:15Z",
+  "actor": "envctl-verification-agent",
+  "helper_id": "helper-req-060_noc_gates_tests",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/meta/src/envctl",
+  "branch": "codex/profile-xdg-owner-20260721",
+  "head_commit": "dbcc8374a9502773670ba6cb40f6cdb08c337750",
+  "files_verified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "ci/gates/no-c.sh",
+    "crates/agent-env/src/catalog.rs",
+    "crates/engine/src/db.rs",
+    "crates/secrets-engine/src/lib.rs"
+  ],
+  "commands_run": [
+    "cargo fmt --check",
+    "cargo test --workspace",
+    "bash ci/gates/no-c.sh"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "completion_gate": "fmt clean, tests pass, no-C gate holds (no new C in trust boundary)",
+    "summary": "Workspace formatting is clean. Cargo test completed 51 suites with 1269 passed and 9 ignored. The fail-closed no-C gate passed: GitHub RS256 remains on the fixed-width no-alloc graph, libSQL ships remote-only, rustls resolves once on ring, and aws-lc/OpenSSL/C-SQLite crates are absent."
+  },
+  "checksums": {
+    "Cargo.toml": "5549fcf84b3a51256f7a087f74dd49c37ac98a7a0eb721d81dcd94554cec8acd",
+    "Cargo.lock": "9d23a4276136efb58a97323e6c6a3cbaffb98fe352eef5fe8e31fd42a12523e1",
+    "ci/gates/no-c.sh": "95abd92de3571a41e7f93d22d25273e827d2f83977392b4808062c57029102e6",
+    "crates/agent-env/src/catalog.rs": "7c8033496c2d9d4c1b003d37451c5dc73f4a4c282c4e729da781e1f6240ff5b2",
+    "crates/engine/src/db.rs": "81c380bb85bb947b6adfa07a80e6b9935e59cc60d2d72cceaa0cf0ff8e24dc27",
+    "crates/secrets-engine/src/lib.rs": "daa5998133c51dcf00cdf2d32ce5977076c88f6bda945c5e387235c9c934f7e7"
+  },
+  "logs_uri": "execution-framework/logs/REQ-060_NOC_GATES_TESTS.log",
+  "heartbeat_uri": "execution-framework/heartbeats/REQ-060_NOC_GATES_TESTS.heartbeat",
+  "failure_reason": "",
+  "next_action": "GH-414 may consume this completed verification gate."
+}

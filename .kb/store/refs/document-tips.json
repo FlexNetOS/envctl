@@ -120,6 +120,11 @@
       "document_id": "019f832b-1bdd-7201-a391-2e1aaa2b7dd9",
       "slug": "proofs/strict-profile-path-owner-progress-20260721",
       "tip_commit_id": "019f832b-1c1d-7402-88aa-e6e1f7b3d1cf"
+    },
+    {
+      "document_id": "019fa1d0-1d28-7733-9d4d-f462783f6799",
+      "slug": "tasks/req-027-envctl-replay-engine",
+      "tip_commit_id": "019fa1d7-262c-7463-8d86-059ca5143dfd"
     }
   ]
 }

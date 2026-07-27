@@ -88,7 +88,9 @@ pub use db_symbols::{
     impact as db_impact, DbOccurrenceRow, DbSymbolKind, DbSymbolRow, ImpactFile, ImpactReport,
     ReplacePolicy, SymbolConfidence, SymbolIndex,
 };
-pub use db_watch::{poll_persisted as db_watch_poll, IndexDelta, WatchState};
+pub use db_watch::{
+    poll_persisted as db_watch_poll, DbWatcher, IndexDelta, WatchBackend, WatchState,
+};
 pub use db_widget::{
     hooks_widget, refs_widget, roots_widget, HookEntry, HooksWidget, RefGroup, RefLocation,
     RefsWidget, RootRefCount, RootsWidget,

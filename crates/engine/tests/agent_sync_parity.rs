@@ -43,7 +43,10 @@ fn sandbox_home() -> &'static Path {
 
 fn unique_dir(prefix: &str) -> PathBuf {
     static N: OnceLock<Mutex<u64>> = OnceLock::new();
-    let mut n = N.get_or_init(|| Mutex::new(0)).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut n = N
+        .get_or_init(|| Mutex::new(0))
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     *n += 1;
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

@@ -1,0 +1,53 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-057_WATCH_INCREMENTAL",
+  "parent_id": "GH-414",
+  "status": "completed",
+  "completed_at": "2026-07-27T12:34:46Z",
+  "actor": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-057_watch_incremental",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/meta/src/envctl",
+  "branch": "codex/profile-xdg-owner-20260721",
+  "head_commit": "dbcc8374a9502773670ba6cb40f6cdb08c337750",
+  "files_verified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/engine/Cargo.toml",
+    "crates/engine/src/db_watch.rs",
+    "crates/engine/src/lib.rs",
+    "crates/cli/src/main.rs",
+    "docs/DB-AUTOMATION.md"
+  ],
+  "commands_run": [
+    "cargo test -p envctl-engine db_watch",
+    "cargo check -p envctl-engine -p envctl",
+    "cargo clippy -p envctl-engine -p envctl -- -D warnings",
+    "rustfmt --edition 2021 --check crates/engine/src/db_watch.rs crates/cli/src/main.rs",
+    "git diff --check -- <task files>",
+    "bash ci/gates/no-c.sh",
+    "bash ci/gates/shape.sh",
+    "envctl db --repo-root /tmp/envctl-req057-proof-20260727 watch --json --poll-interval-ms 5000",
+    "envctl db --repo-root /tmp/envctl-req057-proof-20260727 watch --once --json"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "completion_gate": "watch invalidates only changed file rows; poll fallback documented",
+    "summary": "Five db_watch tests passed. The real CLI received a native recursive notification and emitted only a.rs as changed and b.rs as added. Native watcher setup/event failures, including inotify-limit signatures, switch to bounded polling. No-C, shape, check, and clippy gates pass.",
+    "runtime_observation": "{\"added\":[\"/tmp/envctl-req057-proof-20260727/b.rs\"],\"changed\":[\"/tmp/envctl-req057-proof-20260727/a.rs\"],\"removed\":[],\"unchanged\":0}",
+    "format_note": "Both modified Rust files pass direct rustfmt checks. Workspace-wide cargo fmt remains blocked by unrelated pre-existing formatting drift."
+  },
+  "checksums": {
+    "Cargo.toml": "5549fcf84b3a51256f7a087f74dd49c37ac98a7a0eb721d81dcd94554cec8acd",
+    "Cargo.lock": "f1812b0070f6b74c44eb9b1e6a94d4ac48a69a7095ef28acd00446b2e8749585",
+    "crates/engine/Cargo.toml": "6c233753ff4ca3ef6ffd15286fadc0bf985465675860e642e42da18e6bf6aa28",
+    "crates/engine/src/db_watch.rs": "84f840cd98cccf00d8e3aaf0e30b139cfc0d6727be5a5d760a8443bf08283484",
+    "crates/engine/src/lib.rs": "2253f299240e6ffcbbafd6d8b4377e3cc08c13231f686197bef44f70018fc300",
+    "crates/cli/src/main.rs": "f125ce2ea9372fb05cf373e59259095ca10bdf6aa8eae3c153151c67dc4ea119",
+    "docs/DB-AUTOMATION.md": "e45cde683493dac422a61a213f18e5cf0bbf47e9d9fa11ed3c3359f72b8286e1"
+  },
+  "logs_uri": "execution-framework/logs/REQ-057_WATCH_INCREMENTAL.log",
+  "heartbeat_uri": "execution-framework/heartbeats/REQ-057_WATCH_INCREMENTAL.heartbeat",
+  "failure_reason": "",
+  "next_action": "REQ-060_NOC_GATES_TESTS may consume this completed dependency."
+}

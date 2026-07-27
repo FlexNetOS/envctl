@@ -1,0 +1,6 @@
+2026-07-27T12:27:24Z REQ-051_MULTI_ROOT_MODEL completed
+PASS rustfmt --edition 2021 --check crates/engine/src/db.rs crates/cli/src/main.rs
+PASS cargo test -p envctl-engine roots (3 passed, 0 failed, 345 filtered out)
+PASS envctl db roots --json: META_ROOT observed_current; LIFE_OS_ROOT release_target; aliases LIFE_OS_ROOT,LIFEOS_ROOT
+PASS envctl --help: Meta/LifeOS environment and release-target manager
+NOTE workspace cargo fmt --check reports pre-existing formatting drift outside target files

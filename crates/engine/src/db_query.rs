@@ -4,8 +4,9 @@
 //! [`QuerySpec`]), the preset enum, and the [`QueryResult`] shape. A minimal,
 //! deterministic evaluator (no SQL clone) + `--explain` land in REQ-054.
 
-use crate::db::{DbError, Result};
+use crate::db::{Db, DbError, Result};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 /// Selectable tables in the query surface.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -19,14 +20,44 @@ pub enum QueryTable {
     Actions,
 }
 
+impl FromStr for QueryTable {
+    type Err = DbError;
+
+    fn from_str(value: &str) -> Result<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "files" => Ok(Self::Files),
+            "symbols" => Ok(Self::Symbols),
+            "occurrences" => Ok(Self::Occurrences),
+            "roots" => Ok(Self::Roots),
+            "refs" => Ok(Self::Refs),
+            "actions" => Ok(Self::Actions),
+            other => Err(DbError::Query(format!("unknown table: {other}"))),
+        }
+    }
+}
+
 /// A single deterministic filter clause.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "op")]
 pub enum QueryFilter {
-    Eq { field: String, value: String },
-    Contains { field: String, value: String },
-    In { field: String, values: Vec<String> },
-    PathMatches { glob: String },
+    Eq {
+        field: String,
+        value: String,
+    },
+    Contains {
+        field: String,
+        value: String,
+    },
+    In {
+        field: String,
+        values: Vec<String>,
+    },
+    PathMatches {
+        /// `None` is the `path` alias and checks absolute and relative paths.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        field: Option<String>,
+        glob: String,
+    },
 }
 
 /// Agent-facing preset queries (stable names).
@@ -40,6 +71,104 @@ pub enum QueryPreset {
     MutableUnsafe,
     SymbolsRustCli,
     PathsLegacy,
+}
+
+impl QueryPreset {
+    pub const NAMES: &'static [&'static str] = &[
+        "root:meta",
+        "root:lifeos",
+        "hooks:codex",
+        "wrappers:broken",
+        "mutable:unsafe",
+        "symbols:rust-cli",
+        "paths:legacy",
+    ];
+}
+
+impl FromStr for QueryPreset {
+    type Err = DbError;
+
+    fn from_str(value: &str) -> Result<Self> {
+        // Keep the scaffold's hyphen spellings as compatibility aliases.
+        match value.trim().to_ascii_lowercase().as_str() {
+            "root:meta" | "root-meta" => Ok(Self::RootMeta),
+            "root:lifeos" | "root-lifeos" => Ok(Self::RootLifeos),
+            "hooks:codex" | "hooks-codex" => Ok(Self::HooksCodex),
+            "wrappers:broken" | "wrappers-broken" => Ok(Self::WrappersBroken),
+            "mutable:unsafe" | "mutable-unsafe" => Ok(Self::MutableUnsafe),
+            "symbols:rust-cli" | "symbols-rust-cli" => Ok(Self::SymbolsRustCli),
+            "paths:legacy" | "paths-legacy" => Ok(Self::PathsLegacy),
+            other => Err(DbError::Query(format!(
+                "unknown preset: {other}; expected one of {}",
+                Self::NAMES.join(", ")
+            ))),
+        }
+    }
+}
+
+impl QueryFilter {
+    /// Parse `field==value`, `field contains value`, `field in a,b`, or
+    /// `path matches */legacy/*`.
+    pub fn parse(expression: &str) -> Result<Self> {
+        let expression = expression.trim();
+        if let Some((field, value)) = expression.split_once("==") {
+            return Ok(Self::Eq {
+                field: required(field, expression)?,
+                value: required(value, expression)?,
+            });
+        }
+        for (operator, kind) in [(" contains ", 0_u8), (" in ", 1), (" matches ", 2)] {
+            if let Some((field, value)) = expression.split_once(operator) {
+                let field = required(field, expression)?;
+                let value = required(value, expression)?;
+                return match kind {
+                    0 => Ok(Self::Contains { field, value }),
+                    1 => {
+                        let values = value
+                            .split(',')
+                            .map(str::trim)
+                            .filter(|item| !item.is_empty())
+                            .map(ToOwned::to_owned)
+                            .collect::<Vec<_>>();
+                        if values.is_empty() {
+                            Err(DbError::Query(format!(
+                                "filter has an empty 'in' list: {expression}"
+                            )))
+                        } else {
+                            Ok(Self::In { field, values })
+                        }
+                    }
+                    _ if matches!(
+                        field.as_str(),
+                        "path" | "absolute_path" | "repo_relative_path"
+                    ) =>
+                    {
+                        Ok(Self::PathMatches {
+                            field: (field != "path").then_some(field),
+                            glob: value,
+                        })
+                    }
+                    _ => Err(DbError::Query(
+                        "'matches' is only valid for path fields".into(),
+                    )),
+                };
+            }
+        }
+        Err(DbError::Query(format!(
+            "invalid filter '{expression}'; use ==, contains, in, or matches"
+        )))
+    }
+}
+
+fn required(value: &str, expression: &str) -> Result<String> {
+    let value = value.trim();
+    if value.is_empty() {
+        Err(DbError::Query(format!(
+            "filter contains an empty operand: {expression}"
+        )))
+    } else {
+        Ok(value.to_string())
+    }
 }
 
 /// A resolved query: either a table+filters form or a preset.
@@ -138,9 +267,15 @@ fn matches(row: &serde_json::Value, filter: &QueryFilter) -> bool {
         QueryFilter::In { field, values } => field_str(field)
             .map(|s| values.contains(&s))
             .unwrap_or(false),
-        QueryFilter::PathMatches { glob } => field_str("absolute_path")
-            .map(|p| glob_match(glob, &p))
-            .unwrap_or(false),
+        QueryFilter::PathMatches { field, glob } => match field {
+            Some(field) => field_str(field)
+                .map(|path| glob_match(glob, &path))
+                .unwrap_or(false),
+            None => ["absolute_path", "repo_relative_path"]
+                .iter()
+                .filter_map(|field| field_str(field))
+                .any(|path| glob_match(glob, &path)),
+        },
     }
 }
 
@@ -206,21 +341,40 @@ pub fn evaluate(
             .iter()
             .map(|r| serde_json::to_value(r).unwrap_or(serde_json::Value::Null))
             .collect(),
-        // roots/refs/actions tables are threaded through the Db façade in
-        // REQ-059 (CLI/GUI wiring); return empty deterministically for now.
-        QueryTable::Roots | QueryTable::Refs | QueryTable::Actions => Vec::new(),
+        QueryTable::Roots => Db::from_profiles(
+            std::env::var("META_ROOT").ok(),
+            std::env::var("LIFE_OS_ROOT")
+                .or_else(|_| std::env::var("LIFEOS_ROOT"))
+                .ok(),
+            spec.target_profile.as_deref().unwrap_or("lifeos-release"),
+        )
+        .roots()
+        .iter()
+        .map(|row| serde_json::to_value(row).unwrap_or(serde_json::Value::Null))
+        .collect(),
+        QueryTable::Refs => symbols
+            .occurrences()
+            .iter()
+            .map(|row| serde_json::to_value(row).unwrap_or(serde_json::Value::Null))
+            .collect(),
+        QueryTable::Actions => symbols
+            .occurrences()
+            .iter()
+            .filter(|row| row.replace_candidate)
+            .map(|row| serde_json::to_value(row).unwrap_or(serde_json::Value::Null))
+            .collect(),
     };
 
-    let rows: Vec<serde_json::Value> = all_rows
+    let mut rows: Vec<serde_json::Value> = all_rows
         .into_iter()
         .filter(|row| filters.iter().all(|f| matches(row, f)))
         .collect();
+    rows.sort_by_key(|row| serde_json::to_string(row).unwrap_or_default());
 
     let explain = spec.explain.then(|| {
         format!(
-            "table={table:?} preset={:?} filters={} matched={}",
+            "table={table:?} preset={:?} filters={filters:?} matched={}",
             spec.preset,
-            filters.len(),
             rows.len()
         )
     });
@@ -319,5 +473,59 @@ mod tests {
         assert!(!glob_match("/a/*", "/b/c"));
         assert!(glob_match("*.rs", "/x/y/cli.rs"));
         assert!(!glob_match("*.rs", "/x/y/cli.toml"));
+    }
+
+    #[test]
+    fn parses_contract_presets_tables_and_all_filter_operators() {
+        assert_eq!(
+            "paths:legacy".parse::<QueryPreset>().unwrap(),
+            QueryPreset::PathsLegacy
+        );
+        assert_eq!(
+            "occurrences".parse::<QueryTable>().unwrap(),
+            QueryTable::Occurrences
+        );
+        assert!(matches!(
+            QueryFilter::parse("file_kind==rust").unwrap(),
+            QueryFilter::Eq { .. }
+        ));
+        assert!(matches!(
+            QueryFilter::parse("absolute_path contains hooks").unwrap(),
+            QueryFilter::Contains { .. }
+        ));
+        assert!(matches!(
+            QueryFilter::parse("kind in env_var,rust_item").unwrap(),
+            QueryFilter::In { values, .. } if values.len() == 2
+        ));
+        assert_eq!(
+            QueryFilter::parse("path matches */legacy/*").unwrap(),
+            QueryFilter::PathMatches {
+                field: None,
+                glob: "*/legacy/*".into(),
+            }
+        );
+    }
+
+    #[test]
+    fn roots_refs_and_actions_tables_are_queryable() {
+        let (files, symbols, root) = build_indexes();
+        let query = |table| QuerySpec {
+            table: Some(table),
+            filters: vec![],
+            preset: None,
+            target_profile: Some("test-release".into()),
+            explain: true,
+        };
+        assert_eq!(
+            evaluate(&query(QueryTable::Roots), &files, &symbols)
+                .unwrap()
+                .row_count,
+            2
+        );
+        let refs = evaluate(&query(QueryTable::Refs), &files, &symbols).unwrap();
+        let actions = evaluate(&query(QueryTable::Actions), &files, &symbols).unwrap();
+        assert!(refs.row_count >= actions.row_count);
+        assert!(refs.explain.unwrap().contains("filters=[]"));
+        let _ = fs::remove_dir_all(&root);
     }
 }

@@ -8,6 +8,7 @@
 use crate::db::{normalize_root_var, MutablePolicy, Result};
 use crate::db_index::{DbFileRow, FileIndex};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -127,6 +128,12 @@ impl SymbolIndex {
             if file.file_kind == "rust" {
                 idx.scan_rust_items(file, &content);
             }
+            if matches!(file.file_kind.as_str(), "shell" | "nushell") {
+                idx.scan_script_symbols(file);
+            }
+            if matches!(file.file_kind.as_str(), "config" | "toml" | "yaml" | "json") {
+                idx.scan_config_key_symbols(file, &content);
+            }
         }
         idx.symbols.sort_by(|a, b| a.symbol_id.cmp(&b.symbol_id));
         idx.occurrences
@@ -138,11 +145,14 @@ impl SymbolIndex {
     /// and one occurrence per hit.
     fn scan_file(&mut self, file: &DbFileRow, content: &str) {
         let replace_policy = replace_policy_for(file.mutable_policy);
+        let mut line_byte_start = 0usize;
         for (line_no, line) in content.lines().enumerate() {
             for hit in scan_line_env_refs(line) {
                 let normalized = normalize_root_var(&hit.name);
                 let kind = classify_symbol(&normalized, &file.file_kind);
                 let symbol_id = format!("sym:{}:{}", kind_tag(&kind), normalized);
+                let byte_start = line_byte_start + hit.byte_start;
+                let byte_end = line_byte_start + hit.byte_end;
                 if !self.symbols.iter().any(|s| s.symbol_id == symbol_id) {
                     self.symbols.push(DbSymbolRow {
                         symbol_id: symbol_id.clone(),
@@ -153,8 +163,8 @@ impl SymbolIndex {
                         absolute_path: file.absolute_path.clone(),
                         line_start: line_no + 1,
                         line_end: line_no + 1,
-                        byte_start: hit.byte_start,
-                        byte_end: hit.byte_end,
+                        byte_start,
+                        byte_end,
                         value: None,
                         scope: None,
                         owner_component: file.logical_owner.clone(),
@@ -167,7 +177,7 @@ impl SymbolIndex {
                     "occ:{}:{}:{}:{}",
                     file.file_id,
                     line_no + 1,
-                    hit.byte_start,
+                    byte_start,
                     normalized
                 );
                 self.occurrences.push(DbOccurrenceRow {
@@ -178,8 +188,8 @@ impl SymbolIndex {
                     normalized_text: normalized,
                     line: line_no + 1,
                     column: hit.column + 1,
-                    byte_start: hit.byte_start,
-                    byte_end: hit.byte_end,
+                    byte_start,
+                    byte_end,
                     context_before: line[..hit.column].to_string(),
                     context_after: line[hit.byte_end_in_line..].to_string(),
                     replace_candidate: replace_policy == ReplacePolicy::Safe
@@ -187,6 +197,146 @@ impl SymbolIndex {
                         || replace_policy == ReplacePolicy::NeedsOwnerMarker,
                     replace_policy,
                 });
+            }
+            // `str::lines` strips both LF and CRLF terminators. Advancing by
+            // the content byte immediately following this line preserves
+            // whole-file byte spans for either form and for a final line with
+            // no terminator.
+            line_byte_start += line.len();
+            if content.as_bytes().get(line_byte_start) == Some(&b'\r') {
+                line_byte_start += 1;
+            }
+            if content.as_bytes().get(line_byte_start) == Some(&b'\n') {
+                line_byte_start += 1;
+            }
+        }
+    }
+
+    /// Scan one shell/nushell script as a hook/wrapper symbol.
+    ///
+    /// Hook/wrapper symbols are discovered from path heuristics to keep detection
+    /// fast and deterministic; each yields one occurrence so `db symbols --kind
+    /// hook-script` and `--kind wrapper-script` remain usable via symbol/occurrence
+    /// joins.
+    fn scan_script_symbols(&mut self, file: &DbFileRow) {
+        let replace_policy = replace_policy_for(file.mutable_policy);
+        let kind = classify_script_kind(file);
+        let symbol_name = file
+            .repo_relative_path
+            .as_deref()
+            .unwrap_or(file.absolute_path.as_str())
+            .to_owned();
+        let display_name = Path::new(&symbol_name)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(&symbol_name);
+        let symbol_id = format!("sym:{}:{}:{}", kind_tag(&kind), file.file_id, symbol_name);
+
+        if !self.symbols.iter().any(|s| s.symbol_id == symbol_id) {
+            self.symbols.push(DbSymbolRow {
+                symbol_id: symbol_id.clone(),
+                kind,
+                name: display_name.to_string(),
+                normalized_name: symbol_name.clone(),
+                file_id: file.file_id.clone(),
+                absolute_path: file.absolute_path.clone(),
+                line_start: 1,
+                line_end: 1,
+                byte_start: 0,
+                byte_end: 0,
+                value: None,
+                scope: None,
+                owner_component: file.logical_owner.clone(),
+                target_profile: None,
+                confidence: SymbolConfidence::Parsed,
+                mutable_policy: file.mutable_policy,
+            });
+        }
+
+        self.occurrences.push(DbOccurrenceRow {
+            occurrence_id: format!("occ:{}:{}:{}:{}", file.file_id, 1, 0, symbol_name),
+            symbol_id,
+            file_id: file.file_id.clone(),
+            match_text: String::new(),
+            normalized_text: symbol_name,
+            line: 1,
+            column: 1,
+            byte_start: 0,
+            byte_end: 0,
+            context_before: String::new(),
+            context_after: String::new(),
+            replace_candidate: replace_policy == ReplacePolicy::Safe
+                || replace_policy == ReplacePolicy::NeedsParser
+                || replace_policy == ReplacePolicy::NeedsOwnerMarker,
+            replace_policy,
+        });
+    }
+
+    /// Scan config-like files (toml/yaml/json/config) for symbol-key occurrences.
+    ///
+    /// This pass is intentionally line-local and heuristic; it is a low-cost symbol
+    /// discovery pass, not a schema validator.
+    fn scan_config_key_symbols(&mut self, file: &DbFileRow, content: &str) {
+        let replace_policy = replace_policy_for(file.mutable_policy);
+        let mut line_byte_start = 0usize;
+        for (line_no, line) in content.lines().enumerate() {
+            for hit in scan_config_keys_in_line(file.file_kind.as_str(), line) {
+                let symbol_id = format!(
+                    "sym:{}:{}:{}",
+                    kind_tag(&DbSymbolKind::ConfigKey),
+                    file.file_id,
+                    hit.name
+                );
+                if !self.symbols.iter().any(|s| s.symbol_id == symbol_id) {
+                    self.symbols.push(DbSymbolRow {
+                        symbol_id: symbol_id.clone(),
+                        kind: DbSymbolKind::ConfigKey,
+                        name: hit.name.clone(),
+                        normalized_name: hit.name.clone(),
+                        file_id: file.file_id.clone(),
+                        absolute_path: file.absolute_path.clone(),
+                        line_start: line_no + 1,
+                        line_end: line_no + 1,
+                        byte_start: line_byte_start + hit.byte_start,
+                        byte_end: line_byte_start + hit.byte_end,
+                        value: None,
+                        scope: None,
+                        owner_component: file.logical_owner.clone(),
+                        target_profile: None,
+                        confidence: SymbolConfidence::Parsed,
+                        mutable_policy: file.mutable_policy,
+                    });
+                }
+                self.occurrences.push(DbOccurrenceRow {
+                    occurrence_id: format!(
+                        "occ:{}:{}:{}:{}",
+                        file.file_id,
+                        line_no + 1,
+                        line_byte_start + hit.byte_start,
+                        hit.name
+                    ),
+                    symbol_id: symbol_id.clone(),
+                    file_id: file.file_id.clone(),
+                    match_text: hit.raw.clone(),
+                    normalized_text: hit.name.clone(),
+                    line: line_no + 1,
+                    column: hit.column + 1,
+                    byte_start: line_byte_start + hit.byte_start,
+                    byte_end: line_byte_start + hit.byte_end,
+                    context_before: line[..hit.byte_start].to_string(),
+                    context_after: line[hit.byte_end_in_line..].to_string(),
+                    replace_candidate: replace_policy == ReplacePolicy::Safe
+                        || replace_policy == ReplacePolicy::NeedsParser
+                        || replace_policy == ReplacePolicy::NeedsOwnerMarker,
+                    replace_policy,
+                });
+            }
+            line_byte_start += line.len();
+            if content.as_bytes().get(line_byte_start) == Some(&b'\r') {
+                line_byte_start += 1;
+            }
+            if content.as_bytes().get(line_byte_start) == Some(&b'\n') {
+                line_byte_start += 1;
             }
         }
     }
@@ -403,15 +553,227 @@ fn flatten_use_tree(tree: &syn::UseTree, prefix: String) -> Vec<String> {
     }
 }
 
+fn classify_script_kind(file: &DbFileRow) -> DbSymbolKind {
+    let path = file
+        .repo_relative_path
+        .as_deref()
+        .unwrap_or(file.absolute_path.as_str())
+        .to_ascii_lowercase();
+    let name = Path::new(&path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+
+    if path.contains("/hooks/")
+        || path.ends_with("/hooks")
+        || path.contains(".codex/hooks")
+        || name.contains("hook")
+        || name.ends_with("-hook")
+        || name.ends_with(".hook")
+        || name.ends_with("git-hook")
+    {
+        DbSymbolKind::HookScript
+    } else if path.contains("/wrappers/")
+        || path.contains("wrapper")
+        || name == "wrapper.sh"
+        || path.contains("/usr/bin/")
+    {
+        DbSymbolKind::WrapperScript
+    } else {
+        DbSymbolKind::HookScript
+    }
+}
+
+/// One config key reference extracted from one line.
+struct ConfigRef {
+    name: String,
+    raw: String,
+    byte_start: usize,
+    byte_end: usize,
+    column: usize,
+    byte_end_in_line: usize,
+}
+
+/// Best-effort config key extraction by format.
+fn scan_config_keys_in_line(file_kind: &str, line: &str) -> Vec<ConfigRef> {
+    match file_kind {
+        "toml" => scan_toml_config_keys(line),
+        "yaml" => scan_yaml_config_keys(line),
+        "json" => scan_json_config_keys(line),
+        _ => scan_config_style_keys(line),
+    }
+}
+
+fn is_config_key_char(b: u8) -> bool {
+    b.is_ascii_alphanumeric() || b == b'_' || b == b'-' || b == b'.'
+}
+
+fn is_config_key(name: &str) -> bool {
+    !name.is_empty() && name.bytes().all(is_config_key_char)
+}
+
+fn unquoted_key(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 {
+        Some(trimmed[1..trimmed.len() - 1].to_string())
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
+fn scan_toml_config_keys(line: &str) -> Vec<ConfigRef> {
+    let mut out = Vec::new();
+    let trimmed = line.trim();
+    if trimmed.is_empty() || trimmed.starts_with('#') || !trimmed.contains('=') {
+        return out;
+    }
+    if trimmed.starts_with('[') {
+        return out;
+    }
+    let bytes = line.as_bytes();
+    let mut eq = 0usize;
+    while eq < bytes.len() && bytes[eq] != b'=' {
+        eq += 1;
+    }
+    if eq == 0 || eq >= bytes.len() {
+        return out;
+    }
+    let mut key_start = 0usize;
+    while key_start < eq && (bytes[key_start] == b' ' || bytes[key_start] == b'\t') {
+        key_start += 1;
+    }
+    if key_start >= eq {
+        return out;
+    }
+    let raw = line[key_start..eq].trim();
+    let key_len = raw.len();
+    let key = unquoted_key(raw).unwrap_or_else(|| raw.to_string());
+    if !is_config_key(&key) {
+        return out;
+    }
+    out.push(ConfigRef {
+        name: key.clone(),
+        raw: key,
+        byte_start: key_start,
+        byte_end: key_start + key_len,
+        column: key_start,
+        byte_end_in_line: key_start + key_len,
+    });
+    out
+}
+
+fn scan_yaml_config_keys(line: &str) -> Vec<ConfigRef> {
+    let mut out = Vec::new();
+    let trimmed = line.trim_start();
+    if trimmed.is_empty() || trimmed.starts_with('#') || !trimmed.contains(':') {
+        return out;
+    }
+    let mut colon = 0usize;
+    while colon < trimmed.len() && trimmed.as_bytes()[colon] != b':' {
+        colon += 1;
+    }
+    if colon == 0 || colon >= trimmed.len() {
+        return out;
+    }
+    let key = trimmed[..colon].trim();
+    if key.starts_with('-') || key.is_empty() {
+        return out;
+    }
+    let key = unquoted_key(key).unwrap_or_else(|| key.to_string());
+    if !is_config_key(&key) {
+        return out;
+    }
+    let offset = line.len() - trimmed.len();
+    out.push(ConfigRef {
+        name: key.clone(),
+        raw: key.clone(),
+        byte_start: offset,
+        byte_end: offset + key.len(),
+        column: offset,
+        byte_end_in_line: offset + key.len(),
+    });
+    out
+}
+
+fn scan_json_config_keys(line: &str) -> Vec<ConfigRef> {
+    let mut out = Vec::new();
+    let bytes = line.as_bytes();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        if bytes[i] != b'"' {
+            i += 1;
+            continue;
+        }
+        let key_start = i + 1;
+        let mut j = key_start;
+        while j < bytes.len() && bytes[j] != b'"' {
+            if bytes[j] == b'\\' {
+                j += 1;
+            }
+            j += 1;
+        }
+        if j >= bytes.len() {
+            break;
+        }
+        let mut k = j + 1;
+        while k < bytes.len() && bytes[k].is_ascii_whitespace() {
+            k += 1;
+        }
+        if k < bytes.len() && bytes[k] == b':' {
+            let key = &line[key_start..j];
+            if is_config_key(key) {
+                out.push(ConfigRef {
+                    name: key.to_string(),
+                    raw: key.to_string(),
+                    byte_start: key_start,
+                    byte_end: j,
+                    column: key_start,
+                    byte_end_in_line: key_start + key.len(),
+                });
+            }
+        }
+        i = j + 1;
+    }
+    out
+}
+
+fn scan_config_style_keys(line: &str) -> Vec<ConfigRef> {
+    let mut out = Vec::new();
+    let trimmed = line.trim();
+    if trimmed.is_empty() || trimmed.starts_with('#') {
+        return out;
+    }
+    let text = trimmed.strip_prefix("export ").unwrap_or(trimmed);
+    let eq = match text.find('=') {
+        Some(i) => i,
+        None => return out,
+    };
+    let key = text[..eq].trim();
+    if key.is_empty() || !is_config_key(key) {
+        return out;
+    }
+    if let Some(byte_start) = line.find(key) {
+        out.push(ConfigRef {
+            name: key.to_string(),
+            raw: key.to_string(),
+            byte_start,
+            byte_end: byte_start + key.len(),
+            column: byte_start,
+            byte_end_in_line: byte_start + key.len(),
+        });
+    }
+    out
+}
+
 /// One environment/path-token reference found on a line.
 struct EnvRef {
     /// The variable name without `$`/`{}` (e.g. `META_ROOT`).
     name: String,
     /// The raw matched text (e.g. `${META_ROOT}`).
     raw: String,
-    /// Byte offset of the match start within the whole-file line stream is not
-    /// tracked here; `byte_start` is the column offset within the line, which is
-    /// what the refactor previewer needs for in-line replacement.
+    /// Byte offsets within the current line. [`SymbolIndex::scan_file`] adds the
+    /// line's whole-file byte offset before storing an occurrence.
     byte_start: usize,
     byte_end: usize,
     column: usize,
@@ -498,6 +860,9 @@ fn kind_tag(kind: &DbSymbolKind) -> &'static str {
     match kind {
         DbSymbolKind::PathToken => "path",
         DbSymbolKind::EnvVar => "env",
+        DbSymbolKind::HookScript => "hook_script",
+        DbSymbolKind::WrapperScript => "wrapper_script",
+        DbSymbolKind::ConfigKey => "config_key",
         _ => "other",
     }
 }
@@ -615,8 +980,11 @@ mod tests {
     use crate::db_index::{FileIndex, ScanScope};
     use std::fs;
 
-    fn tmp() -> std::path::PathBuf {
-        let d = std::env::temp_dir().join(format!("envctl-db-symbols-{}", std::process::id()));
+    fn tmp(test_name: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "envctl-db-symbols-{}-{test_name}",
+            std::process::id()
+        ));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d
@@ -624,7 +992,7 @@ mod tests {
 
     #[test]
     fn extracts_root_tokens_with_alias_normalization_and_safe_policy() {
-        let root = tmp();
+        let root = tmp("root-tokens");
         // shell wrapper (OwnedApply -> Safe replace) referencing both spellings.
         fs::write(
             root.join("wrapper.sh"),
@@ -670,6 +1038,87 @@ mod tests {
             .expect("env occurrence");
         assert_eq!(env_occ.replace_policy, ReplacePolicy::Refuse);
         assert!(!env_occ.replace_candidate);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn script_and_config_keys_are_indexed_with_distinct_kinds_and_replace_metadata() {
+        let root = tmp("scripts-config");
+        std::fs::create_dir_all(root.join("hooks")).unwrap();
+        std::fs::create_dir_all(root.join("wrappers")).unwrap();
+        std::fs::create_dir_all(root.join("config")).unwrap();
+
+        fs::write(root.join("hooks/pre-commit.sh"), b"#!/bin/sh\n$META_ROOT\n").unwrap();
+        fs::write(
+            root.join("wrappers/wrapper.sh"),
+            b"#!/bin/sh\necho $META_ROOT\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("config/settings.toml"),
+            b"[paths]\nroot = \"$META_ROOT\"\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("config/settings.yaml"),
+            b"paths:\n  home: /tmp\n  meta: $META_ROOT\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("config/settings.json"),
+            b"{\"path\": \"$META_ROOT\", \"tool.path\": \"x\"}\n",
+        )
+        .unwrap();
+
+        let files = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let symbols = SymbolIndex::build(&files).unwrap();
+
+        let hooks = symbols
+            .symbols()
+            .iter()
+            .filter(|s| s.kind == DbSymbolKind::HookScript)
+            .collect::<Vec<_>>();
+        assert!(!hooks.is_empty());
+        assert!(hooks
+            .iter()
+            .any(|s| s.normalized_name.ends_with("hooks/pre-commit.sh")));
+
+        let wrappers = symbols
+            .symbols()
+            .iter()
+            .filter(|s| s.kind == DbSymbolKind::WrapperScript)
+            .collect::<Vec<_>>();
+        assert!(!wrappers.is_empty());
+        assert!(wrappers
+            .iter()
+            .any(|s| s.normalized_name.ends_with("wrappers/wrapper.sh")));
+
+        let config_keys = symbols
+            .symbols()
+            .iter()
+            .filter(|s| s.kind == DbSymbolKind::ConfigKey)
+            .collect::<Vec<_>>();
+        assert!(
+            !config_keys.is_empty(),
+            "config parser should emit at least one config key"
+        );
+        assert!(config_keys.iter().any(|s| s.name == "root"));
+        assert!(config_keys.iter().any(|s| s.name == "home"));
+        assert!(config_keys.iter().any(|s| s.name == "path"));
+        assert!(config_keys.iter().any(|s| s.name == "tool.path"));
+
+        let wrapper_occ = symbols
+            .occurrences()
+            .iter()
+            .find(|o| wrappers.iter().any(|s| s.symbol_id == o.symbol_id))
+            .unwrap();
+        assert!(!wrapper_occ.normalized_text.is_empty());
+        assert!(wrapper_occ.replace_candidate);
 
         let _ = fs::remove_dir_all(&root);
     }
@@ -814,6 +1263,39 @@ mod inner {
             rust.iter().any(|s| s.value.as_deref() == Some("use")),
             "imports extracted"
         );
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn occurrence_byte_spans_are_file_relative_and_slice_exactly() {
+        let root =
+            std::env::temp_dir().join(format!("envctl-db-symbols-spans-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let content = "π=$OTHER_ROOT\r\ncd ${META_ROOT}/bin\n";
+        fs::write(root.join("wrapper.sh"), content).unwrap();
+
+        let files = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let symbols = SymbolIndex::build(&files).unwrap();
+
+        for occurrence in symbols.occurrences() {
+            assert_eq!(
+                &content[occurrence.byte_start..occurrence.byte_end],
+                occurrence.match_text
+            );
+        }
+        let meta = symbols
+            .occurrences()
+            .iter()
+            .find(|o| o.normalized_text == "META_ROOT")
+            .expect("META_ROOT occurrence");
+        assert_eq!(meta.byte_start, content.find("${META_ROOT}").unwrap());
+        assert_eq!(meta.byte_end, meta.byte_start + "${META_ROOT}".len());
 
         let _ = fs::remove_dir_all(&root);
     }

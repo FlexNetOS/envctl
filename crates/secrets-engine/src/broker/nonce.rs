@@ -258,7 +258,9 @@ mod tests {
         let store = Arc::new(Mutex::new(NonceStore::new()));
         let nonce = {
             let rng = SystemRandom::new();
-            let mut g = store.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut g = store
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             g.issue(NOW, &rng).expect("issue")
         };
         let n = 32;
@@ -267,7 +269,9 @@ mod tests {
                 let store = Arc::clone(&store);
                 let nonce = nonce.clone();
                 thread::spawn(move || {
-                    let mut g = store.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                    let mut g = store
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
                     g.check_and_consume(&nonce, NOW)
                 })
             })
@@ -284,6 +288,12 @@ mod tests {
         }
         assert_eq!(oks, 1, "exactly one concurrent winner consumes the nonce");
         assert_eq!(unknowns, n - 1, "all others see Unknown (already consumed)");
-        assert_eq!(store.lock().unwrap_or_else(std::sync::PoisonError::into_inner).len(), 0);
+        assert_eq!(
+            store
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .len(),
+            0
+        );
     }
 }
