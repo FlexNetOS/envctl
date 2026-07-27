@@ -197,6 +197,13 @@ envctl-secrets-store-libsql = { path = "crates/secrets-store-libsql" }
 # fixes documented in ENVCTL-PATCH.md; it preserves the GUI/Wayland capability
 # without raising the workspace MSRV or importing unreleased breaking changes.
 [patch.crates-io]
+# Exact crates.io postgres-protocol 0.6.12 source with one feature-only
+# hardening patch. The synchronous envctl committer uses this through
+# postgres 0.19.14; disabling sha2's unused default `alloc` feature keeps
+# the workspace's fixed-width GitHub RS256 signer graph fail-closed.
+# Source checksum, upstream revision, licenses, and verification are recorded
+# in third_party/postgres-protocol-0.6.12/ENVCTL-PATCH.md.
+postgres-protocol = { path = "third_party/postgres-protocol-0.6.12" }
 wayland-scanner = { path = "third_party/wayland-scanner-0.31.10" }
 # Exact crates.io epaint 0.33.3 plus only the upstream Skrifa/vello_cpu font
 # migration and traversal correction. ENVCTL-PATCH.md records the archive
