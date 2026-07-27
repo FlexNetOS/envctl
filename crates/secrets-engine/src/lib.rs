@@ -257,15 +257,25 @@ struct EngineInner {
 }
 
 fn read_lock<'a, T>(lock: &'a RwLock<T>) -> RwLockReadGuard<'a, T> {
-    lock.read().unwrap_or_else(std::sync::PoisonError::into_inner)
+    lock.read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn write_lock<'a, T>(lock: &'a RwLock<T>) -> RwLockWriteGuard<'a, T> {
-    lock.write().unwrap_or_else(std::sync::PoisonError::into_inner)
+    lock.write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn mutex_lock<'a, T>(lock: &'a std::sync::Mutex<T>) -> std::sync::MutexGuard<'a, T> {
-    lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    lock.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+#[cfg(test)]
+fn lock_no_panic<'a, T>(mutex: &'a std::sync::Mutex<T>) -> std::sync::MutexGuard<'a, T> {
+    mutex
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Which unlock factor the operator is presenting.
@@ -835,12 +845,12 @@ impl Engine {
     /// Zeroizes the DEK + CA issuer in RAM (the true panic stop). Idempotent when already Locked.
     pub fn lock(&self, sink: &EventSink) -> anyhow::Result<()> {
         {
-            let mut v = write_lock(&inner.vault);
+            let mut v = write_lock(&self.inner.vault);
             // Replacing Unlocked{dek} with Locked drops the old Dek => ZeroizeOnDrop wipes it.
             *v = vault::Vault::Locked;
         }
         {
-            let mut ca = write_lock(&inner.ca);
+            let mut ca = write_lock(&self.inner.ca);
             *ca = None; // drop the in-RAM CA issuer.
         }
         {
@@ -1052,7 +1062,7 @@ impl Engine {
         // owner-only capability and we keep parity with `secret_get`'s gate. The DEK borrow is dropped
         // before the per-name store reads below.
         {
-            let v = read_lock(&inner.vault);
+            let v = read_lock(&self.inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -1086,7 +1096,7 @@ impl Engine {
     pub fn secret_meta(&self, name: &str) -> anyhow::Result<Option<SecretMeta>> {
         let inner = &self.inner;
         {
-            let v = read_lock(&inner.vault);
+            let v = read_lock(&self.inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -1110,7 +1120,7 @@ impl Engine {
         // Fail-closed: a locked vault cannot remove (consistent with the other mutating verbs). The
         // refusal writes a durable Refused row + GuardRefused event BEFORE returning.
         {
-            let v = read_lock(&inner.vault);
+            let v = read_lock(&self.inner.vault);
             if v.dek().is_none() {
                 drop(v);
                 self.refuse(sink, "secret_removed", name, "vault is locked")?;
@@ -1305,7 +1315,7 @@ impl Engine {
 
         // Hold the vault READ lock for the whole mint so the DEK cannot be zeroized out from under
         // us between the gate check and the MAC.
-        let v = read_lock(&inner.vault);
+        let v = read_lock(&self.inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -2199,7 +2209,7 @@ impl Engine {
     #[cfg(feature = "provider-github")]
     pub fn app_credential_pem(&self, secret_name: &str) -> anyhow::Result<Option<AppCredential>> {
         let inner = &self.inner;
-        let v = read_lock(&inner.vault);
+        let v = read_lock(&self.inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
@@ -2261,7 +2271,7 @@ impl Engine {
     #[cfg(feature = "provider-github")]
     pub fn put_github_app_id(&self, app_id: &str) -> anyhow::Result<()> {
         {
-            let v = read_lock(&inner.vault);
+            let v = read_lock(&self.inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -2303,7 +2313,7 @@ impl Engine {
         // read lock (the un-revealable broker-only path; `secret_get` would refuse a broker_only
         // reveal). A locked vault has no DEK ⇒ Err(Locked) ⇒ fail-closed (no key ⇒ no mint).
         let pem = {
-            let v = read_lock(&inner.vault);
+            let v = read_lock(&self.inner.vault);
             let dek = match v.dek() {
                 Some(d) => d,
                 None => return Err(EngineError::Locked.into()),
@@ -2415,7 +2425,7 @@ impl Engine {
     ) -> anyhow::Result<bool> {
         // Auth floor: require the vault Unlocked (mirrors mint). A locked vault ⇒ Err(Locked).
         {
-            let v = read_lock(&inner.vault);
+            let v = read_lock(&self.inner.vault);
             if v.dek().is_none() {
                 return Err(EngineError::Locked.into());
             }
@@ -2538,7 +2548,8 @@ impl Engine {
                 // revoke request's auth-header bearer.
                 #[cfg(feature = "provider-github")]
                 {
-                    mutex_lock(&self.inner.native_token_cache).insert(relay.to_string(), scoped.token.clone());
+                    mutex_lock(&self.inner.native_token_cache)
+                        .insert(relay.to_string(), scoped.token.clone());
                 }
                 // Inject the MINTED token (never the relay bearer) into the provider's key var(s).
                 // `expires_at` is GitHub's authoritative value (RFC3339 from epoch secs), surfaced
@@ -3737,7 +3748,7 @@ impl Engine {
     /// tail, advancing the monotonic high-water. No-op when locked (no resident DEK to key the
     /// anchor with).
     fn advance_audit_anchor_if_unlocked(&self) -> anyhow::Result<()> {
-        let v = read_lock(&inner.vault);
+        let v = read_lock(&self.inner.vault);
         let Some(dek) = v.dek() else {
             return Ok(());
         };
@@ -3812,7 +3823,7 @@ impl Engine {
     /// Requires the vault to be unlocked (the anchor is DEK-keyed). See `verify_audit_anchor_with`
     /// for the verification rule. Returns `Err(EngineError::AuditChainBroken)` on any mismatch.
     pub fn verify_audit_anchor(&self, _sink: &EventSink) -> anyhow::Result<()> {
-        let v = read_lock(&inner.vault);
+        let v = read_lock(&self.inner.vault);
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),

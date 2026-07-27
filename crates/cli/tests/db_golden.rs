@@ -98,3 +98,33 @@ fn db_symbols_json_is_byte_identical_across_runs() {
     assert_eq!(a, b, "db symbols --json must be deterministic across runs");
     let _ = std::fs::remove_dir_all(&fx);
 }
+
+#[test]
+fn db_symbols_kind_and_name_filters_return_only_matching_occurrences() {
+    let fx = fixture("symbol-filters");
+    let output = run_json(
+        &[
+            "db",
+            "symbols",
+            "--kind",
+            "env-var",
+            "--name",
+            "META_ROOT",
+            "--json",
+        ],
+        Some(&fx),
+    );
+    let value: serde_json::Value = serde_json::from_str(&output).unwrap();
+    let symbols = value["symbols"].as_array().unwrap();
+    let occurrences = value["occurrences"].as_array().unwrap();
+
+    assert_eq!(1, symbols.len());
+    assert_eq!("path_token", symbols[0]["kind"]);
+    assert_eq!("META_ROOT", symbols[0]["normalized_name"]);
+    assert!(!occurrences.is_empty());
+    assert!(occurrences
+        .iter()
+        .all(|row| row["normalized_text"] == "META_ROOT"));
+
+    let _ = std::fs::remove_dir_all(&fx);
+}

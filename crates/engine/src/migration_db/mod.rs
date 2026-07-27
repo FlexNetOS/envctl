@@ -29,8 +29,12 @@ use std::path::{Path, PathBuf};
 
 pub use api::{ApprovalDecision, OperationSpec, RunBundle, RunSpec, TargetSpec, ValidationSpec};
 pub use model::*;
-pub use replay::{ReplayCheck, ReplayMode, ReplayReport};
-pub use views::{ApprovalRow, ReplayReadinessRow, RunStatusRow, ScorecardRow, TimelineRow};
+pub use replay::{
+    ReplayCheck, ReplayEventChain, ReplayHashCheck, ReplayHashStatus, ReplayMode,
+    ReplayNonDeterministicOperation, ReplayPlanRow, ReplayRequest, ReplayRequestMode, ReplayReport,
+    ReplayResult, ReplayResultStatus,
+};
+pub use views::{ApprovalRow, RunStatusRow, ScorecardRow, TimelineRow};
 
 /// Errors from the migration database. redb errors are carried as strings so the
 /// API stays stable across redb major versions.

@@ -9,17 +9,20 @@
 //!   - [`WatchState::tick`] re-scans the scope, diffs it against the held
 //!     snapshot by content hash (via [`FileIndex::diff_paths`]), swaps in the
 //!     new snapshot, and returns an [`IndexDelta`] of what changed.
+//!   - [`DbWatcher`] uses the platform's native recursive watcher and persists
+//!     a delta after each notification.
 //!
-//! **Poll fallback (documented, per the REQ-057 gate):** `tick()` *is* the poll
-//! step — the CLI calls it on an interval. A `notify`/inotify watcher is an
-//! optional acceleration layered on top in the CLI (REQ-059/060-gated dependency
-//! decision); when the OS inotify watch limit is hit on a large tree, the CLI
-//! degrades to calling `tick()` on a timer, which needs no per-file watches. The
-//! engine core therefore has no OS-watch dependency and the no-C boundary holds.
+//! **Poll fallback:** if native watcher creation, recursive registration, or a
+//! later event fails (including Linux inotify `ENOSPC` watch-limit failures),
+//! [`DbWatcher`] switches to bounded polling. Polling needs no per-directory
+//! watches, so large trees remain observable without changing sysctls.
 
 use crate::db::Result;
 use crate::db_index::{DbIndexStore, FileIndex, ScanScope};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
+use std::time::Duration;
 
 /// What changed between two index snapshots. Only these rows need re-derived
 /// symbols; everything else is reused (incremental invalidation).
@@ -49,6 +52,150 @@ impl IndexDelta {
 pub struct WatchState {
     scope: ScanScope,
     index: FileIndex,
+}
+
+/// Active filesystem event source. `reason` is populated when native watching
+/// could not be used and is suitable for operator-facing diagnostics.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WatchBackend {
+    Notify,
+    Poll { reason: String },
+}
+
+/// A synchronous, non-printing native watcher with a poll safety net.
+///
+/// The native watcher is held solely to keep its OS registration alive. Events
+/// are coalesced into one content-hash delta, so duplicate/noisy notifications
+/// never invalidate unchanged rows.
+pub struct DbWatcher {
+    scope: ScanScope,
+    store: DbIndexStore,
+    interval: Duration,
+    backend: WatchBackend,
+    events: Receiver<notify::Result<notify::Event>>,
+    _watcher: Option<RecommendedWatcher>,
+}
+
+impl DbWatcher {
+    /// Persist an initial baseline, then try to register a recursive native
+    /// watcher. Any registration failure becomes a documented poll fallback.
+    pub fn start(scope: ScanScope, store: DbIndexStore, interval: Duration) -> Result<Self> {
+        let initial = FileIndex::scan(&scope)?;
+        store.save(&initial)?;
+
+        let (sender, events) = mpsc::channel();
+        let mut watcher = match notify::recommended_watcher(sender) {
+            Ok(watcher) => watcher,
+            Err(error) => {
+                return Ok(Self::polling(
+                    scope,
+                    store,
+                    interval,
+                    events,
+                    error.to_string(),
+                ));
+            }
+        };
+        let roots = std::iter::once(scope.root.as_str())
+            .chain(scope.extra_roots.iter().map(String::as_str));
+        let registration = roots
+            .map(std::path::Path::new)
+            .try_for_each(|root| watcher.watch(root, RecursiveMode::Recursive));
+        match registration {
+            Ok(()) => Ok(Self {
+                scope,
+                store,
+                interval,
+                backend: WatchBackend::Notify,
+                events,
+                _watcher: Some(watcher),
+            }),
+            Err(error) => Ok(Self::polling(
+                scope,
+                store,
+                interval,
+                events,
+                classify_notify_error(&error),
+            )),
+        }
+    }
+
+    fn polling(
+        scope: ScanScope,
+        store: DbIndexStore,
+        interval: Duration,
+        events: Receiver<notify::Result<notify::Event>>,
+        reason: String,
+    ) -> Self {
+        Self {
+            scope,
+            store,
+            interval,
+            backend: WatchBackend::Poll { reason },
+            events,
+            _watcher: None,
+        }
+    }
+
+    pub fn backend(&self) -> &WatchBackend {
+        &self.backend
+    }
+
+    /// Wait for the next native event or poll deadline, then return only rows
+    /// whose content/path membership changed since the persisted baseline.
+    pub fn next_delta(&mut self) -> Result<IndexDelta> {
+        if matches!(self.backend, WatchBackend::Notify) {
+            loop {
+                match self.events.recv_timeout(self.interval) {
+                    Ok(Ok(event)) if is_relevant_event(&event) => break,
+                    // Persisting the baseline itself produces events below
+                    // `.envctl`; ignore them to avoid a self-triggered loop.
+                    Ok(Ok(_)) => continue,
+                    Err(RecvTimeoutError::Timeout) => break,
+                    Ok(Err(error)) => {
+                        self.backend = WatchBackend::Poll {
+                            reason: classify_notify_error(&error),
+                        };
+                        self._watcher = None;
+                        break;
+                    }
+                    Err(RecvTimeoutError::Disconnected) => {
+                        self.backend = WatchBackend::Poll {
+                            reason: "native watcher event channel disconnected".into(),
+                        };
+                        self._watcher = None;
+                        break;
+                    }
+                }
+            }
+        } else {
+            std::thread::sleep(self.interval);
+        }
+        poll_persisted(&self.scope, &self.store)
+    }
+}
+
+fn is_relevant_event(event: &notify::Event) -> bool {
+    event.paths.iter().any(|path| {
+        !path
+            .components()
+            .any(|part| part.as_os_str() == crate::db_index::ENVCTL_STATE_DIR)
+    })
+}
+
+fn classify_notify_error(error: &notify::Error) -> String {
+    let message = error.to_string();
+    let lower = message.to_ascii_lowercase();
+    if lower.contains("no space left")
+        || lower.contains("watch limit")
+        || lower.contains("max files")
+        || lower.contains("too many open files")
+    {
+        format!("native watcher limit reached; using poll fallback: {message}")
+    } else {
+        format!("native watcher unavailable; using poll fallback: {message}")
+    }
 }
 
 impl WatchState {
@@ -220,5 +367,34 @@ mod tests {
         let (added, changed, removed) = b.diff_paths(&a);
         assert!(added.is_empty() && changed.is_empty() && removed.is_empty());
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn db_watcher_uses_native_notifications_and_filters_its_state_file() {
+        let root = tmp("native");
+        fs::write(root.join("a.sh"), b"before\n").unwrap();
+        let store = DbIndexStore::for_root(&root);
+        let mut watcher =
+            DbWatcher::start(scope(&root), store, Duration::from_millis(500)).unwrap();
+        assert_eq!(watcher.backend(), &WatchBackend::Notify);
+
+        fs::write(root.join("a.sh"), b"after\n").unwrap();
+        let delta = watcher.next_delta().unwrap();
+        assert_eq!(delta.changed.len(), 1, "{delta:?}");
+        assert!(delta.changed[0].ends_with("a.sh"));
+
+        // The baseline save emits native events under `.envctl`. They are
+        // ignored; the safety deadline returns an empty delta instead of a
+        // self-triggered invalidation loop.
+        assert!(watcher.next_delta().unwrap().is_empty());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn inotify_limit_errors_are_operator_actionable() {
+        let error = notify::Error::generic("No space left on device (os error 28)");
+        let reason = classify_notify_error(&error);
+        assert!(reason.contains("limit reached"));
+        assert!(reason.contains("poll fallback"));
     }
 }

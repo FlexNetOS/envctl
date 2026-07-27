@@ -1,0 +1,7 @@
+REQ-059_CLI_GUI_SHARED_ENGINE completed.
+GUI and CLI use envctl-engine DbSnapshot entry points for db query/refactor/deploy.
+PASS cargo check -p envctl-gui -p envctl
+PASS cargo test -p envctl-engine --test db_parity (6 tests)
+PASS cargo test -p envctl-gui (32 tests)
+PASS cargo test -p envctl (74 tests)
+BLOCKED cargo test --workspace by pre-existing crates/secrets-engine/src/lib.rs compile errors outside task scope.

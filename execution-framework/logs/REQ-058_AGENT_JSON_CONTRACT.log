@@ -1,0 +1,11 @@
+REQ-058_AGENT_JSON_CONTRACT
+2026-07-27T12:43:33Z
+
+PASS cargo test -p envctl-engine json_contract
+     5 passed; 0 failed; 352 filtered out
+PASS rustfmt --edition 2021 --check crates/engine/src/db.rs
+PASS git diff --check -- crates/engine/src/db.rs docs/DB-AUTOMATION.md
+
+The detached execution workspace could not resolve crates/engine's ../../../loop_lib
+path. Verification ran from the packet-provided canonical envctl checkout exposed by
+__task_root__, which resolves the same target files.

@@ -476,7 +476,8 @@ fn validate_raw_agent_targets(cfg: &Config, cfg_dir: &Path, scope: Scope) -> Res
         let mcp = match scope {
             Scope::Project => agent.mcp_project_target(cfg_dir),
             Scope::Global => agent.mcp_settings_target(
-                home.as_deref().ok_or_else(|| err("global scope missing home path"))?,
+                home.as_deref()
+                    .ok_or_else(|| err("global scope missing home path"))?,
                 agent_env_config
                     .as_deref()
                     .ok_or_else(|| err("global scope missing config path"))?,

@@ -614,7 +614,10 @@ impl InMemStore {
     /// `verify_audit_chain` will detect the tamper at that seq. Used by the test that proves the
     /// chain catches a mutated middle row.
     pub fn tamper_audit_subject(&self, seq: i64) {
-        let mut g = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut g = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(row) = g.audit.iter_mut().find(|r| r.seq == seq) {
             row.subject = Some(match row.subject.take() {
                 Some(s) => format!("{s}!tampered"),
@@ -625,7 +628,10 @@ impl InMemStore {
 
     /// Snapshot the current audit chain (for assertions on seq / prev_hash linkage).
     pub fn audit_rows(&self) -> Vec<AuditRecord> {
-        let g = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let g = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         g.audit.clone()
     }
 
@@ -634,7 +640,10 @@ impl InMemStore {
     /// valid unkeyed chain (seq 1..=k, linked), so only the DEK-keyed anchor can catch this. Used
     /// by the tail-truncation regression test.
     pub fn truncate_audit_tail(&self, n: usize) {
-        let mut g = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut g = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let keep = g.audit.len().saturating_sub(n);
         g.audit.truncate(keep);
     }
@@ -642,7 +651,10 @@ impl InMemStore {
     /// Overwrite a meta value, modeling a store-level tamper of a non-secret header field (e.g.
     /// `vault.dek_generation`). Used by the dek_generation-binding regression test.
     pub fn tamper_meta(&self, k: &str, v: &str) {
-        let mut g = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut g = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         g.meta.insert(k.to_string(), v.to_string());
     }
 
@@ -651,7 +663,10 @@ impl InMemStore {
     /// rewrite the peer binding, repoint the policy_id). The row-MAC verify on the swap path must
     /// reject this as `UnknownBearer`. Used by the bearer-row authenticity regression test.
     pub fn tamper_bearer(&self, token_id: &str, edit: impl FnOnce(&mut BearerRow)) {
-        let mut g = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut g = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(b) = g.bearers.iter_mut().find(|b| b.token_id == token_id) {
             edit(b);
         }

@@ -1,0 +1,41 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-052_FILE_INDEX",
+  "parent_id": "GH-414",
+  "status": "completed",
+  "completed_at": "2026-07-27T12:28:10Z",
+  "actor": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-052_file_index",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/meta/src/envctl",
+  "branch": "codex/profile-xdg-owner-20260721",
+  "head_commit": "dbcc8374a9502773670ba6cb40f6cdb08c337750",
+  "files_verified": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/engine/Cargo.toml",
+    "crates/engine/src/db_index.rs"
+  ],
+  "commands_run": [
+    "cargo test -p envctl-engine db_index",
+    "cargo check -p envctl-engine",
+    "cargo check -p envctl",
+    "git diff --check"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "completion_gate": "DbFileRow scan honors repository ignore rules and narrow ScanScope roots",
+    "summary": "Six db_index tests passed; engine and CLI compile; default traversal uses ignore::WalkBuilder with gitignore support and excludes heavy generated directories.",
+    "format_note": "Changed-file diff is clean. Workspace-wide cargo fmt --all -- --check remains blocked by unrelated pre-existing formatting drift."
+  },
+  "checksums": {
+    "Cargo.toml": "ecfcf6036667e5bbd82a06a9d19621fbd0acc011dec1511aca1fe06e60e6fe4a",
+    "Cargo.lock": "4585815796f142bc3284d768d20ef1961f70c18a3a4d9d8889539eb2b58e21c5",
+    "crates/engine/Cargo.toml": "19da6ec4baf05b94aab24cb7de82f7219049bdd211986cea85211e6fe3b4d280",
+    "crates/engine/src/db_index.rs": "07966589af1888f02a1956535581630a731fe3616aeae4e4e513b59087928df5"
+  },
+  "logs_uri": "execution-framework/logs/REQ-052_FILE_INDEX.log",
+  "heartbeat_uri": "execution-framework/heartbeats/REQ-052_FILE_INDEX.heartbeat",
+  "failure_reason": "",
+  "next_action": "REQ-053_SYMBOL_INDEX and REQ-057_WATCH_INCREMENTAL may proceed."
+}

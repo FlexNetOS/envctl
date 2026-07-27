@@ -23,7 +23,29 @@ if ("HOME" in $env) and ("PATH" in $env) and (($env.PATH | describe) =~ "list") 
     }
 
     $env.SHELL = $profile_nu
-    $env.PATH = $profile_bins
+
+    # Profile ownership is precedence, not exclusivity. The profile frontdoors are
+    # prepended so they win every lookup; only the competing owners named above are
+    # discarded. Assigning $profile_bins outright also removed /usr/bin, /bin and
+    # /snap/bin -- and because this user's /etc/passwd login shell is nu, that
+    # amputated PATH reached the graphical session and left system capabilities
+    # (snaps, desktop launchers, D-Bus-activated helpers) unresolvable.
+    let local_root = ([$env.HOME ".local"] | path join)
+    let inherited = (
+        $env.PATH
+        | where {|entry| not ($entry | str starts-with "/nix/store/") }
+        | where {|entry| not ($entry | str starts-with $local_root) }
+        | where {|entry| not ($entry in $profile_bins) }
+    )
+
+    # Guaranteed floor: a login that arrives with an already-stripped PATH must not
+    # be able to propagate that loss into the session.
+    let system_baseline = ([
+        "/usr/local/sbin" "/usr/local/bin" "/usr/sbin" "/usr/bin" "/sbin" "/bin"
+        "/usr/games" "/usr/local/games" "/snap/bin"
+    ] | where { path exists })
+
+    $env.PATH = ($profile_bins | append $inherited | append $system_baseline | uniq)
 
     let meta_root = ([$env.HOME "meta"] | path join)
     let profile_data = ([$meta_root "var" "lib"] | path join)

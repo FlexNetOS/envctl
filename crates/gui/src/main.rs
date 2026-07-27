@@ -17,9 +17,11 @@ use envctl_engine::{
     AgentCleanSpec, AgentCommandSpec, AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome,
     AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockSpec,
     AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, BuildStrategy,
-    CatalogRenderReport, ComponentState, DashboardPlan, DashboardSpec, DoctorReport, DoctorSpec,
-    DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor,
-    RefactorGoal, RenameRule, Severity, Status, Stream, Telemetry, TelemetryControl, Zeroizing,
+    CatalogRenderReport, ComponentState, DashboardPlan, DashboardSpec, DeployPlan, DeploySpec,
+    DoctorReport, DoctorSpec, DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event,
+    OpStatus, QueryPreset, QueryResult, QuerySpec, Refactor, RefactorGoal, RefactorPlan,
+    RenameRule, RootAliasSpec, ScanScope, Severity, Status, Stream, Telemetry, TelemetryControl,
+    Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -43,6 +45,7 @@ enum Screen {
     Doctor,
     Components,
     Graph,
+    Database,
     AddRepo,
     Agent,
     Secrets,
@@ -58,6 +61,7 @@ impl Screen {
             Screen::Doctor => "Doctor",
             Screen::Components => "Components",
             Screen::Graph => "Graph",
+            Screen::Database => "Database",
             Screen::AddRepo => "Add Repo",
             Screen::Agent => "Agent",
             Screen::Secrets => "Secrets",
@@ -212,6 +216,15 @@ struct EnvctlApp {
     // read-only engine clone for on-thread graph queries
     geng: Engine,
     graph_focus: String,
+    // GH#414 database panel. The GUI is only an adapter over DbSnapshot; all
+    // query/refactor/deploy decisions remain in envctl-engine.
+    db_repo_root: String,
+    db_query_preset: String,
+    db_refactor_from: String,
+    db_refactor_to: String,
+    db_deploy_target: String,
+    db_deploy_stage: String,
+    db_status: String,
     // GPU summary (from the last EnvReport) for the DriverNotActive card
     gpu_present: bool,
     driver_loaded: bool,
@@ -354,6 +367,13 @@ impl EnvctlApp {
             tel,
             geng,
             graph_focus: String::new(),
+            db_repo_root: ".".into(),
+            db_query_preset: "paths:legacy".into(),
+            db_refactor_from: "META_ROOT".into(),
+            db_refactor_to: "LIFE_OS_ROOT".into(),
+            db_deploy_target: String::new(),
+            db_deploy_stage: String::new(),
+            db_status: String::new(),
             gpu_present: false,
             driver_loaded: false,
             software_rendered: false,
@@ -746,6 +766,51 @@ impl EnvctlApp {
     }
 }
 
+/// GUI adapters intentionally contain no database behavior. They translate
+/// form values into the same engine-owned entry points used by `envctl db`.
+fn gui_db_query(repo_root: &str, preset: &str) -> anyhow::Result<QueryResult> {
+    let snapshot = envctl_engine::DbSnapshot::open(ScanScope {
+        root: repo_root.to_string(),
+        ..Default::default()
+    })?;
+    let spec = QuerySpec {
+        table: None,
+        filters: Vec::new(),
+        preset: Some(preset.parse::<QueryPreset>()?),
+        target_profile: None,
+        explain: true,
+    };
+    Ok(snapshot.query(&spec)?)
+}
+
+fn gui_db_refactor_plan(repo_root: &str, from: &str, to: &str) -> anyhow::Result<RefactorPlan> {
+    let snapshot = envctl_engine::DbSnapshot::open(ScanScope {
+        root: repo_root.to_string(),
+        ..Default::default()
+    })?;
+    let spec = RootAliasSpec {
+        from: from.to_string(),
+        to: to.to_string(),
+        target_profile: None,
+        scope: None,
+        render_out: None,
+    };
+    Ok(snapshot.refactor_plan(&spec)?)
+}
+
+fn gui_db_deploy_plan(target: &str, stage: &str) -> anyhow::Result<DeployPlan> {
+    let snapshot = envctl_engine::DbSnapshot::open(ScanScope {
+        root: target.to_string(),
+        ..Default::default()
+    })?;
+    let spec = DeploySpec {
+        kind: "hooks".into(),
+        target: target.to_string(),
+        stage_dir: (!stage.trim().is_empty()).then(|| stage.to_string()),
+    };
+    Ok(snapshot.deploy_plan(&spec)?)
+}
+
 impl eframe::App for EnvctlApp {
     fn update(&mut self, ctx: &egui::Context, _f: &mut eframe::Frame) {
         self.drain();
@@ -778,6 +843,7 @@ impl eframe::App for EnvctlApp {
                         Screen::Doctor,
                         Screen::Components,
                         Screen::Graph,
+                        Screen::Database,
                         Screen::AddRepo,
                         Screen::Agent,
                         Screen::Secrets,
@@ -809,6 +875,7 @@ impl eframe::App for EnvctlApp {
                 Screen::Doctor => self.doctor_screen(ui),
                 Screen::Components => self.components_screen(ui),
                 Screen::Graph => self.graph_screen(ui),
+                Screen::Database => self.database_screen(ui),
                 Screen::AddRepo => self.add_repo_screen(ui),
                 Screen::Agent => self.agent_screen(ui),
                 Screen::Secrets => self.secrets_screen(ui),
@@ -961,6 +1028,100 @@ impl EnvctlApp {
                 report.meta_boundary.violations.len()
             ));
         });
+    }
+
+    // ── Database (GH#414 / REQ-059) ────────────────────────────────────────
+    fn database_screen(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Code graph database");
+        ui.label(
+            RichText::new(
+                "Query and plan through the same envctl-engine DbSnapshot API as the CLI.",
+            )
+            .color(theme::TEXT_MUTED),
+        );
+        ui.add_space(8.0);
+
+        ui.horizontal(|ui| {
+            ui.label("Repository root");
+            ui.add(
+                egui::TextEdit::singleline(&mut self.db_repo_root)
+                    .desired_width(520.0)
+                    .hint_text("/path/to/repository"),
+            );
+        });
+
+        ui.separator();
+        ui.label(RichText::new("Query").strong());
+        ui.horizontal(|ui| {
+            ui.label("Preset");
+            ui.text_edit_singleline(&mut self.db_query_preset);
+            if ui.button("Run query").clicked() {
+                self.db_status = match gui_db_query(&self.db_repo_root, &self.db_query_preset) {
+                    Ok(result) => format!(
+                        "query: {} row(s){}",
+                        result.row_count,
+                        result
+                            .explain
+                            .as_deref()
+                            .map(|trace| format!(" · {trace}"))
+                            .unwrap_or_default()
+                    ),
+                    Err(error) => format!("⛔ query refused: {error}"),
+                };
+            }
+        });
+
+        ui.separator();
+        ui.label(RichText::new("Root-alias refactor plan").strong());
+        ui.horizontal(|ui| {
+            ui.label("From");
+            ui.text_edit_singleline(&mut self.db_refactor_from);
+            ui.label("To");
+            ui.text_edit_singleline(&mut self.db_refactor_to);
+            if ui.button("Plan refactor").clicked() {
+                self.db_status = match gui_db_refactor_plan(
+                    &self.db_repo_root,
+                    &self.db_refactor_from,
+                    &self.db_refactor_to,
+                ) {
+                    Ok(plan) => format!(
+                        "refactor plan: {} file(s), {} occurrence(s), {} refused",
+                        plan.files_touched, plan.occurrences_total, plan.refused
+                    ),
+                    Err(error) => format!("⛔ refactor refused: {error}"),
+                };
+            }
+        });
+        ui.label(
+            RichText::new("Plan only: this screen never mutates the source tree.")
+                .color(theme::TEXT_FAINT),
+        );
+
+        ui.separator();
+        ui.label(RichText::new("Deploy plan").strong());
+        ui.horizontal(|ui| {
+            ui.label("Target");
+            ui.text_edit_singleline(&mut self.db_deploy_target);
+            ui.label("Stage");
+            ui.text_edit_singleline(&mut self.db_deploy_stage);
+            if ui.button("Plan deploy").clicked() {
+                self.db_status =
+                    match gui_db_deploy_plan(&self.db_deploy_target, &self.db_deploy_stage) {
+                        Ok(plan) => format!(
+                            "deploy plan: {} ready, {} queued, {} refused",
+                            plan.ready, plan.queued, plan.refused
+                        ),
+                        Err(error) => format!("⛔ deploy refused: {error}"),
+                    };
+            }
+        });
+        ui.label(
+            RichText::new("Plan only: promotion still requires the engine approval gate.")
+                .color(theme::TEXT_FAINT),
+        );
+
+        ui.add_space(12.0);
+        ui.monospace(&self.db_status);
     }
 
     // ── Dashboard ───────────────────────────────────────────────────────────
@@ -3298,6 +3459,13 @@ mod agent_spec_tests {
             tel: TelemetryControl::new(),
             geng,
             graph_focus: String::new(),
+            db_repo_root: ".".into(),
+            db_query_preset: "paths:legacy".into(),
+            db_refactor_from: "META_ROOT".into(),
+            db_refactor_to: "LIFE_OS_ROOT".into(),
+            db_deploy_target: String::new(),
+            db_deploy_stage: String::new(),
+            db_status: String::new(),
             gpu_present: false,
             driver_loaded: false,
             software_rendered: false,
@@ -3888,5 +4056,49 @@ mod agent_spec_tests {
         assert_eq!(json_string_field(j, "absent"), None);
         assert_eq!(json_number_field(j, "absent"), None);
         assert_eq!(json_bool_field(j, "absent"), None);
+    }
+
+    #[test]
+    fn database_screen_exercises_shared_query_refactor_and_deploy_entry_points() {
+        let root = std::env::temp_dir().join(format!(
+            "envctl-gui-db-parity-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let stage = root.join("stage");
+        let target = root.join("target");
+        let legacy = root.join("legacy");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&stage).unwrap();
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(
+            legacy.join("settings.toml"),
+            "root = \"${META_ROOT}/legacy\"\n",
+        )
+        .unwrap();
+        std::fs::write(stage.join("hook.nu"), "echo shared-engine\n").unwrap();
+
+        let root_s = root.display().to_string();
+        let query = gui_db_query(&root_s, "paths:legacy").unwrap();
+        assert!(query.row_count > 0);
+
+        let refactor = gui_db_refactor_plan(&root_s, "META_ROOT", "LIFE_OS_ROOT").unwrap();
+        assert_eq!(refactor.files_touched, 1);
+        assert_eq!(refactor.refused, 0);
+
+        let deploy =
+            gui_db_deploy_plan(&target.display().to_string(), &stage.display().to_string())
+                .unwrap();
+        assert_eq!(deploy.ready, 1);
+        assert_eq!(deploy.queued, 0);
+        assert_eq!(deploy.refused, 0);
+
+        // The GUI adapter plans only; neither source nor target was mutated.
+        assert!(std::fs::read_to_string(legacy.join("settings.toml"))
+            .unwrap()
+            .contains("META_ROOT"));
+        assert!(!target.join("hook.nu").exists());
+        let _ = std::fs::remove_dir_all(root);
     }
 }

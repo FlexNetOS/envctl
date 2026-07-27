@@ -140,7 +140,7 @@ impl DagState {
     pub fn set_attention_params(&self, mechanism: &str, params: Value) {
         self.inner
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .attention_params
             .insert(mechanism.to_string(), params);
     }

@@ -335,7 +335,9 @@ mod tests {
             .map(|_| {
                 let store = Arc::clone(&store);
                 thread::spawn(move || {
-                    let mut guard = store.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                    let mut guard = store
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
                     guard.check_and_record("client-a", "jti-race", NOW, NOW)
                 })
             })
@@ -352,6 +354,12 @@ mod tests {
         }
         assert_eq!(oks, 1, "exactly one concurrent winner");
         assert_eq!(replays, n - 1, "all others see Replayed");
-        assert_eq!(store.lock().unwrap_or_else(std::sync::PoisonError::into_inner).len(), 1);
+        assert_eq!(
+            store
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .len(),
+            1
+        );
     }
 }

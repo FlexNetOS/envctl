@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
   "status": "completed",
-  "started_at": "2026-07-05T05:39:53+00:00",
-  "completed_at": "2026-07-05T05:39:53+00:00",
+  "started_at": "2026-07-27T18:39:21+00:00",
+  "completed_at": "2026-07-27T18:39:21+00:00",
   "actor": "flexnetos-adapter-agent",
   "helper_id": "helper-flexnetos-adapter-01",
   "model_tag": "gpt-5.3-spark",
@@ -25,7 +25,7 @@
     "schema_version": "1.0",
     "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
     "status": "pass",
-    "generated_at": "2026-07-05T05:39:53+00:00",
+    "generated_at": "2026-07-27T18:39:21+00:00",
     "recipe_summary": {
       "recipe_id": "flexnetos-codex-package-target-adapter",
       "version": "1.0.0",
@@ -68,7 +68,7 @@
       "paths": [
         "docs/FLEXNETOS_ADAPTER_RECIPE.md",
         "generated/flexnetos_adapter_recipe.json",
-        "scripts/verify_flexnetos_adapter_recipe.py"
+        "/home/flexnetos/meta/src/envctl/scripts/verify_flexnetos_adapter_recipe.py"
       ],
       "findings": []
     },
@@ -102,18 +102,18 @@
     "sha256": {
       "docs/FLEXNETOS_ADAPTER_RECIPE.md": "sha256:13e1e4e4b5df0f0c5d840e3c8bf3daecda0c65401a175c2d58925a39dd8c32d8",
       "generated/flexnetos_adapter_recipe.json": "sha256:4732e80f5243bd4270b5442d9358d805d1dee167a34da8e4d43c0b5222659cd7",
-      "scripts/verify_flexnetos_adapter_recipe.py": "sha256:3a59b31f3490f51f3f8f276717ea21ab835954bd63666d4000a82b973363a75f"
+      "scripts/verify_flexnetos_adapter_recipe.py": "sha256:da8662496a12dc2a8b454f6d6fc9d9de9819a52451fa6901557692410d4f9331"
     }
   },
   "checksums": {
     "execution-framework/scripts/verify_flexnetos_adapter_recipe.py": "3a59b31f3490f51f3f8f276717ea21ab835954bd63666d4000a82b973363a75f",
     "execution-framework/docs/FLEXNETOS_ADAPTER_RECIPE.md": "13e1e4e4b5df0f0c5d840e3c8bf3daecda0c65401a175c2d58925a39dd8c32d8",
     "execution-framework/generated/flexnetos_adapter_recipe.json": "4732e80f5243bd4270b5442d9358d805d1dee167a34da8e4d43c0b5222659cd7",
-    "execution-framework/generated/flexnetos_adapter_recipe_validation_report.json": "8db3e9b4b6003419f30f187d34bf7945ca49cc152a4ad87e39953bd0980a8636",
-    "execution-framework/state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json": "4a1ae9f3d75c3dda9d87aaec1a2f19404ba7e5643533e44d399cf98ffa89f44f",
-    "execution-framework/logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log": "8db3e9b4b6003419f30f187d34bf7945ca49cc152a4ad87e39953bd0980a8636",
-    "execution-framework/proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json": "61e2c28f50f70e607110e24f0aa7e4445053e28851e1f97effb102e10d0966d5",
-    "execution-framework/proof_records/proof_ledger.jsonl": "19b5f9e45b59f2618c78745d3460fe8e311c91d8fd12d54ac735de6f224aff12"
+    "execution-framework/generated/flexnetos_adapter_recipe_validation_report.json": "86fb2cc85f0b9871c2e066bb289d39567f94faffc95a749f6ea6d8d65e6e1250",
+    "execution-framework/state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json": "dd0a61d69a4e48f9e6ba57af1b13fee792cf6b93022559e05d68c429b4e7d1fd",
+    "execution-framework/logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log": "86fb2cc85f0b9871c2e066bb289d39567f94faffc95a749f6ea6d8d65e6e1250",
+    "execution-framework/proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json": "57bc43d2e2e51ab1114e955958c620d91b2a9b7a5ebde29161d88d35680cb27b",
+    "execution-framework/proof_records/proof_ledger.jsonl": "6195dfd60b7b92e45eaf6c93209192a0f66debc74378ed1043618ded8bc9057b"
   },
   "logs_uri": "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

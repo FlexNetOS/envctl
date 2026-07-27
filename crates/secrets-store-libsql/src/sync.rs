@@ -130,7 +130,8 @@ impl SyncConnection {
             .db
             .connect()
             .map_err(|e| Error::Connect(e.to_string()))?;
-        *self.conn
+        *self
+            .conn
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = fresh;
         Ok(())

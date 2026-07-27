@@ -71,8 +71,11 @@ envctl db --repo-root /path/to/repo query --preset symbols-rust-cli --json
 
 For a durable file snapshot, `envctl db scan --json` stores the deterministically ordered index
 at `<repo-root>/.envctl/db-index.json`; `--no-persist` keeps the scan in memory. `envctl db watch`
-performs one content-hash delta poll against that saved baseline and reports added, changed,
-removed, and unchanged rows.
+uses native recursive filesystem notifications and reports content-hash deltas against that
+saved baseline. It automatically switches to interval polling if the native watcher cannot be
+registered or later fails (including Linux inotify watch-limit exhaustion); polling needs no
+per-directory watches. `--poll-interval-ms` controls the safety/fallback interval, and `--once`
+performs one deterministic persisted poll for scripts and smoke tests.
 
 ## Symbol mapping and impact
 
@@ -151,6 +154,21 @@ the planner.
 Use `--json` for roots, queries, symbols, impact, refactor plans, and deploy plans. The engine
 sorts indexed rows, changes, and promoted paths for deterministic output, and tests pin the wire
 tags and output shape. Compact UI-ready projections are also available:
+
+The stable top-level schemas are:
+
+| Command | JSON shape |
+|---|---|
+| `roots` | array of root rows |
+| `query` | `{ "rows": [...], "row_count": N, "explain": string|null }` |
+| `symbols` | `{ "symbols": [...], "occurrences": [...] }` |
+| `impact` | `{ "symbol", "normalized_symbol", "files", "files_affected", "occurrences_total", "safe_occurrences", "refused_occurrences", "definitions" }` |
+| `refactor` | `{ "plan": { "mode", "changes", "files_touched", "occurrences_total", "refused", "approved" }, "rendered": array|null, "mutated": array|null }` |
+| `deploy` | `{ "plan": { "steps", "ready", "queued", "refused", "approved" }, "promoted": array|null }` |
+
+Fields are always present, including nullable optional fields and zero counts. Enum values use
+`snake_case`, except preset names in serialized query specifications, which use `kebab-case`.
+Consumers may rely on these names and types; they must not rely on pretty-print indentation.
 
 ```bash
 envctl db widget roots --json

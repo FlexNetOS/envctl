@@ -560,7 +560,10 @@ pub(crate) mod seed_factor {
 
         fn env_lock() -> MutexGuard<'static, ()> {
             static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-            ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+            ENV_LOCK
+                .get_or_init(|| Mutex::new(()))
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
         }
 
         fn restore_var(key: &str, value: Option<String>) {

@@ -1,0 +1,6 @@
+2026-07-27T12:40:15Z completed REQ-054_QUERY_SURFACE
+cargo test -p envctl-engine db_query: passed (4 tests)
+cargo check -p envctl: passed
+targeted rustfmt --check: passed
+targeted git diff --check: passed
+completion gate: passed; paths:legacy resolved to Files + absolute_path contains legacy

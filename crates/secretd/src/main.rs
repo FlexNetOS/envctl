@@ -300,31 +300,25 @@ async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
             envctl_secretd::edge::authorizer::cert_fingerprint_from_pem(&edge_cert_path)
                 .context("computing this VPS's edge-cert fingerprint for the authorizer binding")?;
         let auth_cfg = envctl_secretd::edge::authorizer::AuthorizerConfig {
-            url: profile
-                .operator_authorizer_url
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but operator_authorizer_url is missing"))?,
-            vps_instance_id: profile
-                .vps_instance_id
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but vps_instance_id is missing"))?,
+            url: profile.operator_authorizer_url.clone().ok_or_else(|| {
+                anyhow::anyhow!("operator topology is VPS but operator_authorizer_url is missing")
+            })?,
+            vps_instance_id: profile.vps_instance_id.clone().ok_or_else(|| {
+                anyhow::anyhow!("operator topology is VPS but vps_instance_id is missing")
+            })?,
             vps_cert_fp,
-            operator_pubkey: profile
-                .operator_pubkey
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but operator_pubkey is missing"))?,
-            operator_ca_path: profile
-                .operator_ca_path
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but operator_ca_path is missing"))?,
-            client_cert_path: profile
-                .client_cert_path
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but client_cert_path is missing"))?,
-            client_key_path: profile
-                .client_key_path
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("operator topology is VPS but client_key_path is missing"))?,
+            operator_pubkey: profile.operator_pubkey.clone().ok_or_else(|| {
+                anyhow::anyhow!("operator topology is VPS but operator_pubkey is missing")
+            })?,
+            operator_ca_path: profile.operator_ca_path.clone().ok_or_else(|| {
+                anyhow::anyhow!("operator topology is VPS but operator_ca_path is missing")
+            })?,
+            client_cert_path: profile.client_cert_path.clone().ok_or_else(|| {
+                anyhow::anyhow!("operator topology is VPS but client_cert_path is missing")
+            })?,
+            client_key_path: profile.client_key_path.clone().ok_or_else(|| {
+                anyhow::anyhow!("operator topology is VPS but client_key_path is missing")
+            })?,
         };
         let (asink, _arx) = envctl_secrets::EventSink::channel();
         let handle = envctl_secretd::edge::authorizer::spawn_authorizer_link(
@@ -350,9 +344,9 @@ async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
             let _ = state.client_revocations_path.set(path);
         }
         if edge_cfg.enabled {
-            let bind_addr = edge_cfg.bind_addr.ok_or_else(|| {
-                anyhow::anyhow!("edge settings enabled but bind_addr is missing")
-            })?;
+            let bind_addr = edge_cfg
+                .bind_addr
+                .ok_or_else(|| anyhow::anyhow!("edge settings enabled but bind_addr is missing"))?;
             let cfg = envctl_secretd::edge::EdgeConfig {
                 enabled: true,
                 bind_addr,

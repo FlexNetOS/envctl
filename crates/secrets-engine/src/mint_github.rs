@@ -949,14 +949,17 @@ QIs94Z6Z9XJZzdSTUvPXYIUfKCiJ7nl0QU9cvM7TVOJnU6Eo9Lx6bZjVTgCDjpM8
         fn captured(&self) -> HttpRequest {
             self.seen
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .clone()
                 .expect("a request was made")
         }
     }
     impl HttpTransport for FakeTransport {
         fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
-            *self.seen.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(req.clone());
+            *self
+                .seen
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(req.clone());
             Ok(self.response.clone())
         }
     }

@@ -1,0 +1,45 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-050_DB_MODULE_SCAFFOLD",
+  "parent_id": "GH-414",
+  "status": "completed",
+  "completed_at": "2026-07-27T12:24:18Z",
+  "actor": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-050_db_module_scaffold",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/meta/src/envctl",
+  "branch": "codex/profile-xdg-owner-20260721",
+  "head_commit": "dbcc8374a9502773670ba6cb40f6cdb08c337750",
+  "implementation_commit": "f6659ba",
+  "files_verified": [
+    "crates/engine/src/db.rs",
+    "crates/engine/src/db_index.rs",
+    "crates/engine/src/db_query.rs",
+    "crates/engine/src/db_symbols.rs",
+    "crates/engine/src/db_refactor.rs",
+    "crates/engine/src/db_deploy.rs",
+    "crates/engine/src/lib.rs"
+  ],
+  "commands_run": [
+    "cargo build -p envctl-engine"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "completion_gate": "engine compiles with new db modules exported from lib.rs",
+    "summary": "Finished dev profile successfully; all six requested db modules are exported from crates/engine/src/lib.rs.",
+    "catalog_boundary": "crates/engine/src/catalog.rs was not modified by this task execution."
+  },
+  "checksums": {
+    "crates/engine/src/db.rs": "a1149859853802d4f363325967c975d18a19924d3a06bc4a11cd13b3b3a36ac8",
+    "crates/engine/src/db_index.rs": "835a6da560c5010162d0a02ad5c1aabf05741b92532c30f18b5a0875213838d0",
+    "crates/engine/src/db_query.rs": "bb51f8509f7aab0d9dea8ae0dc2051a48a289b5c4297b0222a1ac153144f9e79",
+    "crates/engine/src/db_symbols.rs": "3ee884f0aea802b76efe52e49d3de07ed7b3443bcbf9d821be7109c5b5534bc7",
+    "crates/engine/src/db_refactor.rs": "59b7c9661312add995ca3ac6c0ccceb1356344df2331a424f3288ca50d2ff6d9",
+    "crates/engine/src/db_deploy.rs": "76c92d4d32b3604cd9d77cb168f59124392e9cfa97938d6fef286df4c4d1e1db",
+    "crates/engine/src/lib.rs": "663ed50894fcc245117b00eddbccb6c611accdccfecb51e02cdf57b5cfd2bb0e"
+  },
+  "logs_uri": "execution-framework/logs/REQ-050_DB_MODULE_SCAFFOLD.log",
+  "heartbeat_uri": "execution-framework/heartbeats/REQ-050_DB_MODULE_SCAFFOLD.heartbeat",
+  "failure_reason": "",
+  "next_action": "REQ-051_MULTI_ROOT_MODEL and REQ-052_FILE_INDEX may proceed."
+}

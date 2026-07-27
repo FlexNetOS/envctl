@@ -1,0 +1,20 @@
+REQ-057_WATCH_INCREMENTAL verification summary
+completed_at=2026-07-27T12:34:46Z
+
+PASS cargo test -p envctl-engine db_watch
+  5 passed; 0 failed
+PASS cargo check -p envctl-engine -p envctl
+PASS cargo clippy -p envctl-engine -p envctl -- -D warnings
+PASS rustfmt --edition 2021 --check crates/engine/src/db_watch.rs crates/cli/src/main.rs
+PASS git diff --check (changed task files)
+PASS bash ci/gates/no-c.sh
+PASS bash ci/gates/shape.sh
+PASS envctl db watch runtime notification
+  changed=/tmp/envctl-req057-proof-20260727/a.rs
+  added=/tmp/envctl-req057-proof-20260727/b.rs
+  unchanged rows were not emitted
+PASS envctl db watch --once --json
+  {"added":[],"changed":[],"removed":[],"unchanged":2}
+
+NOTE workspace-wide cargo fmt --all -- --check is blocked by unrelated
+pre-existing formatting drift; both modified Rust files pass rustfmt directly.

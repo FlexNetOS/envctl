@@ -87,7 +87,10 @@ impl Upstream for SlowPumpUpstream {
         _req: EgressReq,
         real_key: &Zeroizing<Vec<u8>>,
     ) -> Result<EgressResp, UpstreamError> {
-        *self.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
+        *self
+            .seen_key
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
         // Take THIS request's body sink and drive a detached slow pump (the real key is NOT captured
         // by the task — only opaque marker bytes flow here).
         if let Some(tx) = envctl_secretd::proxy::__test_take_body_tx() {
@@ -501,7 +504,10 @@ async fn revoke_mid_stream_tears_down_within_bound() {
         .expect("revoke");
     assert_eq!(n, 1, "the revoke flipped exactly one bearer");
     assert_eq!(
-        h.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
+        h.seen_key
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_deref(),
         Some(SENTINEL),
         "the real key reached the upstream on the allowed open swap"
     );

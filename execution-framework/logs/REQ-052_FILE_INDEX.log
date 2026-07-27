@@ -1,0 +1,6 @@
+2026-07-27T12:28:10Z REQ-052_FILE_INDEX completed
+cargo test -p envctl-engine db_index: passed (6 tests)
+cargo check -p envctl-engine: passed
+cargo check -p envctl: passed
+git diff --check: passed
+Default scans use ignore::WalkBuilder, honor gitignore rules, skip heavy directories, and accept narrow ScanScope roots.

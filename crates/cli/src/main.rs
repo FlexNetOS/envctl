@@ -43,6 +43,7 @@ macro_rules! envctl_examples {
 
 use envctl_engine::catalog as catalog_engine;
 use envctl_engine::secrets::run_secretctl;
+use envctl_engine::migration_db::{MigrationDb, ReplayRequest, ReplayRequestMode, ReplayResultStatus};
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentAuditReport, AgentAuditSpec, AgentCleanSpec,
     AgentDoctorSpec, AgentInitSpec, AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec,
@@ -62,8 +63,8 @@ use envctl_engine::{
     version,
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
-    about = "meta's agentic environment manager — projects state and validates profile-owned tools",
-    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's standard $META_ROOT layout ($META_ROOT/usr, $META_ROOT/etc, $META_ROOT/var, $META_ROOT/opt, plus meta-home XDG roots) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
+    about = "Meta/LifeOS agentic environment and release-target manager",
+    long_about = "A declarative, GPU-aware environment and release-target manager for the Meta control plane and LifeOS product runtime, written in Rust.\n\nenvctl keeps the observed $META_ROOT control-plane layout and the declared $LIFE_OS_ROOT release target simultaneously addressable; the accepted LIFEOS_ROOT alias normalizes to LIFE_OS_ROOT. It brings tools, dependencies, providers, vendors, CLIs, and config to declared state under profile-owned roots, without system-depth or user-global installs. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. TOML component lifecycle hooks wrap proven scripts for detect, install, fix, reset, and wiring. One shared engine drives both the CLI and GUI. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail closed unless safety is proven and the explicit act flag (--apply / --build / --confirm) is supplied. Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
         "envctl doctor",
@@ -558,6 +559,18 @@ enum Cmd {
         #[command(subcommand)]
         cmd: migration_cmd::MigrationCmd,
     },
+    /// Deterministic replay requests for completed migration runs.
+    #[command(
+        long_about = "Replay a completed migration run using the shared deterministic protocol: `dry-run` for verification and plan metadata, `apply` for gate-checked replay readiness decisions.",
+        after_help = envctl_examples!(
+            "envctl replay dry-run --run-id run-000001 --replay-id replay-000001-dry --requested-by helper-envctl-replay-01",
+            "envctl replay apply --run-id run-000001 --replay-id replay-000001-apply --requested-by helper-envctl-replay-01 --operation-ids op-001,op-002",
+        )
+    )]
+    Replay {
+        #[command(subcommand)]
+        cmd: ReplayModeCmd,
+    },
     /// Manage agent assets (skills / MCP servers / commands) declaratively over the
     /// shared `Engine::agent_*` API. Mutating verbs (sync/add/remove/clean) are
     /// PREVIEW by default; pass `--apply` to write. `--json` (global) emits the typed
@@ -620,6 +633,52 @@ enum Cmd {
     Secret {
         #[command(subcommand)]
         cmd: SecretCmd,
+    },
+}
+
+#[derive(Subcommand)]
+enum ReplayModeCmd {
+    /// Replay-only verification / dry-run metadata. No destructive action is performed.
+    #[command(
+        long_about = "Replay in dry-run mode: recompute target/contract/operation/evidence/artifact/reproducibility hashes and identify blockers; no destructive side-effects are performed.",
+        after_help = envctl_examples!("envctl replay dry-run --run-id run-000001 --replay-id replay-000001-dry --requested-by helper")
+    )]
+    DryRun {
+        #[arg(long)]
+        run_id: String,
+        #[arg(long)]
+        replay_id: String,
+        #[arg(long)]
+        requested_by: String,
+        #[arg(long, value_delimiter = ',')]
+        operation_ids: Vec<String>,
+        #[arg(long)]
+        target_descriptor_id: Option<String>,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long, default_value_t = false)]
+        verify_files: bool,
+    },
+    /// Replay apply-mode validation for deterministic re-run gates.
+    #[command(
+        long_about = "Replay in apply mode: same replay checks as dry-run plus gate checks for approvals, non-deterministic operations, and blocked references before execution may proceed.",
+        after_help = envctl_examples!("envctl replay apply --run-id run-000001 --replay-id replay-000001-apply --requested-by helper")
+    )]
+    Apply {
+        #[arg(long)]
+        run_id: String,
+        #[arg(long)]
+        replay_id: String,
+        #[arg(long)]
+        requested_by: String,
+        #[arg(long, value_delimiter = ',')]
+        operation_ids: Vec<String>,
+        #[arg(long)]
+        target_descriptor_id: Option<String>,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long, default_value_t = false)]
+        verify_files: bool,
     },
 }
 
@@ -771,28 +830,37 @@ enum DbCmd {
         #[arg(long, default_value = "lifeos-release")]
         profile: String,
     },
-    /// Run a deterministic agent preset query against the indexed scope.
+    /// Run a deterministic table/filter query or agent preset.
     #[command(
-        long_about = "Scan the repo root into a file + symbol index and run a named agent preset query against it. Presets are the stable agent-facing contract: root-meta, root-lifeos, hooks-codex, wrappers-broken, mutable-unsafe, symbols-rust-cli, paths-legacy. Add --explain to see the resolved table/filters. Use --json for machine output.",
+        long_about = "Scan the repo root into a file + symbol index and query files, symbols, occurrences, roots, refs, or actions. Repeat --filter with the deliberately small grammar `field==value`, `field contains value`, `field in a,b`, or `path matches */legacy/*`. Alternatively use a stable agent preset: root:meta, root:lifeos, hooks:codex, wrappers:broken, mutable:unsafe, symbols:rust-cli, paths:legacy. A preset may be narrowed with additional filters. Add --explain to report the resolved table and filters. Use --json for machine output.",
         after_help = envctl_examples!(
-            "envctl db query --preset root-meta --json",
-            "envctl db query --preset mutable-unsafe --explain",
-            "envctl db --repo-root /path/to/repo query --preset symbols-rust-cli --json",
+            "envctl db query --preset paths:legacy --json --explain",
+            "envctl db query --table symbols --filter 'kind in env_var,rust_item' --json",
+            "envctl db --repo-root /path/to/repo query --table files --filter 'path matches */hooks/*' --json",
         )
     )]
     Query {
-        /// Preset name, e.g. root-meta, root-lifeos, mutable-unsafe, symbols-rust-cli.
+        /// Stable preset name, e.g. root:meta, mutable:unsafe, paths:legacy.
         #[arg(long)]
-        preset: String,
+        preset: Option<String>,
+        /// Table: files, symbols, occurrences, roots, refs, or actions.
+        #[arg(long, value_name = "TABLE")]
+        table: Option<String>,
+        /// Filter expression; repeat to combine filters with logical AND.
+        #[arg(long = "filter", value_name = "EXPRESSION")]
+        filters: Vec<String>,
+        /// Release-target profile used when querying roots.
+        #[arg(long)]
+        target_profile: Option<String>,
         /// Include the --explain trace of the resolved table/filters.
         #[arg(long)]
         explain: bool,
     },
     /// Root-alias refactor: PLAN by default, render to a new tree, or gated in-place apply.
     #[command(
-        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. Three modes, fail-closed by default:\n  (plan)         no flags: emit per-file unified diffs; refuse protected/.env; never touch the filesystem.\n  --render-out   write the rewritten files into a NEW tree; originals are never modified.\n  --apply        mutate files IN PLACE. Gated (R3): requires --confirm AND --approve <who>. Without both, apply refuses and nothing is written. No .envctl-bak is kept — run on a clean, committed tree so git is your backstop.\nAll logic lives in the engine (DbSnapshot); the CLI and GUI drive identical code. Use --json for the machine contract.",
+        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. Three modes, fail-closed by default:\n  --plan         emit per-file unified diffs; refuse protected/.env; never touch the filesystem (also the default when no mode is supplied).\n  --render-out   write the rewritten files into a NEW tree; originals are never modified.\n  --apply        mutate files IN PLACE. Gated (R3): requires --confirm AND --approve <who>. Without both, apply refuses and nothing is written. No .envctl-bak is kept — run on a clean, committed tree so git is your backstop.\nAll logic lives in the engine (DbSnapshot); the CLI and GUI drive identical code. Use --json for the machine contract.",
         after_help = envctl_examples!(
-            "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --json",
+            "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --plan --json",
             "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --render-out /tmp/rendered",
             "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --apply --confirm --approve drdave --note 'REQ-055 migration'",
         )
@@ -804,8 +872,11 @@ enum DbCmd {
         /// Target root var, e.g. LIFE_OS_ROOT.
         #[arg(long)]
         to: String,
+        /// Emit the plan and per-file unified diffs without writing (the default mode).
+        #[arg(long, conflicts_with_all = ["render_out", "apply"])]
+        plan: bool,
         /// Render the rewritten files into this NEW tree (originals untouched).
-        #[arg(long = "render-out", value_name = "DIR")]
+        #[arg(long = "render-out", value_name = "DIR", conflicts_with = "apply")]
         render_out: Option<String>,
         /// Mutate files IN PLACE. Requires --confirm and --approve (R3 gate).
         #[arg(long)]
@@ -835,13 +906,21 @@ enum DbCmd {
     },
     /// Build the symbol + occurrence index over the scope (agent-first --json).
     #[command(
-        long_about = "Scan the repo root and build the symbol + occurrence index (env-var / path-token references, with a syn-parsed Rust-item pass over `.rs` files). Each occurrence carries its replace policy derived from the owning file's mutable policy, so an agent can tell at a glance what is safe to rewrite. Use --json for the machine contract.",
+        long_about = "Scan the repo root and build the symbol + occurrence index (env-var / path-token references, with a syn-parsed Rust-item pass over `.rs` files). Filter by the serialized symbol kind (for example `env-var` / `env_var`) and/or exact normalized name. The `env-var` family includes path-token environment variables such as META_ROOT; use `path-token` to select only that narrower subtype. Returned occurrences are restricted to the selected symbols. Each occurrence carries its replace policy derived from the owning file's mutable policy, so an agent can tell at a glance what is safe to rewrite. Use --json for the machine contract.",
         after_help = envctl_examples!(
             "envctl db symbols --json",
+            "envctl db symbols --kind env-var --name META_ROOT --json",
             "envctl db --repo-root /path/to/repo symbols --json",
         )
     )]
-    Symbols {},
+    Symbols {
+        /// Serialized symbol kind, accepting hyphenated or snake_case spelling.
+        #[arg(long, value_name = "KIND")]
+        kind: Option<String>,
+        /// Exact symbol name after root-variable normalization.
+        #[arg(long, value_name = "NAME")]
+        name: Option<String>,
+    },
     /// Symbol-reference impact map: what a rename/edit to a symbol would touch.
     #[command(
         long_about = "Map the blast radius of a symbol (e.g. an env-var root or a Rust item) across the indexed scope: every file + occurrence that references it, split by whether the occurrence is safely rewritable, needs a parser/owner marker, or is refused (protected/.env). This is the read-only impact surface an agent consults before proposing a refactor. Use --json for the machine contract.",
@@ -857,7 +936,7 @@ enum DbCmd {
     },
     /// Plan (and, gated, apply) a safe hook/wrapper deploy into a target root.
     #[command(
-        long_about = "Plan a fail-closed deploy of a staged artifact tree into a target layout root. Each step is classified Ready / Queued (target appears to be executing — never disturbed) / Refused (protected/Never target). `--apply` promotes only Ready steps and is gated (R3): it requires --confirm AND --approve <who>; each promotion backs up an existing target to `<target>.envctl-bak` and writes atomically (temp-fsync-rename-reread-hash). Use --json for the machine contract.",
+        long_about = "Plan a fail-closed deploy of a staged artifact tree into a target layout root. Each step is classified Ready / Queued (target appears to be executing — never disturbed) / Refused (protected/Never target). `--apply` promotes only Ready steps, rechecks liveness immediately before each promotion, and is gated (R3): it requires --confirm AND --approve <who>; each promotion backs up an existing target to `<target>.bak` and writes atomically (temp-fsync-rename-reread-hash). Use --json for the machine contract.",
         after_help = envctl_examples!(
             "envctl db deploy --kind hooks --target /path/to/root --stage /tmp/rendered --json",
             "envctl db deploy --kind hooks --target /path/to/root --stage /tmp/rendered --apply --confirm --approve drdave",
@@ -886,15 +965,23 @@ enum DbCmd {
         #[arg(long, value_name = "TEXT")]
         note: Option<String>,
     },
-    /// One incremental watch poll: report the delta vs the persisted baseline.
+    /// Watch for changes and incrementally invalidate only affected index rows.
     #[command(
-        long_about = "Run one incremental index poll: scan the repo root, diff it (by content hash) against the persisted baseline at `.envctl/db-index.json`, persist the fresh scan as the new baseline, and report the delta (added / changed / removed / unchanged). Only changed rows are invalidated (REQ-057). Drive it on a timer for a poll-based watcher that needs no per-file OS watches. Use --json for the machine contract.",
+        long_about = "Watch the repo recursively using native filesystem notifications, diff each event by content hash against `.envctl/db-index.json`, and report only added / changed / removed rows. Automatically falls back to bounded polling when native watching is unavailable or an inotify limit is reached. Use --once for one deterministic poll.",
         after_help = envctl_examples!(
             "envctl db watch --json",
+            "envctl db watch --once --json",
             "envctl db --repo-root /path/to/repo watch --json",
         )
     )]
-    Watch {},
+    Watch {
+        /// Run one persisted delta poll and exit (automation/smoke-test mode).
+        #[arg(long)]
+        once: bool,
+        /// Native-watch safety poll / fallback interval.
+        #[arg(long, default_value_t = 1000, value_name = "MILLISECONDS")]
+        poll_interval_ms: u64,
+    },
     /// Agent widget surfaces: compact JSON for roots / refs / hooks views.
     #[command(
         long_about = "Emit the compact JSON widget surfaces an agent UI renders directly: `roots` (the multi-root model + per-root reference counts), `refs` (every env-var/path-token reference grouped by symbol), and `hooks` (discovered hook/wrapper scripts with their mutable policy). Read-only; always machine-shaped. Use --json (default for widgets).",
@@ -1994,7 +2081,11 @@ fn main() -> anyhow::Result<()> {
 
     let engine = if matches!(
         cli.cmd,
-        Cmd::Dashboard { .. } | Cmd::Env { .. } | Cmd::Migration { .. } | Cmd::Db { .. }
+        Cmd::Dashboard { .. }
+            | Cmd::Env { .. }
+            | Cmd::Migration { .. }
+            | Cmd::Replay { .. }
+            | Cmd::Db { .. }
     ) || matches!(
         cli.cmd,
         Cmd::Catalog {
@@ -2157,6 +2248,7 @@ fn main() -> anyhow::Result<()> {
         } => run_env(meta_file, toolchains, materialize, json),
         Cmd::Migrate { cmd } => run_migrate(&engine, cmd, json),
         Cmd::Migration { db, cmd } => migration_cmd::run_migration(db, cmd, json),
+        Cmd::Replay { cmd } => run_replay(cmd, json),
         Cmd::Agent { cmd } => run_agent(engine, cmd, json),
         Cmd::Secret { cmd } => run_secret(cmd, json),
         Cmd::Completions { shell } => run_completions(shell),
@@ -2417,19 +2509,37 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 }
             }
         }
-        DbCmd::Query { preset, explain } => {
-            let parsed: QueryPreset =
-                serde_json::from_value(serde_json::Value::String(preset.clone()))
-                    .map_err(|_| anyhow::anyhow!("unknown preset: {preset}"))?;
+        DbCmd::Query {
+            preset,
+            table,
+            filters,
+            target_profile,
+            explain,
+        } => {
+            let parsed_preset = preset
+                .as_deref()
+                .map(str::parse::<QueryPreset>)
+                .transpose()?;
+            let parsed_table = table
+                .as_deref()
+                .map(str::parse::<envctl_engine::QueryTable>)
+                .transpose()?;
+            if parsed_preset.is_none() && parsed_table.is_none() {
+                anyhow::bail!("query requires --preset or --table");
+            }
+            let parsed_filters = filters
+                .iter()
+                .map(|filter| envctl_engine::QueryFilter::parse(filter))
+                .collect::<Result<Vec<_>, _>>()?;
             let snap = DbSnapshot::open(ScanScope {
                 root,
                 ..Default::default()
             })?;
             let spec = QuerySpec {
-                table: None,
-                filters: vec![],
-                preset: Some(parsed),
-                target_profile: None,
+                table: parsed_table,
+                filters: parsed_filters,
+                preset: parsed_preset,
+                target_profile,
                 explain,
             };
             let res = snap.query(&spec)?;
@@ -2445,6 +2555,7 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
         DbCmd::Refactor {
             from,
             to,
+            plan: _,
             render_out,
             apply,
             confirm,
@@ -2501,6 +2612,15 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                     plan.refused,
                     plan.approved
                 );
+                for change in plan.changes.iter().filter(|change| change.safe) {
+                    print!("{}", change.unified_diff);
+                }
+                for change in plan.changes.iter().filter(|change| !change.safe) {
+                    println!(
+                        "REFUSED {}: {}",
+                        change.absolute_path, change.refused_reason
+                    );
+                }
                 if let Some(paths) = &rendered {
                     println!("rendered {} file(s) to new tree:", paths.len());
                     for p in paths {
@@ -2545,22 +2665,51 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 );
             }
         }
-        DbCmd::Symbols {} => {
+        DbCmd::Symbols { kind, name } => {
             let snap = DbSnapshot::open(ScanScope {
                 root,
                 ..Default::default()
             })?;
+            let kind = kind
+                .as_deref()
+                .map(parse_db_symbol_kind_filter)
+                .transpose()?;
+            let name = name.as_deref().map(envctl_engine::db::normalize_root_var);
+            let symbols = snap
+                .symbols()
+                .symbols()
+                .iter()
+                .filter(|symbol| {
+                    kind.as_deref()
+                        .map(|expected| db_symbol_kind_matches(&symbol.kind, expected))
+                        .unwrap_or(true)
+                        && name
+                            .as_deref()
+                            .map(|expected| symbol.normalized_name == expected)
+                            .unwrap_or(true)
+                })
+                .collect::<Vec<_>>();
+            let symbol_ids = symbols
+                .iter()
+                .map(|symbol| symbol.symbol_id.as_str())
+                .collect::<BTreeSet<_>>();
+            let occurrences = snap
+                .symbols()
+                .occurrences()
+                .iter()
+                .filter(|occurrence| symbol_ids.contains(occurrence.symbol_id.as_str()))
+                .collect::<Vec<_>>();
             let out = serde_json::json!({
-                "symbols": snap.symbols().symbols(),
-                "occurrences": snap.symbols().occurrences(),
+                "symbols": symbols,
+                "occurrences": occurrences,
             });
             if json {
                 println!("{}", serde_json::to_string_pretty(&out)?);
             } else {
                 println!(
                     "{} symbol(s), {} occurrence(s)",
-                    snap.symbols().symbols().len(),
-                    snap.symbols().occurrences().len()
+                    symbols.len(),
+                    occurrences.len()
                 );
             }
         }
@@ -2629,23 +2778,33 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 }
             }
         }
-        DbCmd::Watch {} => {
+        DbCmd::Watch {
+            once,
+            poll_interval_ms,
+        } => {
             let scope = ScanScope {
                 root: root.clone(),
                 ..Default::default()
             };
             let store = DbIndexStore::for_root(&root);
-            let delta = db_watch_poll(&scope, &store)?;
-            if json {
-                println!("{}", serde_json::to_string_pretty(&delta)?);
+            if once {
+                let delta = db_watch_poll(&scope, &store)?;
+                print_db_watch_delta(&delta, json)?;
             } else {
-                println!(
-                    "added={} changed={} removed={} unchanged={}",
-                    delta.added.len(),
-                    delta.changed.len(),
-                    delta.removed.len(),
-                    delta.unchanged
-                );
+                let mut watcher = envctl_engine::DbWatcher::start(
+                    scope,
+                    store,
+                    std::time::Duration::from_millis(poll_interval_ms.max(1)),
+                )?;
+                if !json {
+                    println!("watching {} via {:?}", root, watcher.backend());
+                }
+                loop {
+                    let delta = watcher.next_delta()?;
+                    if !delta.is_empty() {
+                        print_db_watch_delta(&delta, json)?;
+                    }
+                }
             }
         }
         DbCmd::Widget { which } => {
@@ -2697,6 +2856,74 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 }
             }
         },
+    }
+    Ok(())
+}
+
+fn parse_db_symbol_kind_filter(value: &str) -> anyhow::Result<String> {
+    let normalized = value.trim().replace('-', "_").to_ascii_lowercase();
+    if matches!(
+        normalized.as_str(),
+        "env_var"
+            | "path_token"
+            | "rust_item"
+            | "cli_subcommand"
+            | "hook_script"
+            | "wrapper_script"
+            | "config_key"
+            | "component_id"
+            | "registry_entry"
+            | "agent_asset"
+            | "secret_reference"
+            | "unknown"
+    ) {
+        return Ok(normalized);
+    }
+    anyhow::bail!("unknown symbol kind: {value}")
+}
+
+fn db_symbol_kind_tag(kind: &envctl_engine::DbSymbolKind) -> &'static str {
+    use envctl_engine::DbSymbolKind;
+    match kind {
+        DbSymbolKind::EnvVar => "env_var",
+        DbSymbolKind::PathToken => "path_token",
+        DbSymbolKind::RustItem => "rust_item",
+        DbSymbolKind::CliSubcommand => "cli_subcommand",
+        DbSymbolKind::HookScript => "hook_script",
+        DbSymbolKind::WrapperScript => "wrapper_script",
+        DbSymbolKind::ConfigKey => "config_key",
+        DbSymbolKind::ComponentId => "component_id",
+        DbSymbolKind::RegistryEntry => "registry_entry",
+        DbSymbolKind::AgentAsset => "agent_asset",
+        DbSymbolKind::SecretReference => "secret_reference",
+        DbSymbolKind::Unknown => "unknown",
+    }
+}
+
+fn db_symbol_kind_matches(kind: &envctl_engine::DbSymbolKind, expected: &str) -> bool {
+    if expected == "env_var"
+        && matches!(
+            kind,
+            envctl_engine::DbSymbolKind::EnvVar | envctl_engine::DbSymbolKind::PathToken
+        )
+    {
+        return true;
+    }
+    db_symbol_kind_tag(kind) == expected
+}
+
+fn print_db_watch_delta(delta: &envctl_engine::IndexDelta, json: bool) -> anyhow::Result<()> {
+    if json {
+        // A watch is a stream: one compact JSON value per observed delta.
+        println!("{}", serde_json::to_string(delta)?);
+    } else {
+        println!(
+            "added={} changed={} removed={} unchanged={}",
+            delta.added.len(),
+            delta.changed.len(),
+            delta.removed.len(),
+            delta.unchanged
+        );
     }
     Ok(())
 }
@@ -3244,6 +3471,7 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
         | Cmd::Manage { .. }
         | Cmd::Env { .. }
         | Cmd::Migrate { .. }
+        | Cmd::Replay { .. }
         | Cmd::Doctor { .. }
         | Cmd::Registry { .. }
         | Cmd::Catalog { .. } => true,
@@ -3668,6 +3896,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Env { .. }
             | Cmd::Migrate { .. }
             | Cmd::Migration { .. }
+            | Cmd::Replay { .. }
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
@@ -4245,6 +4474,63 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
         result.render_human();
     }
     if !result.ok() {
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+fn run_replay(cmd: ReplayModeCmd, json: bool) -> anyhow::Result<()> {
+    let db = MigrationDb::open(&MigrationDb::default_path())?;
+    let (request, verify_files) = match cmd {
+        ReplayModeCmd::DryRun {
+            run_id,
+            replay_id,
+            requested_by,
+            operation_ids,
+            target_descriptor_id,
+            reason,
+            verify_files,
+        } => (
+            ReplayRequest {
+                replay_id,
+                run_id,
+                mode: ReplayRequestMode::DryRun,
+                requested_by,
+                operation_ids,
+                target_descriptor_id,
+                reason,
+            },
+            verify_files,
+        ),
+        ReplayModeCmd::Apply {
+            run_id,
+            replay_id,
+            requested_by,
+            operation_ids,
+            target_descriptor_id,
+            reason,
+            verify_files,
+        } => (
+            ReplayRequest {
+                replay_id,
+                run_id,
+                mode: ReplayRequestMode::Apply,
+                requested_by,
+                operation_ids,
+                target_descriptor_id,
+                reason,
+            },
+            verify_files,
+        ),
+    };
+
+    let result = db.replay_request(request, verify_files)?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&result)?);
+    } else {
+        println!("{}", serde_json::to_string_pretty(&result)?);
+    }
+    if !matches!(result.status, ReplayResultStatus::Pass) {
         std::process::exit(1);
     }
     Ok(())

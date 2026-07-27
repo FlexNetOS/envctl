@@ -51,6 +51,10 @@ libc = "0.2"
 # --- envctl-only rows (unchanged) ---
 sysinfo = "0.33.1"
 glob = "0.3.1"
+# Pure-Rust parallel directory walker and gitignore matcher for the scalable
+# DbFileRow index (REQ-052). Default scanning follows repository ignore rules.
+ignore = "0.4.23"
+notify = "8.2.0"
 # Keep the GUI on the MSRV-compatible egui API line without eframe's full
 # default feature set: accesskit pulls the unmaintained `paste` proc macro on
 # Windows. Both native Linux display backends remain supported. The local

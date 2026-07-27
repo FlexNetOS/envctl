@@ -1,0 +1,11 @@
+2026-07-27T12:46:49Z REQ-056_DEPLOY_AUTOMATION completed
+- cargo test -p envctl-engine db_deploy: 4 passed
+- cargo test -p envctl --test db_docs_contract: 2 passed
+- cargo check -p envctl: passed
+- cargo clippy -p envctl-engine --lib -- -D warnings: passed
+- targeted rustfmt check: passed
+- targeted git diff check: passed
+- plan remains read-only and classifies executing targets as queued
+- apply rechecks liveness and skips a target that starts executing after plan
+- ready promotions use backup + temp-fsync + atomic rename + reread/hash verification
+- workspace-wide formatting check remains blocked by unrelated pre-existing drift

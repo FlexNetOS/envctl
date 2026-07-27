@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
   "status": "pass",
-  "generated_at": "2026-07-05T05:39:53+00:00",
+  "generated_at": "2026-07-27T18:39:21+00:00",
   "recipe_summary": {
     "recipe_id": "flexnetos-codex-package-target-adapter",
     "version": "1.0.0",
@@ -45,7 +45,7 @@
     "paths": [
       "docs/FLEXNETOS_ADAPTER_RECIPE.md",
       "generated/flexnetos_adapter_recipe.json",
-      "scripts/verify_flexnetos_adapter_recipe.py"
+      "/home/flexnetos/meta/src/envctl/scripts/verify_flexnetos_adapter_recipe.py"
     ],
     "findings": []
   },
@@ -79,6 +79,6 @@
   "sha256": {
     "docs/FLEXNETOS_ADAPTER_RECIPE.md": "sha256:13e1e4e4b5df0f0c5d840e3c8bf3daecda0c65401a175c2d58925a39dd8c32d8",
     "generated/flexnetos_adapter_recipe.json": "sha256:4732e80f5243bd4270b5442d9358d805d1dee167a34da8e4d43c0b5222659cd7",
-    "scripts/verify_flexnetos_adapter_recipe.py": "sha256:3a59b31f3490f51f3f8f276717ea21ab835954bd63666d4000a82b973363a75f"
+    "scripts/verify_flexnetos_adapter_recipe.py": "sha256:da8662496a12dc2a8b454f6d6fc9d9de9819a52451fa6901557692410d4f9331"
   }
 }
