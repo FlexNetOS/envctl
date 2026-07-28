@@ -22,7 +22,7 @@ use crate::{
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::Duration;
 
 #[derive(Clone, Debug)]
@@ -176,7 +176,7 @@ impl TelemetryControl {
     /// skips the wait) instead of losing the notification in the gap.
     fn bump_and_notify(&self) {
         {
-            let mut g = self.gen.lock().unwrap();
+            let mut g = lock_no_panic(&self.gen);
             *g = g.wrapping_add(1);
         }
         self.wake.notify_all();
@@ -189,18 +189,18 @@ impl TelemetryControl {
 
 fn spawn_sampler(sink: EventSink, ctrl: TelemetryControl) {
     std::thread::spawn(move || {
-        let mut last_seen = *ctrl.gen.lock().unwrap();
+        let mut last_seen = *lock_no_panic(&ctrl.gen);
         while ctrl.alive.load(Ordering::Relaxed) {
             sink.emit(Event::Telemetry(crate::telemetry::sample()));
             let cadence = Duration::from_millis(ctrl.cadence_ms.load(Ordering::Relaxed).max(250));
             // audit fix (minor): wait on a predicate (generation unchanged) so a
             // set_cadence/sample_now/stop notify that lands before we wait is not
             // lost — the predicate is already true and we wake immediately.
-            let guard = ctrl.gen.lock().unwrap();
+            let guard = lock_no_panic(&ctrl.gen);
             let (guard, _) = ctrl
                 .wake
                 .wait_timeout_while(guard, cadence, |g| *g == last_seen)
-                .unwrap();
+                .unwrap_or_else(|e| e.into_inner());
             last_seen = *guard;
             drop(guard);
             // audit fix (minor): re-check alive right after the wait so a stopped
@@ -211,6 +211,13 @@ fn spawn_sampler(sink: EventSink, ctrl: TelemetryControl) {
             }
         }
     });
+}
+
+fn lock_no_panic<'a, T>(mutex: &'a Mutex<T>) -> MutexGuard<'a, T> {
+    match mutex.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    }
 }
 
 pub fn run_event_loop(

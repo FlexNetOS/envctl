@@ -45,7 +45,7 @@ fn cwd_lock() -> &'static Mutex<()> {
 
 fn unique_dir(prefix: &str) -> PathBuf {
     static N: OnceLock<Mutex<u64>> = OnceLock::new();
-    let mut n = N.get_or_init(|| Mutex::new(0)).lock().unwrap();
+    let mut n = N.get_or_init(|| Mutex::new(0)).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     *n += 1;
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -1000,7 +1000,7 @@ fn remove_then_sync_after_prunes_skill() {
 
 #[test]
 fn clean_preview_keeps_then_apply_removes_tracked_only() {
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let (engine, project, cfg) = project_with_config(&full_config(&pack_dir()));
 
     // Seed an untracked global server alongside what the sync will add.
@@ -1112,7 +1112,7 @@ fn clean_preview_keeps_then_apply_removes_tracked_only() {
 
 #[test]
 fn m22_fallback_resolves_default_config_from_cwd() {
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let (engine, project, _cfg) = project_with_config(&full_config(&pack_dir()));
 
     // No explicit config_path -> default_config_path() resolves the local `agent-env.yaml`.
@@ -1349,7 +1349,7 @@ fn agent_list_emits_agent_listed_event() {
     // against the other cwd-mutating tests (clean/m22) via the same lock, or under
     // `cargo test --workspace` parallelism it races and corrupts their cwd-based scope
     // resolution mid-call (the CI failure that blocked #93: `clean ... removed >= 1`).
-    let _guard = cwd_lock().lock().unwrap();
+    let _guard = cwd_lock().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let (engine, project, cfg) = project_with_config(&full_config(&pack_dir()));
     let (s, _rx) = sink();
     engine

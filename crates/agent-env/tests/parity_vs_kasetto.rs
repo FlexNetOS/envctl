@@ -165,7 +165,7 @@ fn parity_rewrite_browse_to_raw_url() {
 // Oracle: kasetto src/source/remote.rs::tests (github/bitbucket/gitea archive)
 #[test]
 fn parity_archive_url() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let gh = RepoUrl::GitHub {
         host: "github.com".into(),
         owner: "o".into(),
@@ -707,7 +707,7 @@ fn parity_command_destination_relpath() {
 // flips the GitHub URL to the api.github.com endpoint, proving the Bearer header was built).
 #[test]
 fn parity_auth_env_credentials_via_archive_url() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
 
     // Save + clear every env var these readers consult, restore at the end (no leak).
     let keys = [
@@ -2326,7 +2326,7 @@ fn parity_settings_file_load_save() {
 // Oracle: kasetto src/fsops/mod.rs::tests::resolve_path_expands_only_leading_tilde.
 #[test]
 fn parity_resolve_path_expands_only_leading_tilde() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let base = Path::new("/base");
     let home = dirs_home().expect("home");
     assert_eq!(resolve_path(base, "~/skills"), home.join("skills"));
@@ -2437,7 +2437,7 @@ fn parity_select_targets_invalid_field_errors() {
 // Agent path table per src/model/agent.rs::tests::agent_paths_cover_supported_presets.
 #[test]
 fn parity_resolve_destinations() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let base = Path::new("/proj");
 
     // Explicit destination wins, resolved against base.
@@ -2495,7 +2495,7 @@ fn parity_resolve_mcp_settings_targets() {
 // global command path (src/model/agent.rs::commands_global_path → None for Cursor).
 #[test]
 fn parity_resolve_command_targets() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let proj = Path::new("/proj");
 
     // No agents → empty.
@@ -2516,7 +2516,7 @@ fn parity_resolve_command_targets() {
 // Lock-portability core: store install paths relative to a scope root, resolve back.
 #[test]
 fn parity_scope_root_relativize_resolve_dest() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let proj = Path::new("/proj");
 
     // scope_root: Project → project_root; Global → home.
@@ -2936,7 +2936,7 @@ fn parity_config_edit_primitives_via_public_api() {
 // envctl-renamed `kasetto` → `agent-env` (asserted as such); the XDG bases are byte-for-byte.
 #[test]
 fn parity_dirs_xdg_resolution() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     // Save + restore every env var this layer consults (no leak across parity tests).
     let keys = ["HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME"];
     let saved: Vec<(&str, Option<String>)> =
@@ -3033,7 +3033,7 @@ fn parity_dirs_xdg_resolution() {
 // `project_root/agent-env.lock` in BOTH, so the cache key is identical.
 #[test]
 fn parity_runtime_state_round_trip() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let keys = ["HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"];
     let saved: Vec<(&str, Option<String>)> =
         keys.iter().map(|k| (*k, std::env::var(k).ok())).collect();
@@ -3279,7 +3279,7 @@ fn parity_resolve_config_path_priority() {
 // public, env-reading entry point. envctl's env var is ENVCTL_AGENT_CONFIG.
 #[test]
 fn parity_default_config_path_env_override() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let prev = std::env::var(CONFIG_ENV_VAR).ok();
     std::env::set_var(CONFIG_ENV_VAR, "https://example.com/from-env.yaml");
     assert_eq!(default_config_path(), "https://example.com/from-env.yaml");

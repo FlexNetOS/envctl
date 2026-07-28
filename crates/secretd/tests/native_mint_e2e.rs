@@ -346,7 +346,7 @@ async fn native_mint_injects_minted_token_and_event_never_leaks_it() {
 
     // The minted token NEVER appears in any byte the client received from the EVENT stream (the
     // RelayMinted event carries only relay + expires_at).
-    let ew = event_wire.lock().unwrap();
+    let ew = event_wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     assert!(
         !contains(&ew, MINTED_TOKEN.as_bytes()),
         "minted token must never cross the event-stream wire"
@@ -564,7 +564,7 @@ async fn mint_github_returns_frozen_two_field_response() {
     assert!(resp.expires_at_unix > 0, "positive epoch");
 
     // The minted token must NEVER appear in the unlock event-stream wire (metadata-only events).
-    let ew = event_wire.lock().unwrap();
+    let ew = event_wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     assert!(
         !contains(&ew, FROZEN_TOKEN.as_bytes()),
         "minted token must never cross the event-stream wire"
@@ -696,7 +696,7 @@ async fn revoke_github_token_over_wire_204_succeeds() {
     assert!(!resp.dry_run, "apply=true ⇒ not a dry-run");
 
     // The token must NEVER appear on the (unlock) event-stream wire.
-    let ew = event_wire.lock().unwrap();
+    let ew = event_wire.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     assert!(
         !contains(&ew, REVOKE_E2E_TOKEN),
         "token must never cross the event-stream wire"

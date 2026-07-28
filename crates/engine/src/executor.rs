@@ -1196,7 +1196,7 @@ mod tests {
         }
 
         fn take_calls(&self) -> Vec<Phase> {
-            std::mem::take(&mut *self.calls.lock().unwrap())
+            std::mem::take(&mut *self.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner))
         }
     }
 
@@ -1209,7 +1209,7 @@ mod tests {
             dry_run: bool,
             _sink: &EventSink,
         ) -> OpResult {
-            self.calls.lock().unwrap().push(phase);
+            self.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(phase);
             let status = match phase {
                 Phase::Detect if self.detected.load(Ordering::SeqCst) => OpStatus::Ok,
                 Phase::Detect => OpStatus::Failed,
@@ -1428,7 +1428,7 @@ command = "false"
                 dry_run: bool,
                 _sink: &EventSink,
             ) -> OpResult {
-                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                self.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((comp.to_owned(), phase));
                 let status = match (comp, phase) {
                     ("sqld-fixture", Phase::Detect | Phase::Verify) => OpStatus::Failed,
                     _ => OpStatus::Ok,
@@ -1497,7 +1497,7 @@ command = "true"
         assert_eq!(summary.incomplete, vec!["sqld-fixture"]);
         assert_eq!(summary.skipped_blocked, vec!["dependent"]);
         assert_eq!(
-            *runner.calls.lock().unwrap(),
+            *runner.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner),
             vec![
                 ("sqld-fixture".into(), Phase::Detect),
                 ("sqld-fixture".into(), Phase::Install),
@@ -1521,7 +1521,7 @@ command = "true"
                 dry_run: bool,
                 _sink: &EventSink,
             ) -> OpResult {
-                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                self.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((comp.to_owned(), phase));
                 let status = match (comp, phase) {
                     ("a", Phase::Detect) => OpStatus::Failed,
                     ("a", Phase::Install) => OpStatus::Refused,
@@ -1589,7 +1589,7 @@ command = "false"
         assert_eq!(summary.refused, vec!["a"]);
         assert_eq!(summary.skipped_blocked, vec!["b", "c"]);
         assert_eq!(
-            *runner.calls.lock().unwrap(),
+            *runner.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner),
             vec![("a".into(), Phase::Detect), ("a".into(), Phase::Install)]
         );
         let _ = std::fs::remove_dir_all(root);
@@ -1686,7 +1686,7 @@ command = "false"
                 dry_run: bool,
                 _sink: &EventSink,
             ) -> OpResult {
-                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                self.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((comp.to_owned(), phase));
                 let status = match (comp, phase) {
                     ("healthy", Phase::Detect) => OpStatus::Ok,
                     ("dependent", Phase::Detect) => OpStatus::Failed,
@@ -1772,7 +1772,7 @@ command = "true"
                 dry_run: bool,
                 _sink: &EventSink,
             ) -> OpResult {
-                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                self.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((comp.to_owned(), phase));
                 OpResult {
                     component: comp.to_owned(),
                     phase,
@@ -1848,7 +1848,7 @@ command = "false"
             Some(ComponentAvailability::Unavailable)
         );
         assert_eq!(
-            *runner.calls.lock().unwrap(),
+            *runner.calls.lock().unwrap_or_else(std::sync::PoisonError::into_inner),
             vec![("healthy".into(), Phase::Detect)]
         );
         restore_env("META_ROOT", old_meta);

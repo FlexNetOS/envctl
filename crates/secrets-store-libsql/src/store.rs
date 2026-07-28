@@ -19,6 +19,10 @@ use crate::schema;
 use crate::serial;
 use crate::sync::SyncConnection;
 
+fn mutex_lock<T>(lock: &std::sync::Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 /// Builder for [`LibSqlStore`]: collects the remote URL + auth token, opens the connection, and
 /// provisions the schema. Durability is server-side (see [`LibSqlStoreBuilder::build`]).
 pub struct LibSqlStoreBuilder {
@@ -371,7 +375,7 @@ impl Store for LibSqlStore {
         // read-tail + insert so two concurrent appends can't seal the same `seq` from a stale tail
         // and drop a row. Each store call still routes through run_retry (reconnect-on-expiry); the
         // `SELECT 1` fsync_barrier confirms the server APPLIED the insert (durability is server-side).
-        let _guard = self.append_lock.lock().expect("append_lock poisoned");
+        let _guard = mutex_lock(&self.append_lock);
         let tail = self.last_audit()?;
         let sealed = audit::link_row(tail.as_ref(), rec.clone());
         let seq = sealed.seq;

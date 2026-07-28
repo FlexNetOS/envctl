@@ -1200,7 +1200,7 @@ mod tests {
 
     #[test]
     fn archive_url_honors_ref_branch_default_precedence() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         std::env::remove_var("GITHUB_TOKEN");
         std::env::remove_var("GH_TOKEN");
         let parsed = RepoUrl::GitHub {
@@ -1224,7 +1224,7 @@ mod tests {
 
     #[test]
     fn github_branch_archive_uses_refs_heads_prefix_without_token() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         std::env::remove_var("GITHUB_TOKEN");
         std::env::remove_var("GH_TOKEN");
         let parsed = RepoUrl::GitHub {
@@ -1238,7 +1238,7 @@ mod tests {
 
     #[test]
     fn github_branch_archive_uses_api_endpoint_with_token() {
-        let _guard = ENV_LOCK.lock().unwrap();
+        let _guard = ENV_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         std::env::set_var("GITHUB_TOKEN", "test-token");
         let parsed = RepoUrl::GitHub {
             host: "github.com".into(),

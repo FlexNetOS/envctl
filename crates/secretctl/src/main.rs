@@ -1074,7 +1074,7 @@ mod tests {
 
     fn env_lock() -> MutexGuard<'static, ()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     fn restore_var(key: &str, value: Option<OsString>) {
@@ -1432,7 +1432,7 @@ vYCCurr2Doy4WohZzL9KOn1AwIclFD8QpIizedoh+mUVfuvNAlHE1h1iK9gkDq9F
         }
         impl HttpTransport for CapturingTransport {
             fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
-                *self.seen.lock().unwrap() = Some(req.clone());
+                *self.seen.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(req.clone());
                 // Canned GitHub 201 — a dummy (non-secret) token literal so the mint completes
                 // offline. This value is asserted on NOWHERE; only the request body is inspected.
                 Ok(HttpResponse {

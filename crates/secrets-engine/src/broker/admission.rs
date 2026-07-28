@@ -246,7 +246,7 @@ mod tests {
             .map(|_| {
                 let limiter = Arc::clone(&limiter);
                 thread::spawn(move || {
-                    let mut g = limiter.lock().expect("lock not poisoned");
+                    let mut g = limiter.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
                     g.admit("racer", NOW)
                 })
             })

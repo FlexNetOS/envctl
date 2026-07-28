@@ -59,7 +59,7 @@ impl Upstream for RecordingUpstream {
         _req: EgressReq,
         real_key: &Zeroizing<Vec<u8>>,
     ) -> Result<EgressResp, UpstreamError> {
-        *self.seen_key.lock().unwrap() = Some(real_key.to_vec());
+        *self.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(real_key.to_vec());
         envctl_secretd::proxy::__test_pump_response_body(hyper::body::Bytes::from_static(
             UPSTREAM_BODY,
         ))
@@ -459,7 +459,7 @@ async fn edge_dpop_swap_accepts_and_rejects() {
         .await;
         assert_eq!(status, 200, "a valid DPoP-bound + nonce'd swap must be 200");
         assert_eq!(
-            rec.seen_key.lock().unwrap().as_deref(),
+            rec.seen_key.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_deref(),
             Some(SENTINEL),
             "the REAL key must reach the upstream on an allowed remote swap"
         );

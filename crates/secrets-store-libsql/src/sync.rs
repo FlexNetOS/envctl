@@ -66,6 +66,10 @@ fn is_stream_expired(e: &Error) -> bool {
         || s.contains("stream not found")
 }
 
+fn mutex_lock<T>(lock: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 impl SyncConnection {
     /// Build the private current-thread runtime, open the remote database, and connect. All async
     /// work happens on the runtime we own here.
@@ -118,7 +122,7 @@ impl SyncConnection {
     /// A fresh handle to the current connection (a cheap clone of the libSQL connection handle).
     /// Used inside runtime-driven async blocks in `store` (e.g. the transaction methods).
     pub fn conn(&self) -> libsql::Connection {
-        self.conn.lock().expect("conn lock poisoned").clone()
+        mutex_lock(&self.conn).clone()
     }
 
     /// Re-establish the connection after a Hrana stream-expiry (a fresh `db.connect()`).
@@ -127,7 +131,7 @@ impl SyncConnection {
             .db
             .connect()
             .map_err(|e| Error::Connect(e.to_string()))?;
-        *self.conn.lock().expect("conn lock poisoned") = fresh;
+        *mutex_lock(&self.conn) = fresh;
         Ok(())
     }
 

@@ -73,7 +73,7 @@ fn seed_staging(client: &mut Client, seqs: &[i64]) {
 
 #[test]
 fn grants_deny_every_non_envctl_write_at_the_database() {
-    let _guard = PG_LOCK.lock().expect("pg lock");
+    let _guard = PG_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let conn = disposable_conn();
     let mut client = admin(&conn);
     reset(&mut client);
@@ -112,7 +112,7 @@ fn grants_deny_every_non_envctl_write_at_the_database() {
 
 #[test]
 fn drain_is_ordered_idempotent_and_restart_safe_with_exact_identity() {
-    let _guard = PG_LOCK.lock().expect("pg lock");
+    let _guard = PG_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let conn = disposable_conn();
     let mut client = admin(&conn);
     reset(&mut client);
@@ -156,7 +156,7 @@ fn drain_is_ordered_idempotent_and_restart_safe_with_exact_identity() {
 
 #[test]
 fn acknowledgement_never_precedes_durable_commit() {
-    let _guard = PG_LOCK.lock().expect("pg lock");
+    let _guard = PG_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let conn = disposable_conn();
     let mut client = admin(&conn);
     reset(&mut client);
@@ -181,7 +181,7 @@ fn acknowledgement_never_precedes_durable_commit() {
 
 #[test]
 fn committed_state_projects_back_deterministically_through_the_owner_protocol() {
-    let _guard = PG_LOCK.lock().expect("pg lock");
+    let _guard = PG_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     let conn = disposable_conn();
     let mut client = admin(&conn);
     reset(&mut client);
@@ -214,7 +214,7 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
                 assert_eq!(request["protocol_version"], OWNER_PROTOCOL_VERSION);
                 assert_eq!(request["token"], "test-owner-token");
                 if request["op"] == "put" {
-                    record_sink.lock().expect("sink").push((
+                    record_sink.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((
                         request["key"].as_str().expect("key").to_string(),
                         request["value"].as_str().expect("value").to_string(),
                     ));
@@ -229,7 +229,7 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
 
     let first = return_projection(&conn, &root).expect("projection");
     server.join().expect("owner server");
-    let recorded_puts = recorded.lock().expect("sink").clone();
+    let recorded_puts = recorded.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
     assert_eq!(recorded_puts, first, "the projection is what actually reached the owner");
     assert!(
         first
