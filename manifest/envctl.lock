@@ -239,7 +239,7 @@ requires = [
 resolved = ""
 
 [components.group-portability]
-content_hash = "7b7f0e488cf7b265"
+content_hash = "8aec79ae9adce96a"
 requires = [
     "claude-global-links",
     "home-config-links",
@@ -289,7 +289,7 @@ requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "aa08c4442467d795"
+content_hash = "0a316b853885238a"
 requires = []
 resolved = ""
 
@@ -388,7 +388,7 @@ requires = []
 resolved = ""
 
 [components.nix-yazelix-cache]
-content_hash = "d4bc9aaba3eeb67b"
+content_hash = "b9eb116a445fb50f"
 requires = ["nix"]
 resolved = ""
 
@@ -523,12 +523,12 @@ requires = []
 resolved = ""
 
 [components.wild-linker]
-content_hash = "cd61df8e88702a71"
+content_hash = "78f1703eef274382"
 requires = []
 resolved = ""
 
 [components.yazelix]
-content_hash = "09e08d4fc870eee6"
+content_hash = "e2c2ee70a549b9e1"
 requires = [
     "nix",
     "nix-yazelix-cache",
