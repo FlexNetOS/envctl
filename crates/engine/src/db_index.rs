@@ -1,16 +1,15 @@
 //! db_index — scalable file index over repo/control-plane files (REQ-052).
 //!
-//! The walk is a bounded, deterministic `std::fs` recursion (no new dependency,
-//! keeping the no-C trust boundary trivially intact — REQ-060). It skips heavy
-//! generated trees (`.git`, `target`, `node_modules`, …) by default and can be
-//! pointed at a narrow subdir via [`ScanScope::root`]. Full `.gitignore`
-//! semantics via the `ignore` crate remain an opt-in dependency decision gated
-//! by REQ-060. Content is hashed with `sha2` (already an engine dep).
+//! The walk uses [`ignore::WalkBuilder`] so repository ignore rules are honored
+//! without scanning giant generated trees (`.git`, `target`, `node_modules`,
+//! …). It can be pointed at a narrow subdir via [`ScanScope::root`]. Content is
+//! hashed with `sha2` (already an engine dependency).
 
 use crate::db::{DbError, MutablePolicy, Result};
+use ignore::{DirEntry, WalkBuilder};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Directory names never descended into by default — heavy, generated, or VCS
 /// internals. A narrow [`ScanScope::root`] still overrides breadth.
@@ -54,7 +53,7 @@ pub struct DbFileRow {
 }
 
 /// Options bounding a scan — never walk giant unrelated trees by default.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct ScanScope {
     /// Root to scan (repo root or a narrow subdir).
     pub root: String,
@@ -62,6 +61,16 @@ pub struct ScanScope {
     pub extra_roots: Vec<String>,
     /// Respect `.gitignore` (default true in REQ-052).
     pub respect_gitignore: bool,
+}
+
+impl Default for ScanScope {
+    fn default() -> Self {
+        Self {
+            root: String::new(),
+            extra_roots: Vec::new(),
+            respect_gitignore: true,
+        }
+    }
 }
 
 /// The file index. REQ-050 provides the container + empty seam.
@@ -86,10 +95,10 @@ impl FileIndex {
     pub fn scan(scope: &ScanScope) -> Result<Self> {
         let mut files = Vec::new();
         let root = Path::new(&scope.root);
-        walk(root, root, &mut files)?;
+        walk(root, &mut files, scope.respect_gitignore)?;
         for extra in &scope.extra_roots {
             let er = Path::new(extra);
-            walk(er, er, &mut files)?;
+            walk(er, &mut files, scope.respect_gitignore)?;
         }
         files.sort_by(|a, b| a.absolute_path.cmp(&b.absolute_path));
         files.dedup_by(|a, b| a.absolute_path == b.absolute_path);
@@ -227,36 +236,50 @@ impl DbIndexStore {
     }
 }
 
-/// Recurse `dir`, appending a [`DbFileRow`] per regular file. `base` is the
-/// scan root used to derive repo-relative paths.
-fn walk(base: &Path, dir: &Path, out: &mut Vec<DbFileRow>) -> Result<()> {
-    if !dir.exists() {
+/// Walk `root`, appending a [`DbFileRow`] per regular file. Repository ignore
+/// files are honored when requested; symlinks are never followed.
+fn walk(root: &Path, out: &mut Vec<DbFileRow>, respect_gitignore: bool) -> Result<()> {
+    if !root.exists() {
         return Ok(());
     }
-    let entries =
-        std::fs::read_dir(dir).map_err(|e| DbError::Index(format!("{}: {e}", dir.display())))?;
-    let mut children: Vec<_> = entries.filter_map(|e| e.ok()).map(|e| e.path()).collect();
-    children.sort();
-    for path in children {
-        let name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or_default();
-        if path.is_symlink() {
-            continue; // never follow symlinks (avoid cycles / escaping the scope)
-        }
-        if path.is_dir() {
-            if SKIP_DIRS.contains(&name) {
-                continue;
-            }
-            walk(base, &path, out)?;
-        } else if path.is_file() {
-            if let Some(row) = index_file(base, &path)? {
+
+    let base = root
+        .canonicalize()
+        .map_err(|e| DbError::Index(format!("{}: {e}", root.display())))?;
+    let mut builder = WalkBuilder::new(&base);
+    builder
+        .follow_links(false)
+        .hidden(false)
+        .git_ignore(respect_gitignore)
+        .git_exclude(respect_gitignore)
+        .git_global(respect_gitignore)
+        .ignore(respect_gitignore)
+        .parents(respect_gitignore)
+        .require_git(false)
+        .filter_entry(should_visit);
+
+    for entry in builder.build() {
+        let entry = entry.map_err(|e| DbError::Index(format!("walk {}: {e}", base.display())))?;
+        if entry.file_type().is_some_and(|kind| kind.is_file()) {
+            if let Some(row) = index_file(&base, entry.path())? {
                 out.push(row);
             }
         }
     }
     Ok(())
+}
+
+fn should_visit(entry: &DirEntry) -> bool {
+    entry.depth() == 0
+        || !entry
+            .file_type()
+            .is_some_and(|kind| kind.is_dir() && is_skipped_dir(entry.path()))
+}
+
+fn is_skipped_dir(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| SKIP_DIRS.contains(&name))
 }
 
 /// Build one [`DbFileRow`] for a regular file. Returns `Ok(None)` for files that
@@ -270,7 +293,11 @@ fn index_file(base: &Path, path: &Path) -> Result<Option<DbFileRow>> {
     hasher.update(&bytes);
     let content_hash = format!("{:x}", hasher.finalize());
     let line_count = bytecount_lines(&bytes);
-    let abs = path.display().to_string();
+    let absolute_path = path
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(path))
+        .display()
+        .to_string();
     let rel = path
         .strip_prefix(base)
         .ok()
@@ -286,7 +313,7 @@ fn index_file(base: &Path, path: &Path) -> Result<Option<DbFileRow>> {
     let mutable_policy = policy_for(&file_kind, generated, protected);
     Ok(Some(DbFileRow {
         file_id: format!("file:{content_hash}"),
-        absolute_path: abs,
+        absolute_path,
         repo_relative_path: rel,
         logical_owner: None,
         file_kind,
@@ -424,6 +451,66 @@ mod tests {
         let mut sorted = paths.clone();
         sorted.sort();
         assert_eq!(paths, sorted);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn scan_respects_gitignore_by_default_and_can_opt_out() {
+        let root = tmp_tag("gitignore");
+        fs::write(root.join(".gitignore"), "ignored.txt\nignored-dir/\n").unwrap();
+        fs::write(root.join("kept.txt"), "kept\n").unwrap();
+        fs::write(root.join("ignored.txt"), "ignored\n").unwrap();
+        fs::create_dir(root.join("ignored-dir")).unwrap();
+        fs::write(root.join("ignored-dir/nested.txt"), "ignored\n").unwrap();
+
+        let default_index = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let default_paths: Vec<_> = default_index
+            .files()
+            .iter()
+            .filter_map(|row| row.repo_relative_path.as_deref())
+            .collect();
+        assert!(default_paths.contains(&".gitignore"));
+        assert!(default_paths.contains(&"kept.txt"));
+        assert!(!default_paths.contains(&"ignored.txt"));
+        assert!(!default_paths.contains(&"ignored-dir/nested.txt"));
+
+        let unfiltered = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            respect_gitignore: false,
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(unfiltered
+            .files()
+            .iter()
+            .any(|row| row.repo_relative_path.as_deref() == Some("ignored.txt")));
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn narrow_scope_does_not_scan_siblings() {
+        let root = tmp_tag("narrow");
+        fs::create_dir(root.join("selected")).unwrap();
+        fs::create_dir(root.join("unrelated")).unwrap();
+        fs::write(root.join("selected/in.rs"), "fn selected() {}\n").unwrap();
+        fs::write(root.join("unrelated/out.rs"), "fn unrelated() {}\n").unwrap();
+
+        let index = FileIndex::scan(&ScanScope {
+            root: root.join("selected").display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(index.files().len(), 1);
+        assert_eq!(
+            index.files()[0].repo_relative_path.as_deref(),
+            Some("in.rs")
+        );
 
         let _ = fs::remove_dir_all(&root);
     }

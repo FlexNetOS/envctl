@@ -138,6 +138,7 @@ impl SymbolIndex {
     /// and one occurrence per hit.
     fn scan_file(&mut self, file: &DbFileRow, content: &str) {
         let replace_policy = replace_policy_for(file.mutable_policy);
+        let mut line_byte_offset = 0;
         for (line_no, line) in content.lines().enumerate() {
             for hit in scan_line_env_refs(line) {
                 let normalized = normalize_root_var(&hit.name);
@@ -153,8 +154,8 @@ impl SymbolIndex {
                         absolute_path: file.absolute_path.clone(),
                         line_start: line_no + 1,
                         line_end: line_no + 1,
-                        byte_start: hit.byte_start,
-                        byte_end: hit.byte_end,
+                        byte_start: line_byte_offset + hit.byte_start,
+                        byte_end: line_byte_offset + hit.byte_end,
                         value: None,
                         scope: None,
                         owner_component: file.logical_owner.clone(),
@@ -167,7 +168,7 @@ impl SymbolIndex {
                     "occ:{}:{}:{}:{}",
                     file.file_id,
                     line_no + 1,
-                    hit.byte_start,
+                    line_byte_offset + hit.byte_start,
                     normalized
                 );
                 self.occurrences.push(DbOccurrenceRow {
@@ -178,17 +179,133 @@ impl SymbolIndex {
                     normalized_text: normalized,
                     line: line_no + 1,
                     column: hit.column + 1,
-                    byte_start: hit.byte_start,
-                    byte_end: hit.byte_end,
+                    byte_start: line_byte_offset + hit.byte_start,
+                    byte_end: line_byte_offset + hit.byte_end,
                     context_before: line[..hit.column].to_string(),
                     context_after: line[hit.byte_end_in_line..].to_string(),
-                    replace_candidate: replace_policy == ReplacePolicy::Safe
-                        || replace_policy == ReplacePolicy::NeedsParser
-                        || replace_policy == ReplacePolicy::NeedsOwnerMarker,
+                    replace_candidate: is_replace_candidate(replace_policy),
                     replace_policy,
                 });
             }
+            if let Some(key) = config_key_on_line(line, &file.file_kind) {
+                self.push_config_key(file, line_no, line_byte_offset, line, key, replace_policy);
+            }
+            // `str::lines` omits the line terminator, but byte offsets are file-relative.
+            line_byte_offset += line.len() + 1;
         }
+        self.push_script_symbol(file, replace_policy);
+    }
+
+    fn push_config_key(
+        &mut self,
+        file: &DbFileRow,
+        line_no: usize,
+        line_byte_offset: usize,
+        line: &str,
+        key: ConfigKeyRef,
+        replace_policy: ReplacePolicy,
+    ) {
+        // `.env`/rc-style `UPPER_SNAKE=value` declarations are environment
+        // symbols, while keys in structured configuration files remain
+        // `ConfigKey` rows. Both retain the exact key occurrence below.
+        let (kind, normalized_name, tag) = if file.file_kind == "config" && is_var_name(&key.name) {
+            let normalized = normalize_root_var(&key.name);
+            let kind = classify_symbol(&normalized, &file.file_kind);
+            (kind.clone(), normalized, kind_tag(&kind))
+        } else {
+            (DbSymbolKind::ConfigKey, key.name.clone(), "config")
+        };
+        let symbol_id = format!("sym:{tag}:{normalized_name}");
+        if !self.symbols.iter().any(|s| s.symbol_id == symbol_id) {
+            self.symbols.push(DbSymbolRow {
+                symbol_id: symbol_id.clone(),
+                kind,
+                name: key.name.clone(),
+                normalized_name: normalized_name.clone(),
+                file_id: file.file_id.clone(),
+                absolute_path: file.absolute_path.clone(),
+                line_start: line_no + 1,
+                line_end: line_no + 1,
+                byte_start: line_byte_offset + key.start,
+                byte_end: line_byte_offset + key.end,
+                value: None,
+                scope: None,
+                owner_component: file.logical_owner.clone(),
+                target_profile: None,
+                confidence: SymbolConfidence::Parsed,
+                mutable_policy: file.mutable_policy,
+            });
+        }
+        self.occurrences.push(DbOccurrenceRow {
+            occurrence_id: format!("occ:{}:{}:{}:config", file.file_id, line_no + 1, key.start),
+            symbol_id,
+            file_id: file.file_id.clone(),
+            match_text: key.name.clone(),
+            normalized_text: normalized_name,
+            line: line_no + 1,
+            column: key.start + 1,
+            byte_start: line_byte_offset + key.start,
+            byte_end: line_byte_offset + key.end,
+            context_before: line[..key.start].to_string(),
+            context_after: line[key.end..].to_string(),
+            replace_candidate: is_replace_candidate(replace_policy),
+            replace_policy,
+        });
+    }
+
+    fn push_script_symbol(&mut self, file: &DbFileRow, replace_policy: ReplacePolicy) {
+        if !matches!(file.file_kind.as_str(), "shell" | "nushell") {
+            return;
+        }
+        let name = file
+            .repo_relative_path
+            .as_deref()
+            .unwrap_or(&file.absolute_path)
+            .to_string();
+        let kind = if name.to_ascii_lowercase().contains("hook") {
+            DbSymbolKind::HookScript
+        } else {
+            DbSymbolKind::WrapperScript
+        };
+        let tag = match kind {
+            DbSymbolKind::HookScript => "hook",
+            DbSymbolKind::WrapperScript => "wrapper",
+            _ => unreachable!(),
+        };
+        let symbol_id = format!("sym:{tag}:{}", file.file_id);
+        self.symbols.push(DbSymbolRow {
+            symbol_id: symbol_id.clone(),
+            kind,
+            name: name.clone(),
+            normalized_name: name.clone(),
+            file_id: file.file_id.clone(),
+            absolute_path: file.absolute_path.clone(),
+            line_start: 1,
+            line_end: file.line_count.max(1),
+            byte_start: 0,
+            byte_end: file.byte_len as usize,
+            value: None,
+            scope: None,
+            owner_component: file.logical_owner.clone(),
+            target_profile: None,
+            confidence: SymbolConfidence::Exact,
+            mutable_policy: file.mutable_policy,
+        });
+        self.occurrences.push(DbOccurrenceRow {
+            occurrence_id: format!("occ:{}:script", file.file_id),
+            symbol_id,
+            file_id: file.file_id.clone(),
+            match_text: name.clone(),
+            normalized_text: name,
+            line: 1,
+            column: 1,
+            byte_start: 0,
+            byte_end: 0,
+            context_before: String::new(),
+            context_after: String::new(),
+            replace_candidate: is_replace_candidate(replace_policy),
+            replace_policy,
+        });
     }
 
     /// syn-based structural extraction over a Rust source file (ARCH09): emits a
@@ -418,6 +535,44 @@ struct EnvRef {
     byte_end_in_line: usize,
 }
 
+struct ConfigKeyRef {
+    name: String,
+    start: usize,
+    end: usize,
+}
+
+/// Return a key occurrence for the simple, line-oriented configuration forms
+/// envctl indexes. Full parser-backed edits remain governed by `MutablePolicy`.
+fn config_key_on_line(line: &str, file_kind: &str) -> Option<ConfigKeyRef> {
+    let trimmed_start = line.len() - line.trim_start().len();
+    let rest = &line[trimmed_start..];
+    if rest.is_empty() || rest.starts_with('#') || rest.starts_with("//") {
+        return None;
+    }
+    let (raw, separator) = match file_kind {
+        "toml" | "config" => rest.split_once('=').or_else(|| rest.split_once(':'))?,
+        "yaml" => rest.split_once(':')?,
+        "json" => rest.split_once(':')?,
+        _ => return None,
+    };
+    let key = raw.trim();
+    let key = key.trim_matches('"').trim_matches('\'');
+    if key.is_empty()
+        || !key
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"_.-".contains(&b))
+    {
+        return None;
+    }
+    let start = trimmed_start + raw.find(key)?;
+    let _ = separator;
+    Some(ConfigKeyRef {
+        name: key.to_string(),
+        start,
+        end: start + key.len(),
+    })
+}
+
 /// Find `$VAR`, `${VAR}` references on a single line. Bare-word roots are left
 /// to the refactor planner's token-form resolution to avoid false positives on
 /// ordinary identifiers.
@@ -511,6 +666,13 @@ fn replace_policy_for(policy: MutablePolicy) -> ReplacePolicy {
         MutablePolicy::OwnedApply => ReplacePolicy::Safe,
         MutablePolicy::GuardedApply => ReplacePolicy::NeedsParser,
     }
+}
+
+fn is_replace_candidate(policy: ReplacePolicy) -> bool {
+    matches!(
+        policy,
+        ReplacePolicy::Safe | ReplacePolicy::NeedsParser | ReplacePolicy::NeedsOwnerMarker
+    )
 }
 
 /// Per-file slice of a symbol's blast radius.
@@ -814,6 +976,72 @@ mod inner {
             rust.iter().any(|s| s.value.as_deref() == Some("use")),
             "imports extracted"
         );
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn indexes_hook_wrapper_and_config_keys_with_rewrite_metadata() {
+        let root = std::env::temp_dir().join(format!(
+            "envctl-db-symbols-script-config-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("hooks")).unwrap();
+        fs::write(
+            root.join("hooks/pre-commit.sh"),
+            b"#!/bin/sh\necho $META_ROOT\n",
+        )
+        .unwrap();
+        fs::write(root.join("wrapper.nu"), b"$env.META_ROOT\n").unwrap();
+        fs::write(
+            root.join("settings.toml"),
+            b"[server]\nport = 8080\nfeature.enabled = true\n",
+        )
+        .unwrap();
+        fs::write(root.join("service.yaml"), b"name: envctl\nworkers: 2\n").unwrap();
+        fs::write(root.join(".env"), b"META_ROOT=/opt/meta\n").unwrap();
+
+        let files = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let symbols = SymbolIndex::build(&files).unwrap();
+
+        let hook = symbols
+            .symbols()
+            .iter()
+            .find(|s| s.kind == DbSymbolKind::HookScript)
+            .expect("hook script symbol");
+        assert!(hook.name.contains("hooks/pre-commit.sh"));
+        let wrapper = symbols
+            .symbols()
+            .iter()
+            .find(|s| s.kind == DbSymbolKind::WrapperScript)
+            .expect("wrapper script symbol");
+        assert!(wrapper.name.ends_with("wrapper.nu"));
+        assert!(symbols.symbols().iter().any(|s| {
+            s.kind == DbSymbolKind::ConfigKey && s.normalized_name == "feature.enabled"
+        }));
+        let env_definition = symbols
+            .occurrences()
+            .iter()
+            .find(|o| o.normalized_text == "META_ROOT" && o.match_text == "META_ROOT")
+            .expect(".env definition occurrence");
+        assert_eq!(env_definition.replace_policy, ReplacePolicy::Refuse);
+        assert!(!env_definition.replace_candidate);
+        let config_occ = symbols
+            .occurrences()
+            .iter()
+            .find(|o| o.normalized_text == "workers")
+            .expect("yaml key occurrence");
+        assert_eq!(config_occ.replace_policy, ReplacePolicy::NeedsParser);
+        assert!(config_occ.replace_candidate);
+        assert!(symbols
+            .occurrences()
+            .iter()
+            .any(|o| o.symbol_id == hook.symbol_id && o.replace_candidate));
 
         let _ = fs::remove_dir_all(&root);
     }

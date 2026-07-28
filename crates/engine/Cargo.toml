@@ -26,6 +26,7 @@ sysinfo = { workspace = true }
 which = { workspace = true }
 chrono = { workspace = true }
 glob = { workspace = true }
+ignore = { workspace = true }
 rustix = { workspace = true }
 # self-update / update-notifier (TASK-0019): reuse the agent-env blocking HTTP client
 # (envctl_agent_env::source::http_client — reqwest→rustls→ring). tar + flate2(rust_backend)
