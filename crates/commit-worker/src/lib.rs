@@ -21,6 +21,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::path::Path;
 
+mod embedding;
+
 /// Authoritative schema owned by envctl.
 pub const AUTHORITATIVE_SCHEMA: &str = "lifeos_runtime";
 /// Authoritative committed-record table (sequence-keyed, append-only).
@@ -246,7 +248,8 @@ pub fn drain_and_commit(
             let seq: i64 = row.get(0);
             let contract_version: String = row.get(1);
             let blob_sha256: String = row.get(2);
-            let job_json: String = row.get(3);
+            let staged_job_json: String = row.get(3);
+            let job_json = embedding::enrich_job(&staged_job_json)?;
             let witness = witness_link(&previous_witness, seq, &blob_sha256, &job_json);
             let affected = tx
                 .execute(
