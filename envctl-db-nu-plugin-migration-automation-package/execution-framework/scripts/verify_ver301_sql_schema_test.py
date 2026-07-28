@@ -194,6 +194,8 @@ def main() -> None:
         "paths": [str(path.relative_to(base)) for path in secret_scan_paths],
         "findings": secret_hits,
     }
+    write_json(REPORT_PATH, report)
+    write_json(LOG_PATH, report)
     if secret_hits:
         report["status"] = "fail"
         report["errors"].append("secret-like content detected in generated outputs: " + ", ".join(secret_hits))

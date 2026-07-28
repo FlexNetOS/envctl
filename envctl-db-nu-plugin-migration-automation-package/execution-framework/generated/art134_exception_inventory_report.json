@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-134_EXCEPTION_INVENTORY",
   "status": "passed",
-  "generated_at": "2026-07-04T23:28:58+00:00",
+  "generated_at": "2026-07-28T10:06:12+00:00",
   "exception_count": 10,
   "categories": [
     "completion_gate",
@@ -26,7 +26,7 @@
       "artifact_id": "01-current-state-exception-inventory-md",
       "run_id": "run-art134-exception-inventory",
       "path": "migration-artifacts/01-current-state/exception-inventory.md",
-      "content_hash": "sha256:88545bc6b4726ab4cb98904fdf5d9aa1e64f2987b604826527ca6b799ce83970",
+      "content_hash": "sha256:c5575ccf7b9a9c64639c94243b433fbc79161eac972d02c711df8babdef8294c",
       "producer_operation_id": "op-art134-generate-exception-inventory",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -58,7 +58,7 @@
       "artifact_id": "art-134-exception-inventory-md",
       "run_id": "run-art134-exception-inventory",
       "path": "migration-artifacts/art-134_exception_inventory/exception-inventory.md",
-      "content_hash": "sha256:88545bc6b4726ab4cb98904fdf5d9aa1e64f2987b604826527ca6b799ce83970",
+      "content_hash": "sha256:c5575ccf7b9a9c64639c94243b433fbc79161eac972d02c711df8babdef8294c",
       "producer_operation_id": "op-art134-generate-exception-inventory",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -78,7 +78,7 @@
       "artifact_id": "art-134-exception-inventory-json",
       "run_id": "run-art134-exception-inventory",
       "path": "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
-      "content_hash": "sha256:d32caeb436cd80a9f0738c253191e0ae80ab3b25115ecce0f90ce057021c1a6e",
+      "content_hash": "sha256:cffe3a9eaa408f79d093a1454fd5046a3dbc7a07d875090d852715229cd621d6",
       "producer_operation_id": "op-art134-generate-exception-inventory",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -103,7 +103,7 @@
       "artifact_type": "current_state_record",
       "status": "complete",
       "path": "migration-artifacts/01-current-state/exception-inventory.md",
-      "content_hash": "sha256:88545bc6b4726ab4cb98904fdf5d9aa1e64f2987b604826527ca6b799ce83970",
+      "content_hash": "sha256:c5575ccf7b9a9c64639c94243b433fbc79161eac972d02c711df8babdef8294c",
       "generated_by_operation_id": "op-art134-generate-exception-inventory",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -183,7 +183,7 @@
       "artifact_type": "task_markdown_companion",
       "status": "complete",
       "path": "migration-artifacts/art-134_exception_inventory/exception-inventory.md",
-      "content_hash": "sha256:88545bc6b4726ab4cb98904fdf5d9aa1e64f2987b604826527ca6b799ce83970",
+      "content_hash": "sha256:c5575ccf7b9a9c64639c94243b433fbc79161eac972d02c711df8babdef8294c",
       "generated_by_operation_id": "op-art134-generate-exception-inventory",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -226,7 +226,7 @@
       "artifact_type": "machine_readable_record",
       "status": "complete",
       "path": "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
-      "content_hash": "sha256:d32caeb436cd80a9f0738c253191e0ae80ab3b25115ecce0f90ce057021c1a6e",
+      "content_hash": "sha256:cffe3a9eaa408f79d093a1454fd5046a3dbc7a07d875090d852715229cd621d6",
       "generated_by_operation_id": "op-art134-generate-exception-inventory",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -263,9 +263,9 @@
     }
   ],
   "checksums": {
-    "migration-artifacts/01-current-state/exception-inventory.md": "88545bc6b4726ab4cb98904fdf5d9aa1e64f2987b604826527ca6b799ce83970",
-    "migration-artifacts/art-134_exception_inventory/exception-inventory.md": "88545bc6b4726ab4cb98904fdf5d9aa1e64f2987b604826527ca6b799ce83970",
-    "migration-artifacts/art-134_exception_inventory/exception-inventory.json": "d32caeb436cd80a9f0738c253191e0ae80ab3b25115ecce0f90ce057021c1a6e"
+    "migration-artifacts/01-current-state/exception-inventory.md": "c5575ccf7b9a9c64639c94243b433fbc79161eac972d02c711df8babdef8294c",
+    "migration-artifacts/art-134_exception_inventory/exception-inventory.md": "c5575ccf7b9a9c64639c94243b433fbc79161eac972d02c711df8babdef8294c",
+    "migration-artifacts/art-134_exception_inventory/exception-inventory.json": "cffe3a9eaa408f79d093a1454fd5046a3dbc7a07d875090d852715229cd621d6"
   },
   "validation": {
     "artifact_file_exists": true,

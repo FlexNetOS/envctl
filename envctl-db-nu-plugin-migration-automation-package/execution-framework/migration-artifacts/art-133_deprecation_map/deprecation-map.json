@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-133_DEPRECATION_MAP",
   "title": "Deprecation Map",
-  "generated_at": "2026-07-04T23:28:24+00:00",
+  "generated_at": "2026-07-28T09:30:31+00:00",
   "status": "complete",
   "contract_row": {
     "contract_row_id": "artifact:02-target-state-deprecation-map-md",
@@ -33,7 +33,7 @@
     "package_graph_summary": {
       "node_count": 8,
       "edge_count": 6,
-      "python_file_count": 49,
+      "python_file_count": 85,
       "third_party_python_import_count": 2,
       "shell_script_count": 6,
       "issue_count": 4,

@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-111_EVENT_MAP",
   "status": "passed",
-  "generated_at": "2026-07-04T23:29:32+00:00",
+  "generated_at": "2026-07-28T11:27:22+00:00",
   "artifact_summary": {
     "contract_count": 5,
     "topic_signal_count": 180,
@@ -14,14 +14,14 @@
     "dlq_signal_count": 180,
     "hotspot_count": 100
   },
-  "completed_at": "2026-07-04T23:29:32+00:00",
+  "completed_at": "2026-07-28T11:27:22+00:00",
   "registry_results": [
     {
       "artifact_row_id": "artifact-3cf75ecca8b9bb7732277c72",
       "artifact_id": "05-integrations-event-catalog-md",
       "run_id": "run-art111-event-map",
       "path": "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
-      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
       "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -47,7 +47,7 @@
       "artifact_id": "05-integrations-event-message-contract-map-md",
       "run_id": "run-art111-event-map",
       "path": "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
-      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
       "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -73,7 +73,7 @@
       "artifact_id": "art-111-event-map-md",
       "run_id": "run-art111-event-map",
       "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
-      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
       "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -99,7 +99,7 @@
       "artifact_id": "art-111-event-map-json",
       "run_id": "run-art111-event-map",
       "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json",
-      "content_hash": "sha256:0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
+      "content_hash": "sha256:09a84d9f9411a46531f8dc30cd4ebf4f33a885ac5f8024167c9a160a90588830",
       "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -130,7 +130,7 @@
       "artifact_type": "event_message_contract_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
-      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
       "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -192,7 +192,7 @@
       "artifact_type": "event_message_contract_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
-      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
       "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -254,7 +254,7 @@
       "artifact_type": "event_message_contract_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
-      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
       "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -316,7 +316,7 @@
       "artifact_type": "event_message_contract_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json",
-      "content_hash": "sha256:0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
+      "content_hash": "sha256:09a84d9f9411a46531f8dc30cd4ebf4f33a885ac5f8024167c9a160a90588830",
       "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

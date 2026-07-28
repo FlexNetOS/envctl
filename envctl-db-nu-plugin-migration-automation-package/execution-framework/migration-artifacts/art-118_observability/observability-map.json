@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-118_OBSERVABILITY",
-  "generated_at": "2026-07-04T23:29:39+00:00",
+  "generated_at": "2026-07-28T11:40:01+00:00",
   "status": "complete",
   "scope": {
     "source": "target descriptor, repo scan, envctl database reports, shared protocol manifest, safe target scan",
@@ -159,9 +159,9 @@
   "safe_scan": {
     "target_root": "/home/flexnetos/FlexNetOS",
     "exists": true,
-    "visited_file_count": 458127,
-    "content_checked_count": 4162,
-    "blocked_skipped_count": 147
+    "visited_file_count": 9980,
+    "content_checked_count": 4239,
+    "blocked_skipped_count": 4
   },
   "coverage": {
     "logs": {
@@ -169,76 +169,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "WORKSPACE_LAYOUT.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/HANDOFF.md",
           "evidence_kind": "content_keyword",
           "keyword": "log",
-          "line": 43
+          "line": 20
         },
         {
-          "source": "WORKLOG.md",
-          "evidence_kind": "path_signal",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/README.md",
+          "evidence_kind": "content_keyword",
           "keyword": "log",
-          "line": null
+          "line": 6
         },
         {
-          "source": "WORKLOG.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/AGENTS.md",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 10
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/tests/fixtures/nushell/env-config.nu",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 11
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/Cargo.toml",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 14
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/tests/inject.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 6
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/tests/vault.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 3
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/paths.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 65
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/startup.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 6
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/event.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 2
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/vault/store.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "log",
+          "line": 14
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/vault/audit.rs",
           "evidence_kind": "content_keyword",
           "keyword": "log",
           "line": 1
-        },
-        {
-          "source": "AGENTS.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 26
-        },
-        {
-          "source": "src/OWNERSHIP.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 25
-        },
-        {
-          "source": "src/teri/TODO.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 8
-        },
-        {
-          "source": "src/teri/README.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 23
-        },
-        {
-          "source": "src/teri/README-ZH.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 136
-        },
-        {
-          "source": "src/teri/ARCHITECTURE.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 21
-        },
-        {
-          "source": "src/teri/CLAUDE.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 90
-        },
-        {
-          "source": "src/teri/tests/agent_ltm_recall.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 1
-        },
-        {
-          "source": "src/teri/tests/pipeline_run.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "log",
-          "line": 7
         }
       ]
     },
@@ -247,76 +247,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "src/teri/src/memory/mod.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/vault/crypto.rs",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 19
+          "line": 8
         },
         {
-          "source": "src/teri/src/services/simulation_manager.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/agent-env/src/driver.rs",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 112
+          "line": 6
         },
         {
-          "source": "src/teri/src/services/simulation_runner.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/agent-env/src/report.rs",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 99
+          "line": 3
         },
         {
-          "source": "src/teri/.codex/prompts/teri-simulation-truth.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/tests/ruvector_codec_compat.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "metric",
+          "line": 13
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/semantic.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "metric",
+          "line": 14
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/peer.rs",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 2
+          "line": 9
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/memory/mod.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/agent/report.rs",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 19
+          "line": 164
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/services/simulation_manager.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/cli/tests/agent.rs",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 112
+          "line": 39
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/services/simulation_runner.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/plan-verifier.toml",
+          "evidence_kind": "content_keyword",
+          "keyword": "metric",
+          "line": 6
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/plan-trend-researcher.toml",
           "evidence_kind": "content_keyword",
           "keyword": "counter",
-          "line": 99
+          "line": 6
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/uploads/simulations/sim_e1166e7bb7a2/simulation_config.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/plan-test-strategist.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "gauge",
-          "line": 117
+          "keyword": "metric",
+          "line": 6
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/uploads/simulations/sim_e1166e7bb7a2/run_state.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/plan-dependency-graph-auditor.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "gauge",
-          "line": 47
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.codex/prompts/teri-simulation-truth.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "counter",
-          "line": 2
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/asap-stratified-100-extractions.json",
-          "evidence_kind": "content_keyword",
-          "keyword": "counter",
-          "line": 1
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/asap-stratified-100-graph-scores.json",
-          "evidence_kind": "content_keyword",
-          "keyword": "counter",
-          "line": 1
+          "keyword": "metric",
+          "line": 10
         }
       ]
     },
@@ -325,76 +325,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "LOCAL_WORKAROUNDS.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/LESSONS.md",
           "evidence_kind": "content_keyword",
           "keyword": "trace",
-          "line": 106
+          "line": 14
         },
         {
-          "source": "src/teri/Cargo.toml",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/ca.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "span",
+          "line": 494
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/db_query.rs",
           "evidence_kind": "content_keyword",
           "keyword": "trace",
-          "line": 32
+          "line": 52
         },
         {
-          "source": "src/teri/tests/community_pipeline_e2e.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/wiring.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "span",
+          "line": 305
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secretd/src/edge/listener.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "tracing",
+          "line": 20
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secretctl/Cargo.toml",
+          "evidence_kind": "content_keyword",
+          "keyword": "tracing",
+          "line": 29
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/instructions/codex-rules.md",
           "evidence_kind": "content_keyword",
           "keyword": "trace",
-          "line": 223
+          "line": 6
         },
         {
-          "source": "src/teri/src/preflight.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/handoff-kernel-engineer.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "tracing",
-          "line": 190
+          "keyword": "span",
+          "line": 2
         },
         {
-          "source": "src/teri/src/api/simulation.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/rust-port-parity-verifier.toml",
           "evidence_kind": "content_keyword",
           "keyword": "trace",
-          "line": 55
+          "line": 20
         },
         {
-          "source": "src/teri/src/services/graph_backend.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/plan-test-strategist.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "tracing",
-          "line": 196
+          "keyword": "trace",
+          "line": 6
         },
         {
-          "source": "src/teri/src/services/oasis_profile_export.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/plan-architect.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "tracing",
-          "line": 34
+          "keyword": "trace",
+          "line": 6
         },
         {
-          "source": "src/teri/src/autonomy/runner.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/agents/explorer.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "tracing",
-          "line": 107
-        },
-        {
-          "source": "src/teri/frontend/src/components/GraphPanel.vue",
-          "evidence_kind": "content_keyword",
-          "keyword": "span",
-          "line": 4
-        },
-        {
-          "source": "src/teri/frontend/src/components/LanguageSwitcher.vue",
-          "evidence_kind": "content_keyword",
-          "keyword": "span",
-          "line": 5
-        },
-        {
-          "source": "src/teri/frontend/src/components/HistoryDatabase.vue",
-          "evidence_kind": "content_keyword",
-          "keyword": "span",
-          "line": 16
-        },
-        {
-          "source": "src/teri/frontend/src/components/Step2EnvSetup.vue",
-          "evidence_kind": "content_keyword",
-          "keyword": "span",
-          "line": 8
+          "keyword": "trace",
+          "line": 9
         }
       ]
     },
@@ -403,76 +403,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/core/src/visualize.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/Cargo.toml",
           "evidence_kind": "content_keyword",
-          "keyword": "visualization",
+          "keyword": "dashboard",
+          "line": 25
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/tests/golden/mission-control.kdl",
+          "evidence_kind": "content_keyword",
+          "keyword": "dashboard",
           "line": 1
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/CLAUDE.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "visualization",
-          "line": 50
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/tests/test_visualization_sanitization.py",
-          "evidence_kind": "path_signal",
-          "keyword": "visualization",
-          "line": null
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/tests/test_visualization_sanitization.py",
-          "evidence_kind": "content_keyword",
-          "keyword": "visualization",
-          "line": 2
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/package.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/command.rs",
           "evidence_kind": "content_keyword",
           "keyword": "dashboard",
-          "line": 4
+          "line": 8
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/src/dashboardView.ts",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/model.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "dashboard",
+          "line": 65
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/dashboard.rs",
           "evidence_kind": "path_signal",
           "keyword": "dashboard",
           "line": null
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/src/dashboardView.ts",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/dashboard.rs",
           "evidence_kind": "content_keyword",
           "keyword": "dashboard",
-          "line": 4
+          "line": 1
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/src/extension.ts",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/cli/tests/dashboard.rs",
+          "evidence_kind": "path_signal",
+          "keyword": "dashboard",
+          "line": null
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/cli/tests/dashboard.rs",
           "evidence_kind": "content_keyword",
           "keyword": "dashboard",
-          "line": 6
+          "line": 1
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/interface-engines/llama/tests/pivot_tests.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/cli/src/bin/meta-env.rs",
           "evidence_kind": "content_keyword",
           "keyword": "dashboard",
           "line": 5
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/api/README.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/gui/src/main.rs",
           "evidence_kind": "content_keyword",
           "keyword": "dashboard",
-          "line": 11
+          "line": 1
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/api/server.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/gui/src/theme.rs",
           "evidence_kind": "content_keyword",
           "keyword": "dashboard",
-          "line": 58
+          "line": 1
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/assets/Futuristic AI system architecture dashboard.png",
-          "evidence_kind": "path_signal",
-          "keyword": "dashboard",
-          "line": null
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.codex/skills/.system/imagegen/references/cli.md",
+          "evidence_kind": "content_keyword",
+          "keyword": "visualization",
+          "line": 125
         }
       ]
     },
@@ -481,76 +481,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "src/teri/src/api/mod.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "notification",
-          "line": 88
-        },
-        {
-          "source": "src/teri/src/services/entity_reader.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "incident",
-          "line": 593
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/api/mod.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "notification",
-          "line": 88
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/services/entity_reader.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "incident",
-          "line": 593
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/asap-stratified-100-extractions.json",
-          "evidence_kind": "content_keyword",
-          "keyword": "alarm",
-          "line": 1
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/asap-stratified-100-graph-scores.json",
-          "evidence_kind": "content_keyword",
-          "keyword": "alert",
-          "line": 1
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/asap-stratified-100-merged-scores.json",
-          "evidence_kind": "content_keyword",
-          "keyword": "alert",
-          "line": 1
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/asap-stratified-100-full-sketch.json",
-          "evidence_kind": "content_keyword",
-          "keyword": "alarm",
-          "line": 1
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/Cargo.toml",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/db_watch.rs",
           "evidence_kind": "content_keyword",
           "keyword": "notify",
-          "line": 34
+          "line": 14
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/src/watcher.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-store-libsql/Cargo.toml",
+          "evidence_kind": "content_keyword",
+          "keyword": "alert",
+          "line": 18
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/prompts/goal.md",
+          "evidence_kind": "content_keyword",
+          "keyword": "incident",
+          "line": 48
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/.codex/prompts/prompt:substrate-init.inherit.md",
+          "evidence_kind": "content_keyword",
+          "keyword": "notify",
+          "line": 23
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/ci/gates/enable.sh",
+          "evidence_kind": "content_keyword",
+          "keyword": "notify",
+          "line": 79
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.codex/skills/.system/skill-creator/scripts/generate_openai_yaml.py",
+          "evidence_kind": "content_keyword",
+          "keyword": "pager",
+          "line": 32
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.claude/hooks/notify-cosmic.sh",
+          "evidence_kind": "path_signal",
+          "keyword": "notify",
+          "line": null
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.claude/hooks/notify-cosmic.sh",
           "evidence_kind": "content_keyword",
           "keyword": "notify",
           "line": 2
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/MediaEngine/tools/__init__.py",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.claude/hooks/ruvector-intel-bridge.sh",
           "evidence_kind": "content_keyword",
           "keyword": "pager",
-          "line": 9
+          "line": 10
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/query_engine_streamlit_reports/state_\u6b66\u6c49\u5927\u5b66_20250825_180214.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.claude/hooks/budget-sentinel.sh",
           "evidence_kind": "content_keyword",
-          "keyword": "notification",
-          "line": 38
+          "keyword": "notify",
+          "line": 24
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.claude/hooks/stop-decision-gate.sh",
+          "evidence_kind": "content_keyword",
+          "keyword": "notify",
+          "line": 23
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.claude/hooks/statusline.sh",
+          "evidence_kind": "content_keyword",
+          "keyword": "alert",
+          "line": 4
         }
       ]
     },
@@ -559,76 +559,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "src/teri/tests/community_loop_e2e.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "slo",
-          "line": 86
-        },
-        {
-          "source": "src/teri/src/seed/community/pebesen.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/CLAUDE.md",
           "evidence_kind": "content_keyword",
           "keyword": "sla",
-          "line": 118
+          "line": 22
         },
         {
-          "source": "src/teri/src/api/streaming.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/tests/relay.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "slo",
+          "line": 12
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/tests/phase0.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "slo",
+          "line": 4
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/mint_github.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "slo",
+          "line": 39
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/error.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "slo",
+          "line": 13
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/startup.rs",
           "evidence_kind": "content_keyword",
           "keyword": "slo",
           "line": 6
         },
         {
-          "source": "src/teri/src/i18n/mod.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/lib.rs",
           "evidence_kind": "content_keyword",
-          "keyword": "sla",
+          "keyword": "slo",
           "line": 9
         },
         {
-          "source": "src/teri/src/i18n/locales/en.json",
-          "evidence_kind": "content_keyword",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/keyslot.rs",
+          "evidence_kind": "path_signal",
           "keyword": "slo",
-          "line": 44
+          "line": null
         },
         {
-          "source": "src/teri/src/i18n/locales/zh.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/keyslot.rs",
           "evidence_kind": "content_keyword",
           "keyword": "slo",
-          "line": 44
+          "line": 1
         },
         {
-          "source": "src/teri/frontend/locales/en.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/vault/mod.rs",
           "evidence_kind": "content_keyword",
           "keyword": "slo",
-          "line": 66
+          "line": 13
         },
         {
-          "source": "src/teri/frontend/locales/zh.json",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/vault/aad.rs",
           "evidence_kind": "content_keyword",
           "keyword": "slo",
-          "line": 66
+          "line": 25
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/tests/community_loop_e2e.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "slo",
-          "line": 86
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/tests/codex_harness.rs",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/agent-env/tests/parity_vs_kasetto.rs",
           "evidence_kind": "content_keyword",
           "keyword": "sla",
-          "line": 3
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/seed/community/pebesen.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "sla",
-          "line": 118
-        },
-        {
-          "source": "src/teri/.worktrees/issue-86-source-wires/src/api/streaming.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "slo",
-          "line": 6
+          "line": 67
         }
       ]
     },
@@ -637,76 +637,76 @@
       "evidence_count": 80,
       "sample_evidence": [
         {
-          "source": "src/release-workspace.meta.yaml",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/sqld_auth.rs",
           "evidence_kind": "content_keyword",
           "keyword": "bootstrap",
           "line": 4
         },
         {
-          "source": "src/teri/SPRINT.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/seam.rs",
           "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 9
-        },
-        {
-          "source": "src/teri/FEATURE-PARITY.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 8
-        },
-        {
-          "source": "src/teri/rust-toolchain.toml",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 17
-        },
-        {
-          "source": "src/teri/RUNBOOK.md",
-          "evidence_kind": "path_signal",
-          "keyword": "runbook",
-          "line": null
-        },
-        {
-          "source": "src/teri/RUNBOOK.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 1
-        },
-        {
-          "source": "src/teri/AGENTS.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 4
-        },
-        {
-          "source": "src/teri/tests/codex_harness.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 122
-        },
-        {
-          "source": "src/teri/src/services/agent_memory.rs",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 3
-        },
-        {
-          "source": "src/teri/code-research/references/research-ledger.md",
-          "evidence_kind": "content_keyword",
-          "keyword": "runbook",
+          "keyword": "rollback",
           "line": 5
         },
         {
-          "source": "src/teri/.codex/prompts/teri-docs-sync.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/broker/authorizer.rs",
           "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 18
+          "keyword": "replay",
+          "line": 15
         },
         {
-          "source": "src/teri/.worktrees/issue-86-source-wires/SPRINT.md",
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/broker/decide.rs",
           "evidence_kind": "content_keyword",
-          "keyword": "runbook",
-          "line": 9
+          "keyword": "rollback",
+          "line": 34
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/broker/mod.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "replay",
+          "line": 24
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/broker/jti.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "replay",
+          "line": 1
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/secrets-engine/src/broker/nonce.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "replay",
+          "line": 2
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/agent-env/src/runtime.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "rollback",
+          "line": 53
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/Cargo.toml",
+          "evidence_kind": "content_keyword",
+          "keyword": "rollback",
+          "line": 42
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/tests/agent_sync.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "bootstrap",
+          "line": 691
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/tests/agent_command_parity.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "bootstrap",
+          "line": 354
+        },
+        {
+          "source": "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/crates/engine/src/register.rs",
+          "evidence_kind": "content_keyword",
+          "keyword": "replay",
+          "line": 8
         }
       ]
     }

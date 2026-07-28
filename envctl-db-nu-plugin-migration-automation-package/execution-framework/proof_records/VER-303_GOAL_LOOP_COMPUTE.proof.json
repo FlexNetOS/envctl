@@ -1,9 +1,9 @@
 {
   "proof_schema_version": "1.0",
   "task_id": "VER-303_GOAL_LOOP_COMPUTE",
-  "status": "completed",
-  "started_at": "2026-07-05T06:01:26+00:00",
-  "completed_at": "2026-07-05T06:01:26+00:00",
+  "status": "failed",
+  "started_at": "2026-07-28T12:22:41+00:00",
+  "completed_at": "2026-07-28T12:22:41+00:00",
   "actor": "goal-validation-agent",
   "helper_id": "helper-goal-validate-01",
   "model_tag": "gpt-5.3-spark",
@@ -26,8 +26,8 @@
   "verification_output": {
     "schema_version": "1.0",
     "task_id": "VER-303_GOAL_LOOP_COMPUTE",
-    "status": "pass",
-    "generated_at": "2026-07-05T06:01:26+00:00",
+    "status": "fail",
+    "generated_at": "2026-07-28T12:22:41+00:00",
     "packet_summary": {
       "goal": "Ensure the /goal loop can compute a complete run path or stop at explicit approval blockers",
       "repo_target": "filesystem",
@@ -38,8 +38,8 @@
     "dependency_proofs": {
       "VER-302_PACKET_SCHEMA_VALIDATION": {
         "proof_path": "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json",
-        "status": "completed",
-        "ok": true
+        "status": "failed",
+        "ok": false
       },
       "REQ-045_RUN_REPLAY": {
         "proof_path": "proof_records/REQ-045_RUN_REPLAY.proof.json",
@@ -48,91 +48,63 @@
       }
     },
     "current_state": {
-      "generated_at": "2026-07-05T06:01:26+00:00",
-      "dispatch_packets": [
-        {
-          "task_id": "VER-303_GOAL_LOOP_COMPUTE",
-          "parallel_group": "verification",
-          "max_parallel": 1,
-          "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json"
-        }
-      ],
-      "runnable_tasks": [
-        {
-          "task_id": "VER-303_GOAL_LOOP_COMPUTE",
-          "parallel_group": "verification",
-          "max_parallel": 1,
-          "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json"
-        }
-      ],
+      "generated_at": "2026-07-28T12:22:41+00:00",
+      "dispatch_packets": [],
+      "runnable_tasks": [],
       "approval_blockers": [],
-      "blocked_tasks": [
-        {
-          "task_id": "VER-304_FINAL_COMPLETENESS",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "VER-303_GOAL_LOOP_COMPUTE"
-          ]
-        },
-        {
-          "task_id": "REL-400_PACKAGE_ARCHIVE",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "VER-304_FINAL_COMPLETENESS"
-          ]
-        },
-        {
-          "task_id": "REL-401_HANDOFF",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "REL-400_PACKAGE_ARCHIVE"
-          ]
-        }
-      ],
-      "status_ver303": "pending",
-      "status_ver304": "pending"
+      "blocked_tasks": [],
+      "status_ver303": "complete",
+      "status_ver304": "complete"
     },
-    "projected_run_path": [
-      "VER-303_GOAL_LOOP_COMPUTE",
-      "VER-304_FINAL_COMPLETENESS",
-      "REL-400_PACKAGE_ARCHIVE",
-      "REL-401_HANDOFF"
-    ],
+    "projected_run_path": [],
     "projected_stop_reason": "complete",
     "projected_terminal_state": {
-      "complete_count": 80,
-      "failed_count": 0,
+      "complete_count": 76,
+      "failed_count": 4,
       "pending_count": 0,
       "approval_blocker_count": 0,
       "blocked_count": 0,
       "dispatch_count": 0
     },
     "checks": {
-      "dependencies_completed": true,
-      "current_dispatch_targets_ver303": true,
-      "current_runnable_contains_only_ver303": true,
+      "dependencies_completed": false,
+      "current_dispatch_targets_ver303": false,
+      "current_runnable_contains_only_ver303": false,
       "current_has_no_approval_blockers": true,
-      "current_status_marks_ver303_pending": true,
+      "current_status_marks_ver303_pending": false,
       "current_status_surface_matches_compute": true,
-      "projected_path_begins_with_ver303": true,
-      "projected_advances_to_ver304": true,
-      "projected_reaches_release_tasks": true,
+      "projected_path_begins_with_ver303": false,
+      "projected_advances_to_ver304": false,
+      "projected_reaches_release_tasks": false,
       "projected_stops_as_complete": true,
       "projected_has_no_approval_blockers": true,
-      "projected_has_no_failed_tasks": true,
+      "projected_has_no_failed_tasks": false,
       "projected_finishes_all_tasks": true,
-      "ver304_is_currently_blocked_only_by_ver303": true,
+      "ver304_is_currently_blocked_only_by_ver303": false,
       "packet_proof_required": true,
       "packet_single_threaded": true
     },
-    "warnings": [],
-    "errors": [],
+    "warnings": [
+      "projected path differs from expected linear tail sequence"
+    ],
+    "errors": [
+      "dependency proof not completed: VER-302_PACKET_SCHEMA_VALIDATION",
+      "check failed: dependencies_completed",
+      "check failed: current_dispatch_targets_ver303",
+      "check failed: current_runnable_contains_only_ver303",
+      "check failed: current_status_marks_ver303_pending",
+      "check failed: projected_path_begins_with_ver303",
+      "check failed: projected_advances_to_ver304",
+      "check failed: projected_reaches_release_tasks",
+      "check failed: projected_has_no_failed_tasks",
+      "check failed: ver304_is_currently_blocked_only_by_ver303"
+    ],
     "sha256": {
       "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json": "sha256:50751f2c157ff264c985651496826947c71c6c3de92b6bef04d367f257a3ffe4",
-      "generated/status_report.json": "sha256:899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
-      "proof_records/proof_ledger.jsonl": "sha256:6df857f3f04fd97be4efe7905b66848d88a4e40ad8e3f11af80c5078256d69bf",
-      "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "sha256:8eee6aa74eeadac471eb09043156d92ed4a9d8b2886e68a59adfc041cb95b899",
-      "proof_records/REQ-045_RUN_REPLAY.proof.json": "sha256:4193576929a715a017d7d0d699b5ed7d0b0ce3da28a50d4f03c629ffa2fca896"
+      "generated/status_report.json": "sha256:a5320182da42351f0f3760b5dfd77255126814ed7b6850d7a4ac07f77abe00bb",
+      "proof_records/proof_ledger.jsonl": "sha256:ba9c21139614c9be34ef5167c1d8183098a33c464666c61fa09ffdb95eafd9ed",
+      "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "sha256:5f455f9981cb23c55eff6b7f6b057a3dc2c4930b6d6cad707910372bb2588627",
+      "proof_records/REQ-045_RUN_REPLAY.proof.json": "sha256:72ffa6ee6d7ea42f53e436bbef5f122a5447dcb092ba63c7e1db9bc7b68bac27"
     },
     "secret_scan": {
       "paths": [
@@ -144,14 +116,15 @@
     }
   },
   "checksums": {
-    "execution-framework/scripts/verify_ver303_goal_loop_compute.py": "96b964ebd83eea94cbc215504efd13da93373cc29a8a974c8be9ceda45f3a17e",
-    "execution-framework/generated/ver303_goal_loop_compute_report.json": "ceaa4abb5fca1b2869ae6f8e8d1787aa9a2244645aa5fdb96fb15f0ee4f35186",
-    "execution-framework/state/VER-303_GOAL_LOOP_COMPUTE.heartbeat.json": "7a72e22828024940a7c81b683b79197c77ed72e78400b5e5e54bc8d2291c357f",
-    "execution-framework/logs/VER-303_GOAL_LOOP_COMPUTE.log": "ceaa4abb5fca1b2869ae6f8e8d1787aa9a2244645aa5fdb96fb15f0ee4f35186",
-    "execution-framework/proof_records/proof_ledger.jsonl": "6df857f3f04fd97be4efe7905b66848d88a4e40ad8e3f11af80c5078256d69bf",
-    "execution-framework/state/goal_loop_state.json": "899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
-    "execution-framework/generated/status_report.json": "899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
-    "execution-framework/generated/status_from_proofs.json": "6efa06f302f0da7cc3a309c4c397c543877522133241ba8a53750d858f511aeb"
+    "execution-framework/scripts/verify_ver303_goal_loop_compute.py": "c39f2c6b335f5dd5eeafc04b7fcc54ce2e172f545bc4e4a08fa31da5cd28720d",
+    "execution-framework/generated/ver303_goal_loop_compute_report.json": "c4ed3960f2eaf58d215f52265f52cc933026431470cac475c266f0e23e7d8090",
+    "execution-framework/state/VER-303_GOAL_LOOP_COMPUTE.heartbeat.json": "edfa1898b768bb44cc51180aa0dee107fb617d6aa70f5737cb87ca2c4ce27b65",
+    "execution-framework/logs/VER-303_GOAL_LOOP_COMPUTE.log": "c4ed3960f2eaf58d215f52265f52cc933026431470cac475c266f0e23e7d8090",
+    "execution-framework/proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json": "01691faf45f68f2815b72286e7b621a7a0f3c19218d8be5c4e34d4da823a5901",
+    "execution-framework/proof_records/proof_ledger.jsonl": "ba9c21139614c9be34ef5167c1d8183098a33c464666c61fa09ffdb95eafd9ed",
+    "execution-framework/state/goal_loop_state.json": "a5320182da42351f0f3760b5dfd77255126814ed7b6850d7a4ac07f77abe00bb",
+    "execution-framework/generated/status_report.json": "a5320182da42351f0f3760b5dfd77255126814ed7b6850d7a4ac07f77abe00bb",
+    "execution-framework/generated/status_from_proofs.json": "a3cac733b0fd6064f55126ca2db938b0550215f08545f6c87de7fa658fd9685c"
   },
   "logs_uri": "logs/VER-303_GOAL_LOOP_COMPUTE.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",
@@ -163,6 +136,6 @@
     "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json",
     "proof_records/REQ-045_RUN_REPLAY.proof.json"
   ],
-  "failure_reason": "",
-  "next_action": "run VER-304_FINAL_COMPLETENESS"
+  "failure_reason": "dependency proof not completed: VER-302_PACKET_SCHEMA_VALIDATION; check failed: dependencies_completed; check failed: current_dispatch_targets_ver303; check failed: current_runnable_contains_only_ver303; check failed: current_status_marks_ver303_pending; check failed: projected_path_begins_with_ver303; check failed: projected_advances_to_ver304; check failed: projected_reaches_release_tasks; check failed: projected_has_no_failed_tasks; check failed: ver304_is_currently_blocked_only_by_ver303",
+  "next_action": "fix VER-303 goal loop validation failures"
 }

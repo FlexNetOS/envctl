@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-116_INFRA_TOPOLOGY",
   "status": "passed",
-  "started_at": "2026-07-04T23:20:52+00:00",
-  "completed_at": "2026-07-04T23:20:52+00:00",
+  "started_at": "2026-07-28T11:31:38+00:00",
+  "completed_at": "2026-07-28T11:31:38+00:00",
   "actor": "artifact-agent",
   "helper_id": "helper-artifact-17",
   "model_tag": "gpt-5.3-spark",
@@ -27,12 +27,12 @@
     "validation_evidence_linked": true
   },
   "checksums": {
-    "execution-framework/migration-artifacts/art-116_infra_topology/topology.md": "5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
-    "execution-framework/migration-artifacts/art-116_infra_topology/topology.json": "7bf629405a5276ff75ccabc6b18d279b4d0dfb00cf1b2605b3ab754328afa094",
-    "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md": "5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
-    "execution-framework/generated/art116_infra_topology_registry_report.json": "55f69e9de5afb5c90b88d924999f834183491df8dfc07a8cccd584b6febee852",
-    "execution-framework/state/ART-116_INFRA_TOPOLOGY.heartbeat.json": "740b96c85d1713b155394358d0695ab31ad805df98e059cd9c013331fa9e0d41",
-    "execution-framework/logs/ART-116_INFRA_TOPOLOGY.log": "6891cc2a8f6a5186134ea63fd2b9adb7e891f9f88151d7ef28072f51d4d5150b"
+    "execution-framework/migration-artifacts/art-116_infra_topology/topology.md": "c05fa4c4e6e129b9cf606117bdd7656675ed9b33ea741d422a4f77ab46fe452f",
+    "execution-framework/migration-artifacts/art-116_infra_topology/topology.json": "fab85dbb9664de2df2d173bdc0e205d6bdf31a7e3e16625d941fa142463c6480",
+    "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md": "c05fa4c4e6e129b9cf606117bdd7656675ed9b33ea741d422a4f77ab46fe452f",
+    "execution-framework/generated/art116_infra_topology_registry_report.json": "87550cf82ecf1691e9e1b390798cad831e8abd00093fea91a180aa47ead53792",
+    "execution-framework/state/ART-116_INFRA_TOPOLOGY.heartbeat.json": "7a051072926d0323baf1a40ee2a88a2c9a3f7cdb1f462af22a2bea18e412753b",
+    "execution-framework/logs/ART-116_INFRA_TOPOLOGY.log": "ea39af3689a5144554da07cee93253b7c986d155f2a7d30c75462f78c2032721"
   },
   "logs_uri": "logs/ART-116_INFRA_TOPOLOGY.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

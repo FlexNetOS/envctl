@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "protocol_name": "envctl_nu_plugin_migration_protocol",
   "protocol_version": "1.0.0",
-  "generated_at": "2026-07-04T23:09:51+00:00",
+  "generated_at": "2026-07-28T12:26:19+00:00",
   "source_of_truth_rule": "envctl migration database owns durable state; nu_plugin renders records and submits auditable commands.",
   "compatibility_rule": "Minor versions may add optional fields; removals, type narrowing, and enum removal require a new major protocol version.",
   "consumers": [

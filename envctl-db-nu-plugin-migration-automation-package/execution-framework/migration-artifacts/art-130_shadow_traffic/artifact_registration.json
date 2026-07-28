@@ -1,0 +1,35 @@
+{
+  "artifact_id": "ART-130_SHADOW_TRAFFIC",
+  "artifact_type": "shadow_traffic_comparison_report",
+  "title": "Shadow traffic comparison report",
+  "status": "registered_pending_evidence",
+  "registered_at": "2026-07-28T09:54:55Z",
+  "owner_agent": "artifact-agent",
+  "owner_lane": "lane_d_filesystem",
+  "dependencies": [
+    "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+  ],
+  "artifacts": [
+    {
+      "path": "migration-artifacts/art-130_shadow_traffic/shadow_traffic_comparison_report.md",
+      "media_type": "text/markdown",
+      "role": "human_readable_report"
+    },
+    {
+      "path": "migration-artifacts/art-130_shadow_traffic/shadow_traffic_comparison_report.json",
+      "media_type": "application/json",
+      "role": "machine_readable_report"
+    }
+  ],
+  "registry_requirements": {
+    "envctl_registry_key": "pending_envctl_database",
+    "shared_protocol_schema_version": "pending_shared_protocol_schemas",
+    "promotion_decision": "pending_evidence"
+  },
+  "integrity": {
+    "raw_payloads_stored": false,
+    "client_traffic_routed_to_new_path": false,
+    "evidence_required_before_promotion": true
+  }
+}

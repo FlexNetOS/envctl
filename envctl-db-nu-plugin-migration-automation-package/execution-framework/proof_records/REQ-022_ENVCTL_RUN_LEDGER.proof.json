@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
   "status": "completed",
-  "started_at": "2026-07-04T23:09:30+00:00",
-  "completed_at": "2026-07-04T23:09:30+00:00",
+  "started_at": "2026-07-28T08:36:16+00:00",
+  "completed_at": "2026-07-28T08:36:16+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-envctl-ledger-01",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/envctl_run_ledger.py",
     "execution-framework/scripts/verify_envctl_run_ledger.py",
@@ -32,11 +32,11 @@
   "checksums": {
     "execution-framework/scripts/envctl_run_ledger.py": "29cf20fa0d0acc7d6148faf9e4c7c98f882ad0c3e02a80b78366e13fd04c6107",
     "execution-framework/scripts/verify_envctl_run_ledger.py": "b6d4551a7e82a047a0bf8f754de965a1530b1f38765788ff5b6ca9a2fa64d6a9",
-    "execution-framework/generated/envctl_run_ledger_report.json": "162e5da83a04f2e0d18fd3598fbea5f6dc67b9085ac245022439b839fd81c571",
-    "execution-framework/docs/ENVCTL_RUN_LEDGER.md": "c8d6e701f0822f4f212307a62ba4126a7190f4579aa538a6eca2c6753b813183",
-    "execution-framework/logs/REQ-022_ENVCTL_RUN_LEDGER.log": "162e5da83a04f2e0d18fd3598fbea5f6dc67b9085ac245022439b839fd81c571",
-    "execution-framework/proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json": "300224a58be633b10f81f034086dad0e00955e816d9d65dcafcca6f0dd430710",
-    "execution-framework/proof_records/proof_ledger.jsonl": "d40077342c93862b2f26b13f3e43f1c908ae88db65ec9c2cd3083e2407d4aee5"
+    "execution-framework/generated/envctl_run_ledger_report.json": "9fd21e2d89e0ac5112637a2fd1771931bc9e05495262f4ccc0df4bc7a3e6fb73",
+    "execution-framework/docs/ENVCTL_RUN_LEDGER.md": "06049097348a3ee0c7694b9878cbb84e0abf47e236efe07fcee1e53e6c3b6f1f",
+    "execution-framework/logs/REQ-022_ENVCTL_RUN_LEDGER.log": "9fd21e2d89e0ac5112637a2fd1771931bc9e05495262f4ccc0df4bc7a3e6fb73",
+    "execution-framework/proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json": "668c8bccbec125084832d20183554aa991e1d1e4cc5b7fbc988f9bf933110871",
+    "execution-framework/proof_records/proof_ledger.jsonl": "911f6478295d9aa6d0c044503304acff1595a6b30339ba3eee5a431796d9d4a1"
   },
   "logs_uri": "logs/REQ-022_ENVCTL_RUN_LEDGER.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

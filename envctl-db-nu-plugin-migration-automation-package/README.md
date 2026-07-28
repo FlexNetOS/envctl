@@ -8,9 +8,31 @@ Package root: `~/envctl-db-nu-plugin-migration-automation-package`
 
 History root: `~/envctl-db-nu-plugin-migration-automation-package/history`
 
-Backtrace rule: Before changing execution behavior, review `history/v0` through `history/v5` to compare prior package versions and preserve upgrade-only/no-downgrade intent. Use `history/v0` as the restored baseline/backtrace anchor when validating package evolution.
+Backtrace rule: Before changing execution behavior, review `history/v0` through `history/v5` and compare the current package state against prior manifests. Use `history/v0` as the restored baseline/backtrace anchor when validating upgrade-only intent.
 
-Codex execution entry: start at `CODEX_FINAL_EXECUTION_PROMPT.md`, then `execution-framework/generated/task_graph.csv`, then `execution-framework/generated/execution_manifest.json`, then `execution-framework/generated/execution_packets/`.
+### v0-v5 history anchors
+
+- `history/v0/VERSION_MANIFEST.md`
+- `history/v0/Migration_Project_Artifacts.md`
+- `history/v1/VERSION_MANIFEST.md`
+- `history/v1/README.md`
+- `history/v2/VERSION_MANIFEST.md`
+- `history/v2/README.md`
+- `history/v3/VERSION_MANIFEST.md`
+- `history/v3/README.md`
+- `history/v4/VERSION_MANIFEST.md`
+- `history/v4/README.md`
+- `history/v5/VERSION_MANIFEST.md`
+- `history/v5/README.md`
+
+### Codex entry pointers
+
+- `CODEX_FINAL_EXECUTION_PROMPT.md`
+- `prompts/CODEX_FINAL_EXECUTION_PROMPT.md`
+- `execution-framework/generated/task_graph.csv`
+- `execution-framework/generated/execution_manifest.json`
+- `execution-framework/generated/execution_packets/`
+- `execution-framework/proof_records/proof_ledger.jsonl`
 
 Agent quick path: `history/` → `CODEX_FINAL_EXECUTION_PROMPT.md` → `execution-framework/generated/task_graph.csv` → `execution-framework/generated/execution_manifest.json` → `execution-framework/generated/execution_packets/` → `execution-framework/state/goal_loop_state.json` → `execution-framework/proof_records/proof_ledger.jsonl` → `execution-framework/generated/final_verification_report.json`.
 

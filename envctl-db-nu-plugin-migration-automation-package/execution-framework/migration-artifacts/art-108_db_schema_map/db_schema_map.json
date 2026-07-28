@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-108_DB_SCHEMA_MAP",
-  "generated_at": "2026-07-04T23:28:33+00:00",
+  "generated_at": "2026-07-28T11:20:31+00:00",
   "status": "complete",
   "database": {
     "backend": "sqlite",

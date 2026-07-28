@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-105_PACKAGE_LIB_GRAPH",
-  "generated_at": "2026-07-04T23:20:41+00:00",
+  "generated_at": "2026-07-28T11:10:39+00:00",
   "status": "passed",
   "errors": [],
   "summary": {
     "node_count": 8,
     "edge_count": 6,
-    "python_file_count": 49,
+    "python_file_count": 85,
     "third_party_python_import_count": 2,
     "shell_script_count": 6,
     "issue_count": 4,
@@ -25,7 +25,7 @@
       "artifact_id": "art-105-package-lib-graph-json",
       "run_id": "run-art105-package-lib-graph",
       "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
-      "content_hash": "sha256:f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+      "content_hash": "sha256:05491af9844d03e398fdd86d7e0812e43cde6d15d72c249f0bf0d55129ddcf76",
       "producer_operation_id": "op-art105-generate-package-lib-graph",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -54,7 +54,7 @@
       "artifact_id": "art-105-package-lib-graph-md",
       "run_id": "run-art105-package-lib-graph",
       "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
-      "content_hash": "sha256:2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+      "content_hash": "sha256:739b9a0f5398ac735bd5c196ed25944103cca46292130852cf2a5b9329e07f38",
       "producer_operation_id": "op-art105-generate-package-lib-graph",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -88,7 +88,7 @@
       "artifact_type": "package_library_dependency_graph",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
-      "content_hash": "sha256:f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+      "content_hash": "sha256:05491af9844d03e398fdd86d7e0812e43cde6d15d72c249f0bf0d55129ddcf76",
       "generated_by_operation_id": "op-art105-generate-package-lib-graph",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -155,7 +155,7 @@
                 ]
               }
             ],
-            "package_manifest_file_count": 281,
+            "package_manifest_file_count": 733,
             "package_scan_folders": [
               "codex",
               "examples",
@@ -217,7 +217,7 @@
       "artifact_type": "package_library_dependency_graph",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
-      "content_hash": "sha256:2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+      "content_hash": "sha256:739b9a0f5398ac735bd5c196ed25944103cca46292130852cf2a5b9329e07f38",
       "generated_by_operation_id": "op-art105-generate-package-lib-graph",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -284,7 +284,7 @@
                 ]
               }
             ],
-            "package_manifest_file_count": 281,
+            "package_manifest_file_count": 733,
             "package_scan_folders": [
               "codex",
               "examples",

@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-131_GOLDEN_DATASET",
   "status": "completed",
-  "started_at": "2026-07-04T23:28:06+00:00",
-  "completed_at": "2026-07-04T23:28:06+00:00",
+  "started_at": "2026-07-28T09:58:41+00:00",
+  "completed_at": "2026-07-28T09:58:41+00:00",
   "actor": "artifact-agent",
   "helper_id": "helper-artifact-32",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art131_golden_dataset.py",
     "execution-framework/migration-artifacts/04-data-migration/golden-dataset.md",
@@ -29,7 +29,7 @@
     "schema_version": "1.0",
     "task_id": "ART-131_GOLDEN_DATASET",
     "status": "passed",
-    "generated_at": "2026-07-04T23:28:06+00:00",
+    "generated_at": "2026-07-28T09:58:41+00:00",
     "artifact_paths": [
       "migration-artifacts/04-data-migration/golden-dataset.md",
       "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
@@ -43,7 +43,7 @@
         "artifact_id": "04-data-migration-golden-dataset-md",
         "run_id": "run-art131-golden-dataset",
         "path": "migration-artifacts/04-data-migration/golden-dataset.md",
-        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "content_hash": "sha256:120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
         "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -77,7 +77,7 @@
         "artifact_id": "art-131-golden-dataset-md",
         "run_id": "run-art131-golden-dataset",
         "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
-        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "content_hash": "sha256:120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
         "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -98,7 +98,7 @@
         "artifact_id": "art-131-golden-dataset-json",
         "run_id": "run-art131-golden-dataset",
         "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
-        "content_hash": "sha256:d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720",
+        "content_hash": "sha256:d5e975a058aaf6e93954dec52b40c66dbf3ab2add78320969a3b6b1328d93231",
         "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -124,7 +124,7 @@
         "artifact_type": "migration_artifact",
         "status": "complete",
         "path": "migration-artifacts/04-data-migration/golden-dataset.md",
-        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "content_hash": "sha256:120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
         "generated_by_operation_id": "produce-04-data-migration-golden-dataset-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -209,7 +209,7 @@
         "artifact_type": "validation_sample",
         "status": "complete",
         "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
-        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "content_hash": "sha256:120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
         "generated_by_operation_id": "produce-04-data-migration-golden-dataset-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -255,7 +255,7 @@
         "artifact_type": "machine_readable_validation_sample",
         "status": "complete",
         "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
-        "content_hash": "sha256:d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720",
+        "content_hash": "sha256:d5e975a058aaf6e93954dec52b40c66dbf3ab2add78320969a3b6b1328d93231",
         "generated_by_operation_id": "produce-04-data-migration-golden-dataset-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -294,9 +294,9 @@
       }
     ],
     "checksums": {
-      "migration-artifacts/04-data-migration/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
-      "migration-artifacts/art-131_golden_dataset/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
-      "migration-artifacts/art-131_golden_dataset/golden-dataset.json": "d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720"
+      "migration-artifacts/04-data-migration/golden-dataset.md": "120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.md": "120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.json": "d5e975a058aaf6e93954dec52b40c66dbf3ab2add78320969a3b6b1328d93231"
     },
     "validation": {
       "artifact_file_exists": true,
@@ -318,14 +318,15 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art131_golden_dataset.py": "6b69116df9e8f00651cd74f9d95d2cc59bdab93fe0b38594ea02b000e7a2e9a3",
-    "execution-framework/migration-artifacts/04-data-migration/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
-    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
-    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.json": "d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720",
-    "execution-framework/generated/art131_golden_dataset_registry_report.json": "f38716f292048238e3db4a5b06609b236e7840e2f464cdb48e4bf76849ca7c41",
-    "execution-framework/state/ART-131_GOLDEN_DATASET.heartbeat.json": "99d6eb5568a5e24d75ffd5a7ba6b301f8459c19d0850e1a4ba077df8e9ce02aa",
-    "execution-framework/logs/ART-131_GOLDEN_DATASET.log": "f38716f292048238e3db4a5b06609b236e7840e2f464cdb48e4bf76849ca7c41",
-    "execution-framework/proof_records/proof_ledger.jsonl": "4f794148a125e815fe6936fdf87f43b441277ff85bee751a79d206f381368c8b",
-    "execution-framework/generated/status_from_proofs.json": "31b0d1602cfb5473cc0e00c5cece982609f2690d7ee8c137edd0375e8db5e567"
+    "execution-framework/migration-artifacts/04-data-migration/golden-dataset.md": "120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
+    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.md": "120841744d5d80c8549b32c73c93dc24cf1863e3759356cb8c5681f7663199bd",
+    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.json": "d5e975a058aaf6e93954dec52b40c66dbf3ab2add78320969a3b6b1328d93231",
+    "execution-framework/generated/art131_golden_dataset_registry_report.json": "ff5cdb8c8776c7fc204aa3916034d5f405f88f752bf0352e7d2ca06b06130aa0",
+    "execution-framework/state/ART-131_GOLDEN_DATASET.heartbeat.json": "e94e596161d308e7062c76675ea5a48b08e3e30d8ae60126a61db3868bf6cd83",
+    "execution-framework/logs/ART-131_GOLDEN_DATASET.log": "ff5cdb8c8776c7fc204aa3916034d5f405f88f752bf0352e7d2ca06b06130aa0",
+    "execution-framework/proof_records/ART-131_GOLDEN_DATASET.proof.json": "c8e2ef278e0a39515dd3a31c8411cbb71a60836357d33d9cffd1f7dcc784b6f1",
+    "execution-framework/proof_records/proof_ledger.jsonl": "2f77e04c41438bf7e78f78583f446029ee92b0b47763ec831e7c093284b91d26",
+    "execution-framework/generated/status_from_proofs.json": "18b2830bf9f033c6c23904b40da58d97adbca584e19335f0da899f658d504cc4"
   },
   "logs_uri": "logs/ART-131_GOLDEN_DATASET.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

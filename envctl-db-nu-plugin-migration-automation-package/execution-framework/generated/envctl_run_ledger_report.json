@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
-  "generated_at": "2026-07-04T23:09:30+00:00",
+  "generated_at": "2026-07-28T08:36:16+00:00",
   "status": "passed",
   "database_backend": "sqlite",
   "runtime": "python sqlite3 in-memory",
@@ -26,8 +26,8 @@
     "run": {
       "run_id": "run-req022",
       "status": "created",
-      "started_at_utc": "2026-07-04T23:09:30+00:00",
-      "reproducibility_hash": "sha256:74f0ae38060de3bbb994e7a83b16382f3aabb92596c7842555d896e2551c7162"
+      "started_at_utc": "2026-07-28T08:36:16+00:00",
+      "reproducibility_hash": "sha256:159c1a4454d02407badc0319f42a478c5bce4d8a837a1687b0fd9c9aa1e1ec7d"
     },
     "snapshot": {
       "run_id": "run-req022",
@@ -36,7 +36,7 @@
       "failed_operation_count": 0,
       "open_approval_count": 0,
       "artifact_count": 0,
-      "last_event_at_utc": "2026-07-04T23:09:30+00:00",
+      "last_event_at_utc": "2026-07-28T08:36:16+00:00",
       "timeline": [
         {
           "event_seq": 1,
@@ -86,18 +86,18 @@
       ],
       "evidence": [
         {
-          "evidence_id": "evidence-9673d92f06e5ade87c6892ff",
-          "operation_id": "op-req022-run-ledger",
-          "uri": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
-          "evidence_kind": "proof_record",
-          "sha256": "sha256:b3a2108255360c6c2e1316e66c3da76562973ed45581c07132468531f589a8ea"
-        },
-        {
           "evidence_id": "evidence-8c1d94286c7e5bbfa87d54f1",
           "operation_id": "op-req022-run-ledger",
           "uri": "generated/envctl_run_ledger_report.json",
           "evidence_kind": "run_ledger_report",
           "sha256": null
+        },
+        {
+          "evidence_id": "evidence-9673d92f06e5ade87c6892ff",
+          "operation_id": "op-req022-run-ledger",
+          "uri": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+          "evidence_kind": "proof_record",
+          "sha256": "sha256:b95fd07bac87f37a5cf609fa96937b605817351c8d64da8656de13d2c6041651"
         }
       ],
       "event_chain": {
@@ -105,7 +105,7 @@
         "event_count": 5,
         "chain_valid": true,
         "errors": [],
-        "head_event_hash": "sha256:559e20351ea720c4c2bd2e296cc10547596e7e8fa132d6f7cce409de8907752d"
+        "head_event_hash": "sha256:599926aa6e8b0c85264e09a27c64d6f3b27ed0881522d0f25a24fe046220fa72"
       }
     },
     "checks": {

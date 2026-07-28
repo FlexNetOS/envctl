@@ -1,6 +1,6 @@
 # ART-117 IAM and Security Access Matrix
 
-Generated at: `2026-07-04T23:19:57+00:00`
+Generated at: `2026-07-28T11:37:46+00:00`
 Status: `complete`
 Target: `flexnetos-vs-lifeos` (mixed)
 
@@ -39,11 +39,11 @@ Target: `flexnetos-vs-lifeos` (mixed)
 
 | category | count |
 |---|---:|
-| approval_control | 34 |
-| external_identity_reference | 7 |
+| approval_control | 55 |
+| external_identity_reference | 8 |
 | iam_reference | 2 |
 | runtime_boundary | 2 |
-| secret_or_credential_reference | 75 |
+| secret_or_credential_reference | 53 |
 
 ## Redaction Notes
 

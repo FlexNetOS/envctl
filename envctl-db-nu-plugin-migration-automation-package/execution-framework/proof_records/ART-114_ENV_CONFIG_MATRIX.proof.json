@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-114_ENV_CONFIG_MATRIX",
   "status": "completed",
-  "started_at": "2026-07-04T23:21:06+00:00",
-  "completed_at": "2026-07-04T23:21:06+00:00",
+  "started_at": "2026-07-28T09:08:41+00:00",
+  "completed_at": "2026-07-28T09:08:41+00:00",
   "actor": "artifact-agent",
   "helper_id": "helper-artifact-15",
   "model_tag": "gpt-5.3-spark",
@@ -27,9 +27,9 @@
     "schema_version": "1.0",
     "task_id": "ART-114_ENV_CONFIG_MATRIX",
     "status": "passed",
-    "generated_at": "2026-07-04T23:21:06+00:00",
-    "started_at": "2026-07-04T23:21:06+00:00",
-    "completed_at": "2026-07-04T23:21:06+00:00",
+    "generated_at": "2026-07-28T09:08:41+00:00",
+    "started_at": "2026-07-28T09:08:41+00:00",
+    "completed_at": "2026-07-28T09:08:41+00:00",
     "artifacts": [
       "migration-artifacts/01-current-state/environment-matrix.md",
       "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
@@ -58,7 +58,7 @@
         "artifact_id": "01-current-state-environment-matrix-md",
         "run_id": "run-art114-env-config-matrix",
         "path": "migration-artifacts/01-current-state/environment-matrix.md",
-        "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+        "content_hash": "sha256:b7f14a240e512410f4f7db979f6214f77716b53af907e82e89898b4de32cfa54",
         "producer_operation_id": "produce-01-current-state-environment-matrix-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -85,7 +85,7 @@
         "artifact_id": "art-114-env-config-matrix-md",
         "run_id": "run-art114-env-config-matrix",
         "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
-        "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+        "content_hash": "sha256:b7f14a240e512410f4f7db979f6214f77716b53af907e82e89898b4de32cfa54",
         "producer_operation_id": "produce-01-current-state-environment-matrix-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -111,7 +111,7 @@
         "artifact_id": "art-114-env-config-matrix-json",
         "run_id": "run-art114-env-config-matrix",
         "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
-        "content_hash": "sha256:ffee79058bc2e9f80f124809d734d89220151a48ea82b286cb2d047fb24ac8a7",
+        "content_hash": "sha256:dd4a582be521d98a7b6778e6925f13f2f8e05b0a8b60372f7609629f08f42184",
         "producer_operation_id": "produce-01-current-state-environment-matrix-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -139,21 +139,21 @@
         {
           "artifact_id": "01-current-state-environment-matrix-md",
           "path": "migration-artifacts/01-current-state/environment-matrix.md",
-          "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+          "content_hash": "sha256:b7f14a240e512410f4f7db979f6214f77716b53af907e82e89898b4de32cfa54",
           "hash_matches": true,
           "status": "complete"
         },
         {
           "artifact_id": "art-114-env-config-matrix-md",
           "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
-          "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+          "content_hash": "sha256:b7f14a240e512410f4f7db979f6214f77716b53af907e82e89898b4de32cfa54",
           "hash_matches": true,
           "status": "complete"
         },
         {
           "artifact_id": "art-114-env-config-matrix-json",
           "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
-          "content_hash": "sha256:ffee79058bc2e9f80f124809d734d89220151a48ea82b286cb2d047fb24ac8a7",
+          "content_hash": "sha256:dd4a582be521d98a7b6778e6925f13f2f8e05b0a8b60372f7609629f08f42184",
           "hash_matches": true,
           "status": "complete"
         }
@@ -179,14 +179,14 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_env_config_matrix.py": "f94af4085a71f478deb7501895744cb1cc936e81f250fb51d6f8af653526e79f",
-    "execution-framework/migration-artifacts/01-current-state/environment-matrix.md": "fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
-    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.md": "fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
-    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.json": "ffee79058bc2e9f80f124809d734d89220151a48ea82b286cb2d047fb24ac8a7",
-    "execution-framework/generated/art114_env_config_matrix_registry_report.json": "b30e83c436b08775f97c9a05652df0f485448d1707a54dbda0f2b1037af43f32",
-    "execution-framework/logs/ART-114_ENV_CONFIG_MATRIX.log": "b30e83c436b08775f97c9a05652df0f485448d1707a54dbda0f2b1037af43f32",
-    "execution-framework/state/ART-114_ENV_CONFIG_MATRIX.heartbeat.json": "86cbb9cd282307b24f994d2876ef2fe1dd479bbc549cc9f822c384c6149e5f7e",
-    "execution-framework/proof_records/ART-114_ENV_CONFIG_MATRIX.proof.json": "b3e7d7c2839be4bd1f29c174c7e18383d2cef57ff4e1e2193952d619c620837a",
-    "execution-framework/proof_records/proof_ledger.jsonl": "74c8a47f93db2086af7ed6c4a0db1f5468c91686cf8f2e0f33cc9ffec71a1d47"
+    "execution-framework/migration-artifacts/01-current-state/environment-matrix.md": "b7f14a240e512410f4f7db979f6214f77716b53af907e82e89898b4de32cfa54",
+    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.md": "b7f14a240e512410f4f7db979f6214f77716b53af907e82e89898b4de32cfa54",
+    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.json": "dd4a582be521d98a7b6778e6925f13f2f8e05b0a8b60372f7609629f08f42184",
+    "execution-framework/generated/art114_env_config_matrix_registry_report.json": "4b2c7d76a6ed3f09a55b5612873d52279d7f3d4aed321699577ac1bc6f5def2e",
+    "execution-framework/logs/ART-114_ENV_CONFIG_MATRIX.log": "4b2c7d76a6ed3f09a55b5612873d52279d7f3d4aed321699577ac1bc6f5def2e",
+    "execution-framework/state/ART-114_ENV_CONFIG_MATRIX.heartbeat.json": "1f8138b59482f6175f9f22bf3386dc141257d95c8283174d0a56197db0bb6e21",
+    "execution-framework/proof_records/ART-114_ENV_CONFIG_MATRIX.proof.json": "5bb8031405b4cc3b2f5ac0ac49d3114256064c0cec3e5c2c2c5d83313b10cedd",
+    "execution-framework/proof_records/proof_ledger.jsonl": "b88dfa8d6ec5fac84e2c9425844c1bcc6745aa247f8229d1ee87f25d6a3c038b"
   },
   "logs_uri": "logs/ART-114_ENV_CONFIG_MATRIX.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

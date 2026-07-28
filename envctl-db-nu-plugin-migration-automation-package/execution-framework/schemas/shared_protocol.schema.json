@@ -320,6 +320,62 @@
             "null"
           ]
         },
+        "producer_operation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contract_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "validations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "validator",
+              "status"
+            ],
+            "properties": {
+              "validator": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "warn",
+                  "blocked",
+                  "unknown"
+                ]
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "operation_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
         "evidence_refs": {
           "type": "array",
           "items": {

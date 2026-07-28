@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-041_TWO_REPO_INTEGRATION",
   "status": "completed",
-  "started_at": "2026-07-05T05:18:43+00:00",
-  "completed_at": "2026-07-05T05:18:43+00:00",
+  "started_at": "2026-07-28T11:13:09+00:00",
+  "completed_at": "2026-07-28T11:13:09+00:00",
   "actor": "integration-agent",
   "helper_id": "helper-integration-01",
   "model_tag": "gpt-5.3-spark",
@@ -29,10 +29,10 @@
     ]
   },
   "checksums": {
-    "execution-framework/generated/req041_two_repo_integration_report.json": "74ab82fdc8d05e20361af55fe4db259b04888eeb665ef0fd4de4ccc97a38228d",
-    "execution-framework/docs/TWO_REPO_INTEGRATION.md": "94714a8d3be6b7fdfa78851442d8b68730138a48205c66782d1cf5f14c7ae1df",
-    "execution-framework/state/REQ-041_TWO_REPO_INTEGRATION.heartbeat.json": "90a275b1f950152dc6e7b47d8dddb25c7b90a2b7c05a3e7406d270a204be0412",
-    "execution-framework/proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json": "a59aa88e23095630b52fde6477b8d1ce87c8c6027cfa9b10272fd315d8035ae7"
+    "execution-framework/generated/req041_two_repo_integration_report.json": "ea6c18a4c9acafe903d5b74a06206579a513f16a2a4d8db9aa09ecf7cbc30845",
+    "execution-framework/docs/TWO_REPO_INTEGRATION.md": "678d0f9d32128f2096b112c39dde392043b3b248ffebdeb5532bdfe4f460ccaf",
+    "execution-framework/state/REQ-041_TWO_REPO_INTEGRATION.heartbeat.json": "7fe1d0c6f436ff182b930dd815e8728d80c22443b8a993a79d8bcd06d64bbdd0",
+    "execution-framework/proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json": "57d14dc7defe007f707e9922fbea339f40b4869bef9ec576f2a3a84538a0c1c6"
   },
   "logs_uri": "logs/REQ-041_TWO_REPO_INTEGRATION.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

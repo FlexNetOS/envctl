@@ -1,8 +1,8 @@
 {
   "task_id": "ART-118_OBSERVABILITY",
   "status": "completed",
-  "started_at": "2026-07-04T23:29:20+00:00",
-  "updated_at": "2026-07-04T23:29:39+00:00",
+  "started_at": "2026-07-28T11:39:59+00:00",
+  "updated_at": "2026-07-28T11:40:01+00:00",
   "proof_uri": "proof_records/ART-118_OBSERVABILITY.proof.json",
   "logs_uri": "logs/ART-118_OBSERVABILITY.log",
   "artifact_paths": {

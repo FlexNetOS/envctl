@@ -461,8 +461,6 @@ def main() -> None:
     if secret_hits:
         report["status"] = "fail"
         report["errors"].append("secret-like content detected in generated outputs: " + ", ".join(secret_hits))
-        write_json(REPORT_PATH, report)
-        write_json(LOG_PATH, report)
         write_json(
             HEARTBEAT_PATH,
             {
@@ -474,6 +472,8 @@ def main() -> None:
                 "validation_report": REPORT_PATH,
             },
         )
+    write_json(REPORT_PATH, report)
+    write_json(LOG_PATH, report)
 
     files_changed = [
         "execution-framework/scripts/verify_ver302_packet_schema_validation.py",

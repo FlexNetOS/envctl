@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-120_WAVE_PLAN",
   "status": "passed",
-  "generated_at": "2026-07-04T23:28:32+00:00",
+  "generated_at": "2026-07-28T11:37:43+00:00",
   "artifact_paths": [
     "migration-artifacts/07-cutover/wave-plan.md",
     "migration-artifacts/07-cutover/migration-wave-plan.md",
@@ -21,7 +21,7 @@
       "artifact_id": "07-cutover-wave-plan-md",
       "run_id": "run-art-120-wave-plan",
       "path": "migration-artifacts/07-cutover/wave-plan.md",
-      "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+      "content_hash": "sha256:06575713356374817f8c62d861caeb4ac0df2452f7574bc7fe8d144b8d5dfee5",
       "producer_operation_id": "produce-07-cutover-wave-plan-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -59,7 +59,7 @@
       "artifact_id": "07-cutover-migration-wave-plan-md",
       "run_id": "run-art-120-wave-plan",
       "path": "migration-artifacts/07-cutover/migration-wave-plan.md",
-      "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+      "content_hash": "sha256:06575713356374817f8c62d861caeb4ac0df2452f7574bc7fe8d144b8d5dfee5",
       "producer_operation_id": "produce-07-cutover-wave-plan-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -97,7 +97,7 @@
       "artifact_id": "art-120-wave-plan-md",
       "run_id": "run-art-120-wave-plan",
       "path": "migration-artifacts/art-120_wave_plan/wave-plan.md",
-      "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+      "content_hash": "sha256:06575713356374817f8c62d861caeb4ac0df2452f7574bc7fe8d144b8d5dfee5",
       "producer_operation_id": "produce-07-cutover-wave-plan-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -135,7 +135,7 @@
       "artifact_id": "art-120-wave-plan-json",
       "run_id": "run-art-120-wave-plan",
       "path": "migration-artifacts/art-120_wave_plan/wave-plan.json",
-      "content_hash": "sha256:f0380305d3d3862c21861c02a8fe6cff0428c164b2e036010dddf1f6d9ad2099",
+      "content_hash": "sha256:d1d99e0cc0616821e24c829c0ba8d77290f82673a47d22cb67a5a9a9f1f0de38",
       "producer_operation_id": "produce-07-cutover-wave-plan-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -178,7 +178,7 @@
       "artifact_type": "migration_control",
       "status": "complete",
       "path": "migration-artifacts/07-cutover/wave-plan.md",
-      "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+      "content_hash": "sha256:06575713356374817f8c62d861caeb4ac0df2452f7574bc7fe8d144b8d5dfee5",
       "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -282,7 +282,7 @@
       "artifact_type": "migration_control",
       "status": "complete",
       "path": "migration-artifacts/07-cutover/migration-wave-plan.md",
-      "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+      "content_hash": "sha256:06575713356374817f8c62d861caeb4ac0df2452f7574bc7fe8d144b8d5dfee5",
       "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -386,7 +386,7 @@
       "artifact_type": "migration_control",
       "status": "complete",
       "path": "migration-artifacts/art-120_wave_plan/wave-plan.md",
-      "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+      "content_hash": "sha256:06575713356374817f8c62d861caeb4ac0df2452f7574bc7fe8d144b8d5dfee5",
       "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -490,7 +490,7 @@
       "artifact_type": "machine_readable_record",
       "status": "complete",
       "path": "migration-artifacts/art-120_wave_plan/wave-plan.json",
-      "content_hash": "sha256:f0380305d3d3862c21861c02a8fe6cff0428c164b2e036010dddf1f6d9ad2099",
+      "content_hash": "sha256:d1d99e0cc0616821e24c829c0ba8d77290f82673a47d22cb67a5a9a9f1f0de38",
       "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

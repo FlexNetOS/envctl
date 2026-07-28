@@ -1,13 +1,13 @@
 # Package/library dependency graph
 
 Task: `ART-105_PACKAGE_LIB_GRAPH`
-Generated: `2026-07-04T23:20:41+00:00`
+Generated: `2026-07-28T11:10:39+00:00`
 
 ## Summary
 
 - Nodes: 8
 - Edges: 6
-- Python files scanned: 49
+- Python files scanned: 85
 - Third-party Python imports: 2
 - Shell scripts scanned: 6
 - Issues: 4
@@ -50,49 +50,85 @@ Generated: `2026-07-04T23:20:41+00:00`
 | file | local imports | stdlib imports | third-party imports |
 |---|---|---|---|
 | `execution-framework/scripts/_common.py` |  | `__future__`, `csv`, `datetime`, `hashlib`, `json`, `os`, `pathlib`, `sys`, `time` |  |
+| `execution-framework/scripts/agent_approval_gate.py` | `_common` | `__future__`, `argparse`, `json`, `pathlib` |  |
+| `execution-framework/scripts/agent_control_api.py` | `_common`, `envctl_run_ledger`, `operation_state_machine` | `__future__`, `argparse`, `dataclasses`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/artifact_registry.py` |  | `__future__`, `dataclasses`, `fnmatch`, `hashlib`, `json`, `pathlib`, `re`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/build_art126_decision_log.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/envctl_run_ledger.py` | `_common` | `__future__`, `dataclasses`, `hashlib`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art102_repository_map.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `json`, `os`, `pathlib`, `sqlite3`, `subprocess`, `typing` |  |
 | `execution-framework/scripts/generate_art104_toolchain_tree.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `fnmatch`, `json`, `os`, `pathlib`, `sqlite3`, `subprocess`, `tomllib`, `typing` |  |
+| `execution-framework/scripts/generate_art106_runtime_dep_map.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `datetime`, `fnmatch`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art108_db_schema_map.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `hashlib`, `json`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art109_data_lineage.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art110_api_catalog.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art111_event_map.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `fnmatch`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art112_code_ownership.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `hashlib`, `json`, `os`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art113_debug_code_map.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art116_infra_topology.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `datetime`, `fnmatch`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art118_observability.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `fnmatch`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art120_wave_plan.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `csv`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art121_cutover.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `csv`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art122_rollback.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `csv`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art123_validation_reconciliation.py` | `_common`, `artifact_registry`, `validation_evidence`, `verify_envctl_db_schema` | `__future__`, `hashlib`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art124_test_coverage.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `hashlib`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art125_risk_register.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art128_readiness_scorecard.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `hashlib`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art131_golden_dataset.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art132_parity_dashboard.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `hashlib`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art133_deprecation_map.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art134_exception_inventory.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art135_raci.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art136_tech_debt_ledger.py` | `_common`, `artifact_registry`, `status_from_proofs`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art_107_data_flow_graph.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art_117_iam_matrix.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `fnmatch`, `json`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_art_119_business_process.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art_127_blast_radius.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_art_129_business_capability.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_config_inventory.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `fnmatch`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/generate_directory_tree_artifact.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `fnmatch`, `hashlib`, `json`, `os`, `pathlib`, `sqlite3`, `subprocess`, `typing` |  |
 | `execution-framework/scripts/generate_env_config_matrix.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/generate_flexnetos_lifeos_comparison.py` |  | `__future__`, `argparse`, `collections`, `csv`, `datetime`, `hashlib`, `json`, `os`, `pathlib`, `subprocess`, `typing` |  |
 | `execution-framework/scripts/generate_package_lib_graph.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `ast`, `json`, `pathlib`, `re`, `sqlite3`, `sys`, `typing` |  |
 | `execution-framework/scripts/generate_system_inventory.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `collections`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `tomllib`, `typing` |  |
-| `execution-framework/scripts/goal_loop.py` | `_common` | `__future__`, `collections`, `json`, `pathlib`, `sys` |  |
+| `execution-framework/scripts/goal_loop.py` | `_common` | `__future__`, `collections`, `json`, `pathlib`, `subprocess`, `sys` |  |
 | `execution-framework/scripts/goal_to_task_graph.py` | `_common` | `__future__`, `json`, `pathlib` |  |
 | `execution-framework/scripts/lock_contract.py` | `_common` | `__future__`, `hashlib`, `json`, `pathlib`, `re` |  |
 | `execution-framework/scripts/merge_proofs.py` | `_common` | `__future__` |  |
 | `execution-framework/scripts/operation_state_machine.py` |  | `__future__`, `dataclasses`, `enum`, `typing` |  |
 | `execution-framework/scripts/redaction_controls.py` | `_common` | `__future__`, `dataclasses`, `fnmatch`, `hashlib`, `json`, `pathlib`, `re`, `typing` |  |
 | `execution-framework/scripts/render_live_visuals.py` | `_common` | `__future__`, `argparse`, `collections`, `pathlib` |  |
+| `execution-framework/scripts/replay_engine.py` | `_common`, `envctl_run_ledger` | `__future__`, `dataclasses`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/rollback_checkpoints.py` | `envctl_run_ledger` | `__future__`, `dataclasses`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/scan_package.py` | `_common` | `__future__`, `argparse`, `pathlib` |  |
 | `execution-framework/scripts/status_from_proofs.py` | `_common` | `__future__` |  |
 | `execution-framework/scripts/task_graph_to_packets.py` | `_common` | `__future__`, `json`, `pathlib`, `sys` |  |
+| `execution-framework/scripts/validate_agent_approval_gate.py` | `_common`, `goal_loop` | `__future__`, `json`, `pathlib`, `subprocess`, `sys` |  |
 | `execution-framework/scripts/validate_task_graph.py` | `_common` | `__future__`, `pathlib`, `sys` |  |
 | `execution-framework/scripts/validation_evidence.py` |  | `__future__`, `dataclasses`, `fnmatch`, `hashlib`, `json`, `pathlib`, `re`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/verify_agent_control_api.py` | `_common`, `agent_control_api`, `envctl_run_ledger` | `__future__`, `json`, `pathlib`, `sqlite3`, `subprocess`, `sys`, `tempfile`, `typing` |  |
 | `execution-framework/scripts/verify_artifact_registry.py` | `_common`, `artifact_registry`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3` |  |
 | `execution-framework/scripts/verify_envctl_db_schema.py` | `_common` | `__future__`, `json`, `pathlib`, `sqlite3` |  |
 | `execution-framework/scripts/verify_envctl_run_ledger.py` | `_common`, `envctl_run_ledger` | `__future__`, `json`, `pathlib`, `sqlite3` |  |
-| `execution-framework/scripts/verify_filesystem_boundaries.py` | `_common` | `__future__`, `copy`, `fnmatch`, `json`, `posixpath` | `jsonschema` |
+| `execution-framework/scripts/verify_filesystem_boundaries.py` | `_common` | `__future__`, `copy`, `fnmatch`, `json`, `posixpath` |  |
+| `execution-framework/scripts/verify_flexnetos_adapter_recipe.py` | `_common` | `__future__`, `json`, `pathlib`, `re`, `typing` |  |
 | `execution-framework/scripts/verify_flexnetos_target_descriptor.py` | `_common`, `verify_target_registry` | `__future__`, `json`, `pathlib`, `re`, `typing` |  |
 | `execution-framework/scripts/verify_history_and_completeness.py` | `_common` | `__future__`, `json`, `pathlib` |  |
 | `execution-framework/scripts/verify_install_bootstrap.py` | `_common` | `__future__`, `json`, `pathlib`, `shlex` |  |
 | `execution-framework/scripts/verify_operation_state_machine.py` | `_common`, `operation_state_machine`, `verify_envctl_db_schema` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` |  |
 | `execution-framework/scripts/verify_plugin_command_surface.py` |  | `__future__`, `json`, `pathlib`, `sys` |  |
+| `execution-framework/scripts/verify_replay_engine.py` | `_common`, `envctl_run_ledger`, `replay_engine`, `rollback_checkpoints` | `__future__`, `argparse`, `json`, `pathlib`, `sqlite3`, `typing` |  |
+| `execution-framework/scripts/verify_rollback_checkpoints.py` | `_common`, `envctl_run_ledger`, `rollback_checkpoints`, `verify_envctl_db_schema` | `__future__`, `json`, `sqlite3` |  |
+| `execution-framework/scripts/verify_run_replay.py` | `_common` | `__future__`, `json`, `pathlib` |  |
 | `execution-framework/scripts/verify_security_redaction.py` | `_common`, `redaction_controls` | `__future__`, `json`, `pathlib` |  |
 | `execution-framework/scripts/verify_shared_protocol_schemas.py` | `_common` | `__future__`, `copy`, `json`, `pathlib` | `jsonschema` |
 | `execution-framework/scripts/verify_target_registry.py` | `_common`, `verify_envctl_db_schema` | `__future__`, `copy`, `hashlib`, `json`, `pathlib`, `sqlite3`, `typing` | `yaml` |
+| `execution-framework/scripts/verify_two_repo_integration.py` | `_common`, `agent_control_api`, `envctl_run_ledger` | `__future__`, `json`, `pathlib`, `sqlite3`, `typing` | `jsonschema` |
 | `execution-framework/scripts/verify_validation_evidence.py` | `_common`, `validation_evidence`, `verify_envctl_db_schema` | `__future__`, `json`, `sqlite3` |  |
+| `execution-framework/scripts/verify_ver300_unit_validation.py` | `_common` | `__future__`, `fnmatch`, `pathlib`, `re`, `typing` |  |
+| `execution-framework/scripts/verify_ver301_sql_schema_test.py` | `_common` | `__future__`, `fnmatch`, `json`, `pathlib`, `re`, `subprocess`, `sys`, `typing` |  |
+| `execution-framework/scripts/verify_ver302_packet_schema_validation.py` | `_common` | `__future__`, `fnmatch`, `json`, `pathlib`, `re`, `sys`, `typing` | `jsonschema` |
+| `execution-framework/scripts/verify_ver303_goal_loop_compute.py` | `_common`, `goal_loop` | `__future__`, `copy`, `pathlib`, `re`, `typing` |  |
+| `execution-framework/scripts/verify_ver304_final_completeness.py` | `_common` | `__future__`, `json`, `subprocess`, `sys` |  |
 | `helpers/build_combined_prompt.py` |  | `pathlib`, `sys` |  |
 | `helpers/package_manifest.py` |  | `hashlib`, `json`, `pathlib`, `sys` |  |
 | `helpers/validate_package.py` |  | `json`, `pathlib`, `sqlite3`, `subprocess`, `sys`, `tempfile` |  |

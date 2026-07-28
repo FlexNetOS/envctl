@@ -55,9 +55,9 @@ Validation status: `passed`
 
 ## Verification
 
-- Files scanned: `244`
-- Pre-redaction findings: `90`
-- Sanitized files: `1`
+- Files scanned: `413`
+- Pre-redaction findings: `0`
+- Sanitized files: `0`
 - Redaction fixtures passed: `5`
 - Secret findings: `0`
 - Blocked path probes passed: `5`

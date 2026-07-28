@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-100_SYSTEM_INVENTORY",
   "status": "completed",
-  "started_at": "2026-07-04T23:21:18+00:00",
-  "completed_at": "2026-07-04T23:21:18+00:00",
+  "started_at": "2026-07-28T08:40:20+00:00",
+  "completed_at": "2026-07-28T08:40:20+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-01",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS",
+  "repo_path": "/run/user/1001/lifeos-json-task-runner/lifeos-json-full-end2end-20260728T081500Z/ART-100_SYSTEM_INVENTORY/20260728T083744436663Z-5113aef5d4f6",
   "files_changed": [
     "execution-framework/scripts/generate_system_inventory.py",
     "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
@@ -27,7 +27,7 @@
     "schema_version": "1.0",
     "task_id": "ART-100_SYSTEM_INVENTORY",
     "status": "passed",
-    "generated_at": "2026-07-04T23:21:18+00:00",
+    "generated_at": "2026-07-28T08:40:20+00:00",
     "target": {
       "target_id": "flexnetos-vs-lifeos",
       "target_type": "mixed",
@@ -36,19 +36,19 @@
       "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
     },
     "scan_summary": {
-      "scanned_files": 106597,
-      "skipped_blocked_paths": 247,
-      "skipped_directories": 408,
+      "scanned_files": 40,
+      "skipped_blocked_paths": 0,
+      "skipped_directories": 2,
       "counts": {
-        "apis": 116,
-        "applications": 2159,
-        "databases": 201,
-        "jobs": 976,
-        "queues": 17251,
-        "reports": 491,
-        "schedulers": 111,
-        "scripts": 6480,
-        "services": 45
+        "apis": 0,
+        "applications": 3,
+        "databases": 0,
+        "jobs": 0,
+        "queues": 3,
+        "reports": 0,
+        "schedulers": 0,
+        "scripts": 0,
+        "services": 0
       }
     },
     "registry": {
@@ -58,7 +58,7 @@
           "artifact_id": "art-100-system-inventory-md",
           "run_id": "run-art-100-system-inventory",
           "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
-          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "content_hash": "sha256:63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769",
           "producer_operation_id": "op-art-100-system-inventory",
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
           "evidence_ids": [
@@ -85,7 +85,7 @@
           "artifact_id": "art-100-system-inventory-json",
           "run_id": "run-art-100-system-inventory",
           "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
-          "content_hash": "sha256:707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53",
+          "content_hash": "sha256:963109abc89cd6e1aa9b4d481ca665a945276c804d7c8c563c74c21631c1efac",
           "producer_operation_id": "op-art-100-system-inventory",
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
           "evidence_ids": [
@@ -112,7 +112,7 @@
           "artifact_id": "01-current-state-system-inventory-md",
           "run_id": "run-art-100-system-inventory",
           "path": "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
-          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "content_hash": "sha256:63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769",
           "producer_operation_id": "op-art-100-system-inventory",
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
           "evidence_ids": [
@@ -144,7 +144,7 @@
           "artifact_type": "migration_artifact",
           "status": "complete",
           "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
-          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "content_hash": "sha256:63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769",
           "generated_by_operation_id": "op-art-100-system-inventory",
           "evidence": {
             "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -168,7 +168,7 @@
               "owner_agent": "artifact-agent",
               "target_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
               "target_id": "flexnetos-vs-lifeos",
-              "target_root": "/home/flexnetos/FlexNetOS",
+              "target_root": "/run/user/1001/lifeos-json-task-runner/lifeos-json-full-end2end-20260728T081500Z/ART-100_SYSTEM_INVENTORY/20260728T083744436663Z-5113aef5d4f6",
               "task_id": "ART-100_SYSTEM_INVENTORY"
             },
             "validation_ids": [
@@ -209,7 +209,7 @@
           "artifact_type": "machine_readable_record",
           "status": "complete",
           "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
-          "content_hash": "sha256:707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53",
+          "content_hash": "sha256:963109abc89cd6e1aa9b4d481ca665a945276c804d7c8c563c74c21631c1efac",
           "generated_by_operation_id": "op-art-100-system-inventory",
           "evidence": {
             "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -233,7 +233,7 @@
               "owner_agent": "artifact-agent",
               "target_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
               "target_id": "flexnetos-vs-lifeos",
-              "target_root": "/home/flexnetos/FlexNetOS",
+              "target_root": "/run/user/1001/lifeos-json-task-runner/lifeos-json-full-end2end-20260728T081500Z/ART-100_SYSTEM_INVENTORY/20260728T083744436663Z-5113aef5d4f6",
               "task_id": "ART-100_SYSTEM_INVENTORY"
             },
             "validation_ids": [
@@ -274,7 +274,7 @@
           "artifact_type": "migration_artifact",
           "status": "complete",
           "path": "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
-          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "content_hash": "sha256:63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769",
           "generated_by_operation_id": "op-art-100-system-inventory",
           "evidence": {
             "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -298,7 +298,7 @@
               "owner_agent": "artifact-agent",
               "target_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
               "target_id": "flexnetos-vs-lifeos",
-              "target_root": "/home/flexnetos/FlexNetOS",
+              "target_root": "/run/user/1001/lifeos-json-task-runner/lifeos-json-full-end2end-20260728T081500Z/ART-100_SYSTEM_INVENTORY/20260728T083744436663Z-5113aef5d4f6",
               "task_id": "ART-100_SYSTEM_INVENTORY"
             },
             "validation_ids": [
@@ -338,33 +338,33 @@
         "artifact_id": "01-current-state-system-inventory-md",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
-        "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7"
+        "content_hash": "sha256:63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769"
       },
       {
         "artifact_id": "art-100-system-inventory-json",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
-        "content_hash": "sha256:707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53"
+        "content_hash": "sha256:963109abc89cd6e1aa9b4d481ca665a945276c804d7c8c563c74c21631c1efac"
       },
       {
         "artifact_id": "art-100-system-inventory-md",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
-        "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7"
+        "content_hash": "sha256:63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769"
       }
     ],
     "errors": []
   },
   "checksums": {
     "execution-framework/scripts/generate_system_inventory.py": "af62d1cb95d765e3c3bebfcc430156cb9e43ca3e3dee6b243a4e16ec37d24fc6",
-    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md": "6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
-    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json": "707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53",
-    "execution-framework/migration-artifacts/01-current-state/system-inventory.md": "6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
-    "execution-framework/generated/art_100_system_inventory_registry_report.json": "58d5955172646ad160a18c4bd8b5e441248c2d55abbcf5e4b04e0eb49d42ed36",
-    "execution-framework/state/ART-100_SYSTEM_INVENTORY.heartbeat.json": "33ae0ae030f23640c44f7046126610c98fb8bb953eec1878c7fc969ea45d3232",
-    "execution-framework/logs/ART-100_SYSTEM_INVENTORY.log": "58d5955172646ad160a18c4bd8b5e441248c2d55abbcf5e4b04e0eb49d42ed36",
-    "execution-framework/proof_records/ART-100_SYSTEM_INVENTORY.proof.json": "7e98aa28b1584f50a3cbf2a998a35f801c29b583d675ad901bc2a5d2c85cdda4",
-    "execution-framework/proof_records/proof_ledger.jsonl": "313188d65d48a4df898547efd4325ac75cfba01414a0dba2d55d0996f9a8f312"
+    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md": "63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769",
+    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json": "963109abc89cd6e1aa9b4d481ca665a945276c804d7c8c563c74c21631c1efac",
+    "execution-framework/migration-artifacts/01-current-state/system-inventory.md": "63cf0a8f217606be6a6d28f2d9b6bf640d2079cbee95db1624e76e856d3a5769",
+    "execution-framework/generated/art_100_system_inventory_registry_report.json": "5a00edbfca72fb3dc3a03518e739ff2429863657790880a7b99f18085788127c",
+    "execution-framework/state/ART-100_SYSTEM_INVENTORY.heartbeat.json": "b704ea2da7c0ecd9a2ebec9875aa8d9dc71d26d87da8c5de62bec0f0e4bbc5ef",
+    "execution-framework/logs/ART-100_SYSTEM_INVENTORY.log": "5a00edbfca72fb3dc3a03518e739ff2429863657790880a7b99f18085788127c",
+    "execution-framework/proof_records/ART-100_SYSTEM_INVENTORY.proof.json": "dee961f10115f58cb0e01ef0936536e3a23ec3fe47223645e5f675a1b62c9428",
+    "execution-framework/proof_records/proof_ledger.jsonl": "343d21aef9ef7c59a0c3a093bcdccdf6f78be4deb9874fdbe33d193d32da24ae"
   },
   "logs_uri": "logs/ART-100_SYSTEM_INVENTORY.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

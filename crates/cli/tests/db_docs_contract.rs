@@ -7,7 +7,7 @@ use std::process::Command;
 const CLI_EXAMPLES: &[&str] = &[
     "envctl db roots --observed /home/u/meta --release /home/u/lifeos --json",
     "envctl db query --preset root-meta --json",
-    "envctl db --repo-root /path/to/repo query --preset symbols-rust-cli --json",
+    "envctl db --repo-root /path/to/repo query --preset paths:legacy --json",
     "envctl db --repo-root /path/to/repo symbols --json",
     "envctl db --repo-root /path/to/repo impact --symbol LIFE_OS_ROOT --json",
     "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --json",
@@ -81,13 +81,12 @@ fn req_061_arch18_docs_cover_the_complete_database_automation_contract() {
     }
 
     for preset in [
-        "root-meta",
-        "root-lifeos",
-        "hooks-codex",
-        "wrappers-broken",
-        "mutable-unsafe",
-        "symbols-rust-cli",
-        "paths-legacy",
+        "root:meta",
+        "root:lifeos",
+        "hooks:codex",
+        "wrappers:broken",
+        "mutable:unsafe",
+        "paths:legacy",
     ] {
         assert_contains(&automation, preset, "docs/DB-AUTOMATION.md");
     }

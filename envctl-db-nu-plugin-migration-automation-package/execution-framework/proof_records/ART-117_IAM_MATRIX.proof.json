@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-117_IAM_MATRIX",
   "status": "completed",
-  "started_at": "2026-07-04T23:19:57+00:00",
-  "completed_at": "2026-07-04T23:19:57+00:00",
+  "started_at": "2026-07-28T11:37:46+00:00",
+  "completed_at": "2026-07-28T11:37:46+00:00",
   "actor": "artifact-agent",
   "helper_id": "helper-artifact-18",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art_117_iam_matrix.py",
     "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
@@ -26,7 +26,7 @@
     "schema_version": "1.0",
     "task_id": "ART-117_IAM_MATRIX",
     "status": "passed",
-    "generated_at": "2026-07-04T23:19:57+00:00",
+    "generated_at": "2026-07-28T11:37:46+00:00",
     "artifact_paths": {
       "markdown": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
       "json": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
@@ -37,7 +37,7 @@
         "artifact_id": "art-117-iam-security-access-matrix-md",
         "run_id": "run-art-117-iam-matrix",
         "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
-        "content_hash": "sha256:c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+        "content_hash": "sha256:ffdee8fe0fb5af2d943fe5cb4bc3cacf617b8dacbbc633f27f422e29852fb8ca",
         "producer_operation_id": "op-art-117-generate-iam-matrix",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -70,7 +70,7 @@
         "artifact_id": "art-117-iam-security-access-matrix-json",
         "run_id": "run-art-117-iam-matrix",
         "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
-        "content_hash": "sha256:3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+        "content_hash": "sha256:5dc8b9590a96937064412ef0920566b9711cd9c8ce94398e2c971876b208ae37",
         "producer_operation_id": "op-art-117-generate-iam-matrix",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -108,7 +108,7 @@
         "artifact_type": "iam_security_access_matrix",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
-        "content_hash": "sha256:c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+        "content_hash": "sha256:ffdee8fe0fb5af2d943fe5cb4bc3cacf617b8dacbbc633f27f422e29852fb8ca",
         "generated_by_operation_id": "op-art-117-generate-iam-matrix",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -190,7 +190,7 @@
         "artifact_type": "iam_security_access_matrix",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
-        "content_hash": "sha256:3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+        "content_hash": "sha256:5dc8b9590a96937064412ef0920566b9711cd9c8ce94398e2c971876b208ae37",
         "generated_by_operation_id": "op-art-117-generate-iam-matrix",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -295,13 +295,13 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art_117_iam_matrix.py": "d404e42c48275f01dd280f88c3ddc8ee94f863824c5b23a57bed410fa8269b68",
-    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md": "c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
-    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json": "3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
-    "execution-framework/generated/art_117_iam_matrix_registry_report.json": "8294137c6c373540fc3428af5752c17487ca2afc2d5a9dec3bca0f86806a0948",
-    "execution-framework/state/ART-117_IAM_MATRIX.heartbeat.json": "d2d7768445531f3af77fac13c1cf95803f19df3ad1b3606bd26040f88fcf0ed3",
-    "execution-framework/logs/ART-117_IAM_MATRIX.log": "8294137c6c373540fc3428af5752c17487ca2afc2d5a9dec3bca0f86806a0948",
-    "execution-framework/proof_records/ART-117_IAM_MATRIX.proof.json": "b3119bd34f6a41a74db3315f3712ada0aaf24ace7b2dc12660432e6b8ad4f451",
-    "execution-framework/proof_records/proof_ledger.jsonl": "2daadd76c430640e51536e98b77a994019dd37ce7011ad39df161fd24a629e38"
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md": "ffdee8fe0fb5af2d943fe5cb4bc3cacf617b8dacbbc633f27f422e29852fb8ca",
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json": "5dc8b9590a96937064412ef0920566b9711cd9c8ce94398e2c971876b208ae37",
+    "execution-framework/generated/art_117_iam_matrix_registry_report.json": "9161d9e9563056a389eed8f0c8e69014245a0494dd94fb7604d07bcb44490564",
+    "execution-framework/state/ART-117_IAM_MATRIX.heartbeat.json": "6187f51eadae4eeef465226fcd7248fb20a4df0628e80058e10029104b174c3e",
+    "execution-framework/logs/ART-117_IAM_MATRIX.log": "9161d9e9563056a389eed8f0c8e69014245a0494dd94fb7604d07bcb44490564",
+    "execution-framework/proof_records/ART-117_IAM_MATRIX.proof.json": "27ff4cc2cf308b824fe45cc4e2161165f4d223f63d3cfca007e8a909c1c3e95c",
+    "execution-framework/proof_records/proof_ledger.jsonl": "bd7b2b7df501bd36d5fe94f98eeae15ff0b2b1e21e625b6b35fb5a73ab865284"
   },
   "logs_uri": "logs/ART-117_IAM_MATRIX.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

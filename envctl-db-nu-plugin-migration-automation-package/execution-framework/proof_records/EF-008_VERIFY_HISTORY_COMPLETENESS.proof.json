@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
   "status": "completed",
-  "started_at": "2026-07-05T06:18:54+00:00",
-  "completed_at": "2026-07-05T06:18:54+00:00",
+  "started_at": "2026-07-28T13:07:32+00:00",
+  "completed_at": "2026-07-28T13:07:32+00:00",
   "actor": "local-execution-framework",
   "helper_id": "helper-final-01",
   "model_tag": "gpt-5.3-spark",
@@ -17,7 +17,7 @@
   ],
   "verification_output": {
     "schema_version": "1.0",
-    "generated_at": "2026-07-05T06:18:54+00:00",
+    "generated_at": "2026-07-28T13:07:32+00:00",
     "status": "pass_with_external_blocker",
     "local_package_complete": true,
     "task_count": 80,
@@ -115,10 +115,10 @@
     "unresolved_gaps": [],
     "goal_loop_summary": {
       "schema_version": "1.0",
-      "generated_at": "2026-07-05T06:18:54+00:00",
+      "generated_at": "2026-07-28T13:07:32+00:00",
       "task_count": 80,
-      "complete_count": 80,
-      "failed_count": 0,
+      "complete_count": 78,
+      "failed_count": 2,
       "pending_count": 0,
       "runnable_count": 0,
       "dispatch_count": 0,
@@ -201,8 +201,8 @@
         "VER-300_UNIT_VALIDATION": "complete",
         "VER-301_SQL_SCHEMA_TEST": "complete",
         "VER-302_PACKET_SCHEMA_VALIDATION": "complete",
-        "VER-303_GOAL_LOOP_COMPUTE": "complete",
-        "VER-304_FINAL_COMPLETENESS": "complete",
+        "VER-303_GOAL_LOOP_COMPUTE": "failed",
+        "VER-304_FINAL_COMPLETENESS": "failed",
         "REL-400_PACKAGE_ARCHIVE": "complete",
         "REL-401_HANDOFF": "complete",
         "MAINT-500_README_NAV_BACKTRACE": "complete",
@@ -220,7 +220,7 @@
     ]
   },
   "checksums": {
-    "execution-framework/generated/final_verification_report.json": "3c2e52dfb9c5490243dbf23838a31df9862ea8f0d67fc1720bf60c81bb20c5e2",
+    "execution-framework/generated/final_verification_report.json": "e3b362ad09f81db48c524272c9ce892eb4c9bae54686beb88e209bc36b767db9",
     "execution-framework/docs/FINAL_VERIFICATION.md": "4349775c03376d11933cc09cbf821b3eba47a69eb80b381da7cbe052d778ad5b"
   },
   "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",

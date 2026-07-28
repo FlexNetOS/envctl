@@ -1,9 +1,9 @@
 {
   "proof_schema_version": "1.0",
   "task_id": "VER-304_FINAL_COMPLETENESS",
-  "status": "completed",
-  "started_at": "2026-07-05T06:04:08+00:00",
-  "completed_at": "2026-07-05T06:04:08+00:00",
+  "status": "failed",
+  "started_at": "2026-07-28T12:44:38+00:00",
+  "completed_at": "2026-07-28T12:44:38+00:00",
   "actor": "final-completeness-agent",
   "helper_id": "helper-complete-01",
   "model_tag": "gpt-5.3-spark",
@@ -24,8 +24,8 @@
   "verification_output": {
     "schema_version": "1.0",
     "task_id": "VER-304_FINAL_COMPLETENESS",
-    "generated_at": "2026-07-05T06:04:08+00:00",
-    "status": "pass",
+    "generated_at": "2026-07-28T12:44:38+00:00",
+    "status": "failed",
     "packet_summary": {
       "goal": "Prove every source requirement is covered by a task or explicit blocker",
       "repo_target": "filesystem",
@@ -36,19 +36,19 @@
     "dependency_proof": {
       "task_id": "VER-303_GOAL_LOOP_COMPUTE",
       "path": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
-      "status": "completed",
-      "ok": true
+      "status": "failed",
+      "ok": false
     },
     "completeness_validator": {
       "command": "python3 scripts/verify_history_and_completeness.py",
       "exit_code": 0,
       "stdout": [
-        "final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=85"
+        "final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=88"
       ],
       "stderr": []
     },
     "checks": {
-      "dependency_completed": true,
+      "dependency_completed": false,
       "validator_exit_zero": true,
       "final_status_allowed": true,
       "local_package_complete": true,
@@ -60,12 +60,12 @@
     },
     "final_verification_report": {
       "schema_version": "1.0",
-      "generated_at": "2026-07-05T06:04:08+00:00",
+      "generated_at": "2026-07-28T12:44:38+00:00",
       "status": "pass_with_external_blocker",
       "local_package_complete": true,
       "task_count": 80,
       "packet_count": 80,
-      "proof_count": 85,
+      "proof_count": 88,
       "missing_outputs": [],
       "tasks_without_packets": [],
       "packet_missing_fields": [],
@@ -158,48 +158,19 @@
       "unresolved_gaps": [],
       "goal_loop_summary": {
         "schema_version": "1.0",
-        "generated_at": "2026-07-05T06:01:54+00:00",
+        "generated_at": "2026-07-28T12:27:57+00:00",
         "task_count": 80,
-        "complete_count": 77,
-        "failed_count": 0,
-        "pending_count": 3,
-        "runnable_count": 1,
-        "dispatch_count": 1,
+        "complete_count": 76,
+        "failed_count": 4,
+        "pending_count": 0,
+        "runnable_count": 0,
+        "dispatch_count": 0,
         "approval_blocker_count": 0,
-        "blocked_count": 2,
-        "runnable_tasks": [
-          {
-            "task_id": "VER-304_FINAL_COMPLETENESS",
-            "parallel_group": "verification",
-            "max_parallel": 1,
-            "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
-          }
-        ],
-        "dispatch_packets": [
-          {
-            "task_id": "VER-304_FINAL_COMPLETENESS",
-            "parallel_group": "verification",
-            "max_parallel": 1,
-            "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
-          }
-        ],
+        "blocked_count": 0,
+        "runnable_tasks": [],
+        "dispatch_packets": [],
         "approval_blockers": [],
-        "blocked_tasks": [
-          {
-            "task_id": "REL-400_PACKAGE_ARCHIVE",
-            "reason": "unmet dependencies",
-            "dependencies": [
-              "VER-304_FINAL_COMPLETENESS"
-            ]
-          },
-          {
-            "task_id": "REL-401_HANDOFF",
-            "reason": "unmet dependencies",
-            "dependencies": [
-              "REL-400_PACKAGE_ARCHIVE"
-            ]
-          }
-        ],
+        "blocked_tasks": [],
         "statuses": {
           "EF-001_SCAN_PACKAGE": "complete",
           "EF-002_GAP_REPORT": "complete",
@@ -271,12 +242,12 @@
           "REQ-201_FLEXNETOS_LIFEOS_COMPARISON": "complete",
           "REQ-202_FLEXNETOS_ADAPTER_RECIPE": "complete",
           "VER-300_UNIT_VALIDATION": "complete",
-          "VER-301_SQL_SCHEMA_TEST": "complete",
-          "VER-302_PACKET_SCHEMA_VALIDATION": "complete",
-          "VER-303_GOAL_LOOP_COMPUTE": "complete",
-          "VER-304_FINAL_COMPLETENESS": "pending",
-          "REL-400_PACKAGE_ARCHIVE": "pending",
-          "REL-401_HANDOFF": "pending",
+          "VER-301_SQL_SCHEMA_TEST": "failed",
+          "VER-302_PACKET_SCHEMA_VALIDATION": "failed",
+          "VER-303_GOAL_LOOP_COMPUTE": "failed",
+          "VER-304_FINAL_COMPLETENESS": "failed",
+          "REL-400_PACKAGE_ARCHIVE": "complete",
+          "REL-401_HANDOFF": "complete",
           "MAINT-500_README_NAV_BACKTRACE": "complete",
           "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
           "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
@@ -299,14 +270,17 @@
       ],
       "findings": []
     },
-    "errors": []
+    "errors": [
+      "dependency_completed"
+    ]
   },
   "checksums": {
-    "execution-framework/generated/final_verification_report.json": "a4de4d098f9ccbb71aea4e5a053046c45865c8eb4b5deff39b6e765921cbd6bf",
-    "execution-framework/generated/ver304_final_completeness_report.json": "49962a851666941223f7d0ee24d377e8910bb892393528a3a14c6483a4462203",
-    "execution-framework/state/VER-304_FINAL_COMPLETENESS.heartbeat.json": "7bdd82703496e4469713d346689826fd5af7d29dc542551c2b6188663df02ba0",
-    "execution-framework/logs/VER-304_FINAL_COMPLETENESS.log": "49962a851666941223f7d0ee24d377e8910bb892393528a3a14c6483a4462203",
-    "execution-framework/proof_records/proof_ledger.jsonl": "f2759dfd60eb565840b98361ca331900d73fd08a9b6f0d8e794c97bbd1d1f57f"
+    "execution-framework/generated/final_verification_report.json": "25a078b76b0cd107a9b38581c9da99902be9def0b2da5b26623fd90236f37d84",
+    "execution-framework/generated/ver304_final_completeness_report.json": "fcd2c84397cec0dace90fb90896975d652e44f4b1aee1c927634409a486181aa",
+    "execution-framework/state/VER-304_FINAL_COMPLETENESS.heartbeat.json": "8b54c38f229397313459734137273dbcb8eabcbbc0dbb80fce9b6cce871deeb9",
+    "execution-framework/logs/VER-304_FINAL_COMPLETENESS.log": "fcd2c84397cec0dace90fb90896975d652e44f4b1aee1c927634409a486181aa",
+    "execution-framework/proof_records/VER-304_FINAL_COMPLETENESS.proof.json": "0bcc60b8e8c8934bd2589508b89f99da0903ca4d64fa66d94afc970b973ec2e8",
+    "execution-framework/proof_records/proof_ledger.jsonl": "598ae77a4444e637dde6a017502cd60ae6f46ab7c425842357980b9d3614f64a"
   },
   "logs_uri": "logs/VER-304_FINAL_COMPLETENESS.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",
@@ -315,6 +289,6 @@
     "generated/final_verification_report.json",
     "generated/ver304_final_completeness_report.json"
   ],
-  "failure_reason": "",
+  "failure_reason": "see generated/ver304_final_completeness_report.json",
   "next_action": "run REL-400_PACKAGE_ARCHIVE"
 }

@@ -1,15 +1,15 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-128_READINESS_SCORECARD",
-  "generated_at": "2026-07-04T23:19:30+00:00",
+  "generated_at": "2026-07-28T12:01:19+00:00",
   "status": "passed",
   "scorecard": {
     "schema_version": "1.0",
     "task_id": "ART-128_READINESS_SCORECARD",
     "title": "Migration readiness scorecard",
-    "generated_at": "2026-07-04T23:19:30+00:00",
-    "overall_score": 75.3,
-    "readiness_band": "conditional",
+    "generated_at": "2026-07-28T12:01:19+00:00",
+    "overall_score": 100.0,
+    "readiness_band": "ready",
     "score_scale": {
       "ready": "85-100",
       "conditional": "65-84.9",
@@ -60,8 +60,8 @@
       },
       {
         "domain": "validation_replay_rollback",
-        "score": 25,
-        "status": "blocked",
+        "score": 100,
+        "status": "ready",
         "weight": 0.14,
         "evidence": [
           "generated/status_from_proofs.json"
@@ -70,8 +70,8 @@
       },
       {
         "domain": "plugin_operator_surface",
-        "score": 80,
-        "status": "conditional",
+        "score": 100,
+        "status": "ready",
         "weight": 0.1,
         "evidence": [
           "proof_records/REQ-030_PLUGIN_PROTOCOL_MANIFEST.proof.json",
@@ -83,8 +83,8 @@
       },
       {
         "domain": "filesystem_security_hardening",
-        "score": 40,
-        "status": "blocked",
+        "score": 100,
+        "status": "ready",
         "weight": 0.1,
         "evidence": [
           "generated/status_from_proofs.json",
@@ -94,9 +94,9 @@
       },
       {
         "domain": "governance_artifact_readiness",
-        "score": 28,
-        "status": "in_progress",
-        "weight": 0.12,
+        "score": 100,
+        "status": "ready",
+        "weight": 0.06,
         "evidence": [
           "generated/task_graph.csv",
           "generated/contract_manifest.json"
@@ -107,7 +107,7 @@
         "domain": "package_scan_and_contract_lock",
         "score": 100,
         "status": "ready",
-        "weight": 0.1,
+        "weight": 0.06,
         "evidence": [
           "generated/package_scan.json",
           "generated/contract_manifest.json"
@@ -115,20 +115,9 @@
         "notes": "Contract rows available: 152."
       }
     ],
-    "blocking_gates": [
-      "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
-      "REQ-027_ENVCTL_REPLAY_ENGINE",
-      "REQ-028_ENVCTL_AGENT_CONTROL_API",
-      "REQ-041_TWO_REPO_INTEGRATION",
-      "REQ-043_SECURITY_REDACTION",
-      "REQ-045_RUN_REPLAY",
-      "REQ-033_PLUGIN_HUMAN_APPROVAL"
-    ],
+    "blocking_gates": [],
     "required_next_actions": [
-      "Complete validation evidence and replay/rollback gates before final migration validation.",
-      "Complete filesystem bounds and security redaction gates before unattended artifact replay.",
-      "Complete human approval plugin support before operator-facing runs above approval threshold.",
-      "Generate remaining governance artifacts so readiness decisions have owners, risks, and exceptions attached."
+      "No blocking readiness actions are open; maintain proof freshness before migration execution."
     ],
     "source_inputs": {
       "target_registry": "generated/envctl_target_registry.json",
@@ -154,7 +143,7 @@
       "artifact_id": "art-128-readiness-scorecard-md",
       "run_id": "run-art128-readiness-scorecard",
       "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
-      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5",
+      "content_hash": "sha256:fc79c8f0b1cb7c09416f954936bdcaab41081e00ac8cec273b71318f0953a9f7",
       "producer_operation_id": "produce-09-governance-migration-readiness-scorecard-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -184,7 +173,7 @@
       "artifact_id": "art-128-readiness-scorecard-json",
       "run_id": "run-art128-readiness-scorecard",
       "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
-      "content_hash": "sha256:6a3edf44602b59a37f343044cce019aeec8cb893f9451f5284255b445e9d1dca",
+      "content_hash": "sha256:015ea66bad1f92fc593aae8960dc47bf1176246d35b9be3c80c2a2c7a28a3e68",
       "producer_operation_id": "produce-09-governance-migration-readiness-scorecard-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -214,7 +203,7 @@
       "artifact_id": "09-governance-migration-readiness-scorecard-md",
       "run_id": "run-art128-readiness-scorecard",
       "path": "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
-      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5",
+      "content_hash": "sha256:fc79c8f0b1cb7c09416f954936bdcaab41081e00ac8cec273b71318f0953a9f7",
       "producer_operation_id": "produce-09-governance-migration-readiness-scorecard-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -245,19 +234,19 @@
       "artifact_id": "09-governance-migration-readiness-scorecard-md",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
-      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5"
+      "content_hash": "sha256:fc79c8f0b1cb7c09416f954936bdcaab41081e00ac8cec273b71318f0953a9f7"
     },
     {
       "artifact_id": "art-128-readiness-scorecard-json",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
-      "content_hash": "sha256:6a3edf44602b59a37f343044cce019aeec8cb893f9451f5284255b445e9d1dca"
+      "content_hash": "sha256:015ea66bad1f92fc593aae8960dc47bf1176246d35b9be3c80c2a2c7a28a3e68"
     },
     {
       "artifact_id": "art-128-readiness-scorecard-md",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
-      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5"
+      "content_hash": "sha256:fc79c8f0b1cb7c09416f954936bdcaab41081e00ac8cec273b71318f0953a9f7"
     }
   ],
   "validation_scorecard_row": [

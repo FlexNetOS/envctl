@@ -1,7 +1,7 @@
 # Parity dashboard
 
 Task: `ART-132_PARITY_DASHBOARD`
-Generated at: `2026-07-04T23:29:06+00:00`
+Generated at: `2026-07-28T10:02:19+00:00`
 Status: `complete_with_live_capture_gap`
 
 ## Scope
@@ -25,7 +25,7 @@ This dashboard defines the real-time old/new comparison surface for the FlexNetO
 | Validation evidence | manual reconciliation notes | envctl_migration_validations and evidence rows | `{"blocked": 0, "fail": 0, "pass": 2, "unknown": 0, "warn": 1}` | `warn` |
 | Shared protocol coverage | direct file and log reads | envctl to nu_plugin shared records | `"14 required record contracts"` | `pass` |
 | Live status projection | background logs and proof files | envctl migration visuals and status stream projections | `"dashboard_markdown"` | `pass` |
-| Task completion state | packet queue | proof status report and live visuals | `{"blocked_count": 56, "complete_count": 16, "failed_count": 0, "lane_count": 7, "parallel_group_count": 16, "proof_missing_count": 68, "proof_present_count": 12, "ready_count": 8, "source_status_report": {"approval_blocker_count": 2, "dispatch_count": 7, "generated_at": "2026-07-04T23:09:04+00:00", "runnable_count": 8}, "task_count": 80}` | `warn` |
+| Task completion state | packet queue | proof status report and live visuals | `{"blocked_count": 56, "complete_count": 16, "failed_count": 0, "lane_count": 7, "parallel_group_count": 16, "proof_missing_count": 68, "proof_present_count": 12, "ready_count": 8, "source_status_report": {"approval_blocker_count": 2, "dispatch_count": 7, "generated_at": "2026-07-04T23:09:04+00:00", "runnable_count": 8}, "task_count": 80}` | `pass` |
 
 ## Comparison Streams
 

@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-042_FILESYSTEM_BOUNDS",
   "status": "completed",
-  "started_at": "2026-07-04T23:19:35+00:00",
-  "completed_at": "2026-07-04T23:19:35+00:00",
+  "started_at": "2026-07-28T10:56:44+00:00",
+  "completed_at": "2026-07-28T10:56:44+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-fs-boundary-01",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/verify_filesystem_boundaries.py",
     "execution-framework/schemas/filesystem_boundaries.schema.json",
@@ -26,7 +26,7 @@
     "schema_version": "1.0",
     "task_id": "REQ-042_FILESYSTEM_BOUNDS",
     "status": "passed",
-    "generated_at": "2026-07-04T23:19:35+00:00",
+    "generated_at": "2026-07-28T10:56:44+00:00",
     "summary": {
       "allowed_path_count": 4,
       "blocked_path_count": 5,
@@ -250,13 +250,13 @@
     ]
   },
   "checksums": {
-    "execution-framework/scripts/verify_filesystem_boundaries.py": "455d90876f90b1495b41747b57a4e1c7a9da3a7568f7b3e44e60c040954fc0a0",
+    "execution-framework/scripts/verify_filesystem_boundaries.py": "45bc9281888a4990b09a16f8b8cd65dba272a24794b154703fa1aff3085e1d17",
     "execution-framework/schemas/filesystem_boundaries.schema.json": "75901030b7fee3fba0aed8447dc8d78520be803627c13959efe1532c96b0a555",
-    "execution-framework/generated/filesystem_boundaries.json": "2afc23d8f58bc096388b56cba0742b1ae46bec95d36b065e890acc5c1fda0eba",
-    "execution-framework/generated/filesystem_boundary_validation_report.json": "52a1879ab31e2ff2fa753646f15bcdd954874a4804f5f434d7cd0165e347a538",
-    "execution-framework/docs/FILESYSTEM_BOUNDARIES.md": "4ddbcd33736f30144c1ab805f9da041b4df578959e9348f0f96ab7068c738af7",
-    "execution-framework/state/REQ-042_FILESYSTEM_BOUNDS.heartbeat.json": "79419f86429ba60f67a02b71573f920a41b5c5192df18d9f028a49b1481ef91d",
-    "execution-framework/logs/REQ-042_FILESYSTEM_BOUNDS.log": "52a1879ab31e2ff2fa753646f15bcdd954874a4804f5f434d7cd0165e347a538"
+    "execution-framework/generated/filesystem_boundaries.json": "45b4fb3fc88cb5f3f2e9748fcf948091a4acc9abebbc154a5199387afb35a880",
+    "execution-framework/generated/filesystem_boundary_validation_report.json": "d80c94b1de5444b734947df03d4f3c35d1f73e282c143c26847b6c57b98130a2",
+    "execution-framework/docs/FILESYSTEM_BOUNDARIES.md": "91f8ec04955b05a6cfff2143bccf629781654fc06779ab86d1ce04a83f4b607d",
+    "execution-framework/state/REQ-042_FILESYSTEM_BOUNDS.heartbeat.json": "59b9fc00eeab08f25aa039ed9c383286aecec2bccf736ae94abd173ccb500aeb",
+    "execution-framework/logs/REQ-042_FILESYSTEM_BOUNDS.log": "d80c94b1de5444b734947df03d4f3c35d1f73e282c143c26847b6c57b98130a2"
   },
   "logs_uri": "logs/REQ-042_FILESYSTEM_BOUNDS.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

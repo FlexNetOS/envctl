@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-112_CODE_OWNERSHIP",
   "title": "Code ownership map",
-  "generated_at": "2026-07-04T23:19:29+00:00",
+  "generated_at": "2026-07-28T11:28:48+00:00",
   "target_root": "/home/flexnetos/FlexNetOS",
   "source_inputs": {
     "target_descriptor": "generated/envctl_target_registry.json",
@@ -67,18 +67,18 @@
       "path_status": [
         {
           "path": "src/envctl/crates/engine/src",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/envctl/Cargo.toml",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/envctl/agent-env.yaml",
-          "exists": true
+          "exists": false
         }
       ],
-      "observed_file_count": 39
+      "observed_file_count": 0
     },
     {
       "id": "envctl-artifact-registry",
@@ -100,18 +100,18 @@
       "path_status": [
         {
           "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/sql",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/schemas",
-          "exists": true
+          "exists": false
         }
       ],
-      "observed_file_count": 13
+      "observed_file_count": 0
     },
     {
       "id": "nu-plugin-control-surface",
@@ -135,22 +135,22 @@
       "path_status": [
         {
           "path": "src/nu_plugin/crates/codedb",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/nu_plugin/crates/codedb_mcp",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/nu_plugin/docs",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/nu_plugin/tests",
-          "exists": true
+          "exists": false
         }
       ],
-      "observed_file_count": 56
+      "observed_file_count": 0
     },
     {
       "id": "shared-protocol",
@@ -305,7 +305,7 @@
       "path_status": [
         {
           "path": "src/envctl/crates/secretctl",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/envctl/crates/secrets-*",
@@ -313,14 +313,14 @@
         },
         {
           "path": "src/envctl/scripts/classify-secrets.nu",
-          "exists": true
+          "exists": false
         },
         {
           "path": "src/nu_plugin/docs/SECURITY_AND_SECRET_POLICY.md",
-          "exists": true
+          "exists": false
         }
       ],
-      "observed_file_count": 5
+      "observed_file_count": 0
     }
   ],
   "owner_index": [

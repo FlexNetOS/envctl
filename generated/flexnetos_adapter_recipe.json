@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "recipe_id": "flexnetos-codex-package-target-adapter",
+  "version": "1.0.0",
+  "metadata": {
+    "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+    "adapter_name": "FlexNetOS adapter",
+    "purpose": "Convert the prior Codex FlexNetOS package into a reusable, approval-gated envctl migration target.",
+    "target_descriptor_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "repo_target": "repo_a",
+    "repo_path_ref": "${ENVCTL_REPO}",
+    "filesystem_scope": "repo",
+    "source_package_glob": "source/codex-flexnetos-migration-prompt-package/**",
+    "depends_on_tasks": [
+      "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "REQ-027_ENVCTL_REPLAY_ENGINE"
+    ],
+    "reusable_adapter_contract": {
+      "read_only_inputs": [
+        "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+        "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+        "${ENVCTL_REPO}/docs/**",
+        "${NU_PLUGIN_REPO}/docs/**",
+        "${MIGRATION_TARGET_ROOT}/docs/**"
+      ],
+      "write_scope": [
+        "envctl run ledger",
+        "envctl recipe registry",
+        "task-owned generated artifacts"
+      ],
+      "blocked_paths": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    "execution_model": {
+      "human_approval_required": true,
+      "approval_mode": "approval-gated",
+      "replay_prerequisite": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "comparison_prerequisite": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON"
+    },
+    "validation_contract": {
+      "verifier": "scripts/verify_flexnetos_adapter_recipe.py",
+      "report_path": "generated/flexnetos_adapter_recipe_validation_report.json",
+      "proof_path": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json"
+    }
+  },
+  "phases": [
+    {
+      "phase_id": "01-ingest-evidence",
+      "depends_on": [],
+      "approval_gate": false,
+      "operations": [
+        {
+          "operation_id": "link-prior-package-inputs",
+          "operation_type": "evidence.link",
+          "risk": "R1",
+          "validators": [
+            "dependency_proof_present",
+            "blocked_paths_preserved"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        },
+        {
+          "operation_id": "capture-flexnetos-comparison-findings",
+          "operation_type": "comparison.import",
+          "risk": "R1",
+          "validators": [
+            "comparison_validation_passed",
+            "line_evidence_linked"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        }
+      ]
+    },
+    {
+      "phase_id": "02-render-adapter",
+      "depends_on": [
+        "01-ingest-evidence"
+      ],
+      "approval_gate": false,
+      "operations": [
+        {
+          "operation_id": "render-adapter-recipe",
+          "operation_type": "recipe.render",
+          "risk": "R1",
+          "validators": [
+            "recipe_shape_valid",
+            "allowed_paths_only"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        },
+        {
+          "operation_id": "register-adapter-for-envctl",
+          "operation_type": "recipe.catalog.register",
+          "risk": "R2",
+          "validators": [
+            "stable_recipe_id",
+            "target_descriptor_reference_present"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        }
+      ]
+    },
+    {
+      "phase_id": "03-verify-replay-readiness",
+      "depends_on": [
+        "02-render-adapter"
+      ],
+      "approval_gate": false,
+      "operations": [
+        {
+          "operation_id": "validate-adapter-contract",
+          "operation_type": "recipe.validate",
+          "risk": "R2",
+          "validators": [
+            "validation_report_passed",
+            "no_secret_exposure"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        },
+        {
+          "operation_id": "prove-replay-compatibility",
+          "operation_type": "replay.verify",
+          "risk": "R2",
+          "validators": [
+            "replay_dependency_declared",
+            "human_gate_retained_for_apply"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        }
+      ]
+    },
+    {
+      "phase_id": "04-approved-apply",
+      "depends_on": [
+        "03-verify-replay-readiness"
+      ],
+      "approval_gate": true,
+      "operations": [
+        {
+          "operation_id": "operator-review-target-docs",
+          "operation_type": "manual_operator",
+          "risk": "R4",
+          "validators": [
+            "approval_recorded",
+            "scope_still_repo_bound"
+          ],
+          "rollback": {
+            "mode": "manual_rollback_required",
+            "requires_human_approval": true
+          }
+        },
+        {
+          "operation_id": "apply-flexnetos-target-adapter",
+          "operation_type": "target.mutate",
+          "risk": "R5",
+          "validators": [
+            "approved_before_apply",
+            "write_scope_repo_only",
+            "rollback_checkpoint_available"
+          ],
+          "rollback": {
+            "mode": "history_manifest_revert",
+            "requires_human_approval": true
+          }
+        }
+      ]
+    }
+  ]
+}

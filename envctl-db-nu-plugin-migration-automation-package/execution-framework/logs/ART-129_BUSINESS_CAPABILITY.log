@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-129_BUSINESS_CAPABILITY",
   "status": "passed",
-  "generated_at": "2026-07-04T23:19:56+00:00",
+  "generated_at": "2026-07-28T12:02:46+00:00",
   "artifact_paths": {
     "markdown": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
     "json": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json"
@@ -13,7 +13,7 @@
       "artifact_id": "art129-business-capability-map-md",
       "run_id": "run-art129-business-capability",
       "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
-      "content_hash": "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+      "content_hash": "sha256:6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811",
       "producer_operation_id": "op-art129-generate-business-capability",
       "contract_id": "contract-art129-full-migration-artifacts",
       "evidence_ids": [
@@ -41,7 +41,7 @@
       "artifact_id": "art129-business-capability-map-json",
       "run_id": "run-art129-business-capability",
       "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
-      "content_hash": "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+      "content_hash": "sha256:949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2",
       "producer_operation_id": "op-art129-generate-business-capability",
       "contract_id": "contract-art129-full-migration-artifacts",
       "evidence_ids": [
@@ -74,7 +74,7 @@
       "artifact_type": "business_capability_map_markdown",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
-      "content_hash": "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+      "content_hash": "sha256:6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811",
       "generated_by_operation_id": "op-art129-generate-business-capability",
       "evidence": {
         "contract_id": "contract-art129-full-migration-artifacts",
@@ -149,7 +149,7 @@
       "artifact_type": "business_capability_map_json",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
-      "content_hash": "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+      "content_hash": "sha256:949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2",
       "generated_by_operation_id": "op-art129-generate-business-capability",
       "evidence": {
         "contract_id": "contract-art129-full-migration-artifacts",
@@ -231,13 +231,13 @@
         "art129-business-capability-map-json",
         "complete",
         "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
-        "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad"
+        "sha256:949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2"
       ],
       [
         "art129-business-capability-map-md",
         "complete",
         "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
-        "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e"
+        "sha256:6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811"
       ]
     ]
   },

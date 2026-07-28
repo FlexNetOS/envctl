@@ -17,16 +17,16 @@ Critical navigation order:
 3. Use `execution-framework/generated/task_graph.csv` as the source of task truth.
 4. Use `execution-framework/generated/execution_manifest.json` to find the JSON executable packets.
 5. Execute bounded JSON packets from `execution-framework/generated/execution_packets/`.
-6. Start at runnable task `REQ-010_CONTRACT_LOCK` unless a newer `status_report.json` says otherwise.
+6. Run the goal loop and use its current `status_report.json` output to select the next runnable task. Do not assume a task is runnable solely because it appears in the graph.
 7. Write proof records to `execution-framework/proof_records/` and merge into `proof_ledger.jsonl` after every completed task.
 8. Recompute status with the framework scripts before reporting completion.
 
-Known no-gap state:
-- Live Drive bookkeeping gaps from `DEEP_VERSION_GAP_ANALYSIS_2026-07-04_envctl_package` are closed.
+Known maintenance state:
+- Live Drive bookkeeping gaps from `DEEP_VERSION_GAP_ANALYSIS_2026-07-04_envctl_package` were closed by the maintenance records.
 - Maintenance packets/proofs exist for README backtrace navigation, proof template restore, live manifest/verification sync, and final Codex handoff.
 - `execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json` is present.
-- `final_verification_report.json` status is `pass_no_gaps_drive_live_synchronized`.
-- envctl/nu_plugin implementation tasks are still pending by design; that is your work.
+- Treat the current `status_report.json` and `final_verification_report.json` as authoritative; rerun their verifiers before acting on an older status claim.
+- Any remaining envctl/nu_plugin or verification work is defined by the current task graph and packets.
 
 Required local repos:
 - envctl repo path: inspect the user's local target, do not invent it.
@@ -34,7 +34,7 @@ Required local repos:
 
 If repo paths are not provided by command-line args or environment variables, stop with `HARD STOP — REPO_PATHS_NOT_PROVIDED` and list the exact missing values. Do not create fake repos.
 
-Execution commands to run from package root before implementation:
+Execution commands to run from package root before implementation or resuming work:
 
 ```bash
 cd execution-framework

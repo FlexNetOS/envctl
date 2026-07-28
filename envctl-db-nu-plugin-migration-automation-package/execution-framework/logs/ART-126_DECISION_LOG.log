@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-126_DECISION_LOG",
   "status": "passed",
-  "generated_at": "2026-07-04T23:20:02+00:00",
+  "generated_at": "2026-07-28T11:50:23+00:00",
   "outputs": {
     "task_markdown": "execution-framework/migration-artifacts/art-126_decision_log/decision-log.md",
     "task_json": "execution-framework/migration-artifacts/art-126_decision_log/decision-log.json",
@@ -14,7 +14,7 @@
       "artifact_id": "art-126-decision-log-md",
       "path": "execution-framework/migration-artifacts/art-126_decision_log/decision-log.md",
       "row_id": "artifact-9516083a555902fde782eb0b",
-      "content_hash": "sha256:6c7cd2246548ee9b490aea6e6563e54cf7207145339c08c3647dca1f3e3d4740",
+      "content_hash": "sha256:d5e3c61e70c3a4c787a61f42c1b2257e3718fcc25410e2d7b276323002ab4246",
       "hash_matches": true,
       "evidence_ids": [
         "evidence-7c8e6cd5ad248813674a7ad8",
@@ -40,7 +40,7 @@
       "artifact_id": "art-126-decision-log-json",
       "path": "execution-framework/migration-artifacts/art-126_decision_log/decision-log.json",
       "row_id": "artifact-a355c1ab69b83e2e6d04a3f3",
-      "content_hash": "sha256:de25ef055ac19fbe946541d0fbbf60b7c750f509b0b1e4d0a443af3168e8c06f",
+      "content_hash": "sha256:a0b755a0c4bd8b35325dd09ee0ee5a7484097f874461101b7a21349b3d22fc73",
       "hash_matches": true,
       "evidence_ids": [
         "evidence-ade5a7213aa19ad6aaac9f52",
@@ -66,7 +66,7 @@
       "artifact_id": "09-governance-decision-log-md",
       "path": "execution-framework/migration-artifacts/09-governance/decision-log.md",
       "row_id": "artifact-1e68c613b8c55091f4e0236c",
-      "content_hash": "sha256:6c7cd2246548ee9b490aea6e6563e54cf7207145339c08c3647dca1f3e3d4740",
+      "content_hash": "sha256:d5e3c61e70c3a4c787a61f42c1b2257e3718fcc25410e2d7b276323002ab4246",
       "hash_matches": true,
       "evidence_ids": [
         "evidence-6d6a1828b6d000ad92728fad",

@@ -40,6 +40,39 @@ python3 scripts/verify_run_replay.py
 
 The generated operator entrypoint is `docs/RUN_REPLAY.md`; the machine-readable command template manifest is `generated/run_replay_manifest.json`. The verifier checks replay, rollback, approval, and convenience-template prerequisites, writes `state/REQ-045_RUN_REPLAY.heartbeat.json`, and records proof at `proof_records/REQ-045_RUN_REPLAY.proof.json`.
 
+## Agent navigation + backtrace metadata
+
+Metadata tag: `README_NAV_BACKTRACE_2026-07-28`
+
+Package root: `~/envctl-db-nu-plugin-migration-automation-package`
+
+History index (v0-v5):
+
+- `history/v0/Migration_Project_Artifacts.md`
+- `history/v0/VERSION_MANIFEST.md`
+- `history/v1/README.md`
+- `history/v1/VERSION_MANIFEST.md`
+- `history/v2/README.md`
+- `history/v2/VERSION_MANIFEST.md`
+- `history/v3/README.md`
+- `history/v3/VERSION_MANIFEST.md`
+- `history/v4/README.md`
+- `history/v4/VERSION_MANIFEST.md`
+- `history/v5/README.md`
+- `history/v5/VERSION_MANIFEST.md`
+
+Codex entry pointers:
+
+- `CODEX_FINAL_EXECUTION_PROMPT.md`
+- `prompts/CODEX_FINAL_EXECUTION_PROMPT.md`
+- `generated/task_graph.csv`
+- `generated/execution_manifest.json`
+- `generated/execution_packets/`
+- `state/goal_loop_state.json`
+- `generated/status_report.json`
+- `generated/final_verification_report.json`
+- `proof_records/proof_ledger.jsonl`
+
 ## Source intent preserved
 
 The framework implements the attached execution prompt requirements and the migration artifact contract: inventory, dependency maps, data flow graphs, database/schema lineage, API/event contracts, debugging maps, validation/reconciliation evidence, cutover, rollback, governance, and decommission controls.

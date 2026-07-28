@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-105_PACKAGE_LIB_GRAPH",
   "status": "completed",
-  "started_at": "2026-07-04T23:20:41+00:00",
-  "completed_at": "2026-07-04T23:20:41+00:00",
+  "started_at": "2026-07-28T11:10:39+00:00",
+  "completed_at": "2026-07-28T11:10:39+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-06",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_package_lib_graph.py",
     "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
@@ -25,13 +25,13 @@
   "verification_output": {
     "schema_version": "1.0",
     "task_id": "ART-105_PACKAGE_LIB_GRAPH",
-    "generated_at": "2026-07-04T23:20:41+00:00",
+    "generated_at": "2026-07-28T11:10:39+00:00",
     "status": "passed",
     "errors": [],
     "summary": {
       "node_count": 8,
       "edge_count": 6,
-      "python_file_count": 49,
+      "python_file_count": 85,
       "third_party_python_import_count": 2,
       "shell_script_count": 6,
       "issue_count": 4,
@@ -49,7 +49,7 @@
         "artifact_id": "art-105-package-lib-graph-json",
         "run_id": "run-art105-package-lib-graph",
         "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
-        "content_hash": "sha256:f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+        "content_hash": "sha256:05491af9844d03e398fdd86d7e0812e43cde6d15d72c249f0bf0d55129ddcf76",
         "producer_operation_id": "op-art105-generate-package-lib-graph",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -78,7 +78,7 @@
         "artifact_id": "art-105-package-lib-graph-md",
         "run_id": "run-art105-package-lib-graph",
         "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
-        "content_hash": "sha256:2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+        "content_hash": "sha256:739b9a0f5398ac735bd5c196ed25944103cca46292130852cf2a5b9329e07f38",
         "producer_operation_id": "op-art105-generate-package-lib-graph",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -112,7 +112,7 @@
         "artifact_type": "package_library_dependency_graph",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
-        "content_hash": "sha256:f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+        "content_hash": "sha256:05491af9844d03e398fdd86d7e0812e43cde6d15d72c249f0bf0d55129ddcf76",
         "generated_by_operation_id": "op-art105-generate-package-lib-graph",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -179,7 +179,7 @@
                   ]
                 }
               ],
-              "package_manifest_file_count": 281,
+              "package_manifest_file_count": 733,
               "package_scan_folders": [
                 "codex",
                 "examples",
@@ -241,7 +241,7 @@
         "artifact_type": "package_library_dependency_graph",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
-        "content_hash": "sha256:2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+        "content_hash": "sha256:739b9a0f5398ac735bd5c196ed25944103cca46292130852cf2a5b9329e07f38",
         "generated_by_operation_id": "op-art105-generate-package-lib-graph",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -308,7 +308,7 @@
                   ]
                 }
               ],
-              "package_manifest_file_count": 281,
+              "package_manifest_file_count": 733,
               "package_scan_folders": [
                 "codex",
                 "examples",
@@ -371,13 +371,13 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_package_lib_graph.py": "82b9bf117d2cd2febf5a3ffcadfecf3b4f1df2cc1190e9b9aa7d1f30d831d90b",
-    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json": "f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
-    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md": "2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
-    "execution-framework/generated/art-105_package_lib_graph.registry_report.json": "98633c22d19ff5f0b124bc07dbef29f677d9be7ceff9a50f024eba81b983ab6f",
-    "execution-framework/state/ART-105_PACKAGE_LIB_GRAPH.heartbeat.json": "918194634de81826b12b0fe748bb5256a94cd715208bfdb832a53a59215c355a",
-    "execution-framework/logs/ART-105_PACKAGE_LIB_GRAPH.log": "98633c22d19ff5f0b124bc07dbef29f677d9be7ceff9a50f024eba81b983ab6f",
-    "execution-framework/proof_records/ART-105_PACKAGE_LIB_GRAPH.proof.json": "01ec673ad63a986aaa693fc8a38d9a8aad54d72bdda25f5554b51576f18fe224",
-    "execution-framework/proof_records/proof_ledger.jsonl": "594837060f22570c361a9e2a1f37e674995bddf0e8de31c4e2d7939b990e5af7"
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json": "05491af9844d03e398fdd86d7e0812e43cde6d15d72c249f0bf0d55129ddcf76",
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md": "739b9a0f5398ac735bd5c196ed25944103cca46292130852cf2a5b9329e07f38",
+    "execution-framework/generated/art-105_package_lib_graph.registry_report.json": "86a840f7b82bcc016307b842c9af331aef93eac0be7d2037d3f68c8fa7d98496",
+    "execution-framework/state/ART-105_PACKAGE_LIB_GRAPH.heartbeat.json": "af85aae05e4c4f7a9afe9061d622e03043a3b47e66b16cb106bd24f1fd3f7849",
+    "execution-framework/logs/ART-105_PACKAGE_LIB_GRAPH.log": "86a840f7b82bcc016307b842c9af331aef93eac0be7d2037d3f68c8fa7d98496",
+    "execution-framework/proof_records/ART-105_PACKAGE_LIB_GRAPH.proof.json": "9865c99061e307f14ead7c8617d8242c760c756e9d2144f0eb1595917a25a3bc",
+    "execution-framework/proof_records/proof_ledger.jsonl": "b3a0f86e899b28d39610df795413d709abce28052043411ee959d978fec948a5"
   },
   "logs_uri": "logs/ART-105_PACKAGE_LIB_GRAPH.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

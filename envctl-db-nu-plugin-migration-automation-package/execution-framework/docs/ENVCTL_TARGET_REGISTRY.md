@@ -1,6 +1,6 @@
 # envctl target descriptor registry
 
-Generated at: `2026-07-04T23:10:14+00:00`
+Generated at: `2026-07-28T08:33:55+00:00`
 Status: `passed`
 
 ## Contract

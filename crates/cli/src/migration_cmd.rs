@@ -10,7 +10,7 @@ use anyhow::{anyhow, Context};
 use clap::Subcommand;
 use envctl_engine::migration_db::{
     self, ActorType, ApprovalDecision, ArtifactStatus, HumanMode, MigrationDb, OpStatus,
-    OperationSpec, ReplayMode, Risk, RunSpec, RunStatus, TargetSpec, TargetType, ValidationSpec,
+    OperationSpec, ReplayMode, Risk, RunSpec, RunStatus, TargetType, ValidationSpec,
     ValidationStatus,
 };
 use std::path::PathBuf;
@@ -61,7 +61,7 @@ pub enum MigrationCmd {
         subcommand,
         long_about = "Target descriptors: the systems a migration run reads from and writes to. Descriptors are JSON objects, validated and content-hashed at registration; target_id is unique; max_auto_risk caps what may start without an approval.",
         after_help = mig_examples!(
-            "envctl migration target add four-system --primary-root /work --descriptor target.json",
+            "envctl migration target add --descriptor target.yaml",
             "envctl migration target validate target.json",
         )
     )]
@@ -366,27 +366,33 @@ pub enum RecipeCmd {
 
 #[derive(Subcommand)]
 pub enum TargetCmd {
-    /// Register a target descriptor (JSON file), validated + content-hashed.
+    /// Register a JSON or YAML target descriptor, validated + content-hashed.
     #[command(
-        long_about = "Register a target: unique target_id, type (codebase|data|infrastructure|integration|mixed), primary root, optional compare root, a JSON descriptor (validated + content-hashed), safety mode, and max_auto_risk — the cap above which operations require approval.",
+        long_about = "Register a target descriptor from JSON or YAML. The descriptor is authoritative for target identity, roots, type, and safety policy; re-registering a target_id upserts its descriptor and hash.",
         after_help = mig_examples!(
-            "envctl migration target add four-system --primary-root /work --descriptor target.json --max-auto-risk R2"
+            "envctl migration target add --descriptor target.yaml"
         )
     )]
     Add {
-        target_id: String,
-        #[arg(long, default_value = "mixed")]
-        target_type: String,
+        /// Legacy assertion; when supplied it must match descriptor.target_id.
+        target_id: Option<String>,
+        /// Legacy assertion; when supplied it must match descriptor.target_type.
         #[arg(long)]
-        primary_root: String,
+        target_type: Option<String>,
+        /// Legacy assertion; when supplied it must match descriptor.primary_root.
+        #[arg(long)]
+        primary_root: Option<String>,
+        /// Legacy assertion; when supplied it must match descriptor.compare_root.
         #[arg(long)]
         compare_root: Option<String>,
         #[arg(long)]
         descriptor: PathBuf,
-        #[arg(long, default_value = "fail-closed")]
-        safety_mode: String,
-        #[arg(long, default_value = "R2")]
-        max_auto_risk: String,
+        /// Legacy assertion; when supplied it must match descriptor.safety.default_mode.
+        #[arg(long)]
+        safety_mode: Option<String>,
+        /// Legacy assertion; when supplied it must match descriptor.safety.max_auto_risk.
+        #[arg(long)]
+        max_auto_risk: Option<String>,
     },
     /// All registered targets.
     #[command(
@@ -402,7 +408,7 @@ pub enum TargetCmd {
     Show { target_id: String },
     /// Parse + validate a descriptor file without registering it.
     #[command(
-        long_about = "Parse and validate a descriptor JSON file and print the descriptor hash it WOULD get — nothing is recorded. The read-only preview of `target add`.",
+        long_about = "Parse and validate a descriptor JSON or YAML file and print its normalized registry identity and hash; nothing is recorded.",
         after_help = mig_examples!("envctl migration target validate target.json")
     )]
     Validate { descriptor: PathBuf },
@@ -860,15 +866,46 @@ pub fn run_migration(
                 safety_mode,
                 max_auto_risk,
             } => {
-                let spec = TargetSpec {
-                    target_id,
-                    target_type: TargetType::parse(&target_type)?,
-                    primary_root,
-                    compare_root,
-                    descriptor: read_json(&descriptor)?,
-                    safety_mode,
-                    max_auto_risk: Risk::parse(&max_auto_risk)?,
-                };
+                let (parsed, raw) = migration_db::load_target_descriptor(&descriptor)?;
+                let spec = parsed.into_spec(raw)?;
+                if let Some(value) = target_id {
+                    if value != spec.target_id {
+                        return Err(anyhow!("target_id conflicts with descriptor.target_id"));
+                    }
+                }
+                if let Some(value) = target_type {
+                    if TargetType::parse(&value)? != spec.target_type {
+                        return Err(anyhow!("target_type conflicts with descriptor.target_type"));
+                    }
+                }
+                if let Some(value) = primary_root {
+                    if value != spec.primary_root {
+                        return Err(anyhow!(
+                            "primary_root conflicts with descriptor.primary_root"
+                        ));
+                    }
+                }
+                if let Some(value) = compare_root {
+                    if Some(value) != spec.compare_root {
+                        return Err(anyhow!(
+                            "compare_root conflicts with descriptor.compare_root"
+                        ));
+                    }
+                }
+                if let Some(value) = safety_mode {
+                    if value != spec.safety_mode {
+                        return Err(anyhow!(
+                            "safety_mode conflicts with descriptor.safety.default_mode"
+                        ));
+                    }
+                }
+                if let Some(value) = max_auto_risk {
+                    if Risk::parse(&value)? != spec.max_auto_risk {
+                        return Err(anyhow!(
+                            "max_auto_risk conflicts with descriptor.safety.max_auto_risk"
+                        ));
+                    }
+                }
                 emit(&db.register_target(spec)?, json)
             }
             TargetCmd::List => emit(&db.targets()?, json),
@@ -882,13 +919,13 @@ pub fn run_migration(
                 emit(&found, json)
             }
             TargetCmd::Validate { descriptor } => {
-                let value = read_json(&descriptor)?;
-                if !value.is_object() {
-                    return Err(anyhow!("descriptor must be a JSON object"));
-                }
+                let (parsed, value) = migration_db::load_target_descriptor(&descriptor)?;
+                let spec = parsed.into_spec(value.clone())?;
                 emit(
                     &serde_json::json!({
                         "valid": true,
+                        "target_id": spec.target_id,
+                        "target_type": spec.target_type,
                         "descriptor_hash": migration_db::sha256_hex(
                             migration_db::canonical_json(&value).as_bytes()
                         ),

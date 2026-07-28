@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-133_DEPRECATION_MAP",
   "status": "completed",
-  "started_at": "2026-07-04T23:28:24+00:00",
-  "completed_at": "2026-07-04T23:28:24+00:00",
+  "started_at": "2026-07-28T09:30:31+00:00",
+  "completed_at": "2026-07-28T09:30:31+00:00",
   "actor": "artifact-agent",
   "helper_id": "helper-artifact-34",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art133_deprecation_map.py",
     "execution-framework/migration-artifacts/02-target-state/deprecation-map.md",
@@ -29,7 +29,7 @@
     "schema_version": "1.0",
     "task_id": "ART-133_DEPRECATION_MAP",
     "status": "passed",
-    "generated_at": "2026-07-04T23:28:24+00:00",
+    "generated_at": "2026-07-28T09:30:31+00:00",
     "summary": {
       "retired": 1,
       "replaced": 2,
@@ -48,7 +48,7 @@
         "artifact_id": "02-target-state-deprecation-map-md",
         "run_id": "run-art-133-deprecation-map",
         "path": "migration-artifacts/02-target-state/deprecation-map.md",
-        "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+        "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
         "producer_operation_id": "produce-02-target-state-deprecation-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -79,7 +79,7 @@
         "artifact_id": "art-133-deprecation-map-md",
         "run_id": "run-art-133-deprecation-map",
         "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
-        "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+        "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
         "producer_operation_id": "produce-02-target-state-deprecation-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -100,7 +100,7 @@
         "artifact_id": "art-133-deprecation-map-json",
         "run_id": "run-art-133-deprecation-map",
         "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
-        "content_hash": "sha256:a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
+        "content_hash": "sha256:37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512",
         "producer_operation_id": "produce-02-target-state-deprecation-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -125,7 +125,7 @@
         "artifact_type": "migration_artifact",
         "status": "complete",
         "path": "migration-artifacts/02-target-state/deprecation-map.md",
-        "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+        "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
         "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -208,7 +208,7 @@
         "artifact_type": "task_local_markdown_artifact",
         "status": "complete",
         "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
-        "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+        "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
         "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -254,7 +254,7 @@
         "artifact_type": "machine_readable_record",
         "status": "complete",
         "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
-        "content_hash": "sha256:a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
+        "content_hash": "sha256:37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512",
         "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -292,9 +292,9 @@
       }
     ],
     "checksums": {
-      "migration-artifacts/02-target-state/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
-      "migration-artifacts/art-133_deprecation_map/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
-      "migration-artifacts/art-133_deprecation_map/deprecation-map.json": "a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa"
+      "migration-artifacts/02-target-state/deprecation-map.md": "095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
+      "migration-artifacts/art-133_deprecation_map/deprecation-map.md": "095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
+      "migration-artifacts/art-133_deprecation_map/deprecation-map.json": "37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512"
     },
     "validation": {
       "artifact_file_exists": true,
@@ -315,14 +315,15 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art133_deprecation_map.py": "b531217dd756b4a8b40bdb3c5bba52270fac4b4fbd174014a1e72403150b39a4",
-    "execution-framework/migration-artifacts/02-target-state/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
-    "execution-framework/migration-artifacts/art-133_deprecation_map/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
-    "execution-framework/migration-artifacts/art-133_deprecation_map/deprecation-map.json": "a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
-    "execution-framework/generated/art133_deprecation_map_report.json": "014bc7632cb3e315aaeb6c90fd2485f8c2c5b19f5ed1b93fbcaeae9d461d9a28",
-    "execution-framework/generated/status_from_proofs.json": "9dfb0fd3f2395cb14548424c0ec826e2a2730469600a2085e9ae9d2faa517e7b",
-    "execution-framework/state/ART-133_DEPRECATION_MAP.heartbeat.json": "102a30ac9b4c2871699d7915631fc4ffb5688ecf207b17952fc9204352ad9b81",
-    "execution-framework/logs/ART-133_DEPRECATION_MAP.log": "014bc7632cb3e315aaeb6c90fd2485f8c2c5b19f5ed1b93fbcaeae9d461d9a28",
-    "execution-framework/proof_records/proof_ledger.jsonl": "4731d3b48034d61e2dda9d62fa16030e498c6f72f473cf9c3339f5d7dec87850"
+    "execution-framework/migration-artifacts/02-target-state/deprecation-map.md": "095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
+    "execution-framework/migration-artifacts/art-133_deprecation_map/deprecation-map.md": "095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
+    "execution-framework/migration-artifacts/art-133_deprecation_map/deprecation-map.json": "37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512",
+    "execution-framework/generated/art133_deprecation_map_report.json": "c5fd99227e0ed7406b864560fa6a53b1b883e5f43984e3a5a96a687edb389d3d",
+    "execution-framework/generated/status_from_proofs.json": "fc7354e54d86b08ba7477c0680f28c1841d30be22a51fb3bebd48f83eade7907",
+    "execution-framework/state/ART-133_DEPRECATION_MAP.heartbeat.json": "d121a56703f14a798836dda059924269696ba54014bceca66f9bac812b2f5d6d",
+    "execution-framework/logs/ART-133_DEPRECATION_MAP.log": "c5fd99227e0ed7406b864560fa6a53b1b883e5f43984e3a5a96a687edb389d3d",
+    "execution-framework/proof_records/ART-133_DEPRECATION_MAP.proof.json": "a5a58fb180fa1fc1e15acfae77c01e953aa26c0431fd3d4853bfb7d27c075203",
+    "execution-framework/proof_records/proof_ledger.jsonl": "d6de0909db533f53ea3d704c68f2fd1e9fd7fe670bd51bed1170eab23bc30edf"
   },
   "logs_uri": "logs/ART-133_DEPRECATION_MAP.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

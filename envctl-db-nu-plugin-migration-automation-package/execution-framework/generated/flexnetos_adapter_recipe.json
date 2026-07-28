@@ -12,6 +12,55 @@
     "repo_path_ref": "${ENVCTL_REPO}",
     "filesystem_scope": "repo",
     "source_package_glob": "source/codex-flexnetos-migration-prompt-package/**",
+    "adapter_parameters": {
+      "package_root": {
+        "required": true,
+        "description": "Migration package root to inspect and import."
+      },
+      "package_name": {
+        "required": true,
+        "default": "flexnetos-artifact-contract"
+      },
+      "target_descriptor": {
+        "required": true,
+        "default": "examples/target-descriptors/flexnetos-vs-lifeos.yaml"
+      },
+      "target_id": {
+        "required": true,
+        "default": "flexnetos-vs-lifeos"
+      }
+    },
+    "package_contract": {
+      "required_files": [
+        "PACKAGE_MANIFEST.json",
+        "prompts/ARTIFACT_CONTRACT_FULL.md",
+        "expected-output/migration-artifacts-tree.md",
+        "prompts/MASTER_PROMPT.md"
+      ],
+      "optional_globs": [
+        "prompts/spark_helpers/*.md",
+        "helpers/*",
+        "schemas/*.json",
+        "migration-artifacts/**"
+      ],
+      "import_mapping": {
+        "PACKAGE_MANIFEST.json": "package provenance and file hashes",
+        "prompts/ARTIFACT_CONTRACT_FULL.md": "artifact contract record",
+        "expected-output/migration-artifacts-tree.md": "required artifact tree",
+        "prompts/MASTER_PROMPT.md": "recipe and operation definitions"
+      }
+    },
+    "runtime_commands": [
+      "envctl migration package inspect {package_root}",
+      "envctl migration package import {package_root} --name {package_name}",
+      "envctl migration target add --descriptor {target_descriptor}",
+      "envctl migration plan --target {target_id} --contract {contract_id} --recipe {recipe_id}",
+      "envctl migration run {plan_id} --mode approval-gated",
+      "envctl migration events {run_id}",
+      "envctl migration artifacts {run_id}",
+      "envctl migration replay {run_id} --verify-hashes",
+      "envctl migration export {run_id} --format json"
+    ],
     "reusable_adapter_contract": {
       "read_only_inputs": [
         "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",

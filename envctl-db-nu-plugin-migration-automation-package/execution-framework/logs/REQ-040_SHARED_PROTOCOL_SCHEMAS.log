@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
   "status": "passed",
-  "generated_at": "2026-07-04T23:09:51+00:00",
+  "generated_at": "2026-07-28T12:26:19+00:00",
   "summary": {
     "required_record_count": 14,
     "manifest_record_count": 14,

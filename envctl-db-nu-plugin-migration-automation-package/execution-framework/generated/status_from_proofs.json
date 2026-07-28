@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T06:18:54+00:00",
+  "generated_at": "2026-07-28T12:22:41+00:00",
   "tasks": [
     {
       "task_id": "EF-001_SCAN_PACKAGE",
@@ -167,7 +167,7 @@
       "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
       "phase": "04-shared",
       "owner_lane": "lane_d_filesystem",
-      "status": "completed",
+      "status": "failed",
       "proof_uri": "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
     },
     {
@@ -489,28 +489,28 @@
       "task_id": "VER-300_UNIT_VALIDATION",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "completed",
+      "status": "failed",
       "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
     },
     {
       "task_id": "VER-301_SQL_SCHEMA_TEST",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "completed",
+      "status": "failed",
       "proof_uri": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json"
     },
     {
       "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "completed",
+      "status": "failed",
       "proof_uri": "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json"
     },
     {
       "task_id": "VER-303_GOAL_LOOP_COMPUTE",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "completed",
+      "status": "failed",
       "proof_uri": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json"
     },
     {

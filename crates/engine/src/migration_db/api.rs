@@ -2,7 +2,7 @@
 //! the hash-chained append-only event ledger, both state machines wired so every
 //! transition appends an event, and the R3+ approval gate (AGENT_CONTROL_PROTOCOL).
 
-use super::machine::{check_op_transition, check_run_transition};
+use super::machine::{check_op_transition, check_rollback_transition, check_run_transition};
 use super::model::*;
 use super::store::{self, child_key, event_key};
 use super::{canonical_json, now_utc, sha256_hex, MigrationDb, MigrationDbError, Result};
@@ -158,11 +158,18 @@ impl MigrationDb {
                 "descriptor must be a JSON object".into(),
             ));
         }
-        let id = self.next_id("target")?;
-        self.index_put(store::IDX_TARGET_NATURAL, &spec.target_id, &id, true)
-            .map_err(|_| {
-                MigrationDbError::Conflict(format!("target_id already exists: {}", spec.target_id))
-            })?;
+        let existing = match self.target_by_natural_id(&spec.target_id) {
+            Ok(target) => Some(target),
+            Err(MigrationDbError::NotFound(_)) => None,
+            Err(error) => return Err(error),
+        };
+        let id = match &existing {
+            Some(target) => target.id.clone(),
+            None => self.next_id("target")?,
+        };
+        if existing.is_none() {
+            self.index_put(store::IDX_TARGET_NATURAL, &spec.target_id, &id, true)?;
+        }
         let now = now_utc();
         let target = Target {
             id: id.clone(),
@@ -174,10 +181,12 @@ impl MigrationDb {
             descriptor_json: spec.descriptor,
             safety_mode: spec.safety_mode,
             max_auto_risk: spec.max_auto_risk,
-            created_at_utc: now.clone(),
+            created_at_utc: existing
+                .map(|target| target.created_at_utc)
+                .unwrap_or_else(|| now.clone()),
             updated_at_utc: now,
         };
-        self.put(store::TARGETS, &id, &target, true)?;
+        self.put(store::TARGETS, &id, &target, false)?;
         Ok(target)
     }
 
@@ -678,11 +687,16 @@ impl MigrationDb {
             }),
             evidence_refs,
         )?;
-        let next = match decision {
-            ApprovalDecision::Approve => OpStatus::Ready,
-            ApprovalDecision::Deny => OpStatus::Denied,
-        };
-        self.op_set_status(&approval.operation_id, next, actor, decided_by, None)?;
+        // A rollback can request a fresh approval for an operation that has
+        // already succeeded.  In that case the decision authorizes the
+        // rollback handle, not a new operation transition.
+        if self.operation(&approval.operation_id)?.status == OpStatus::AwaitingApproval {
+            let next = match decision {
+                ApprovalDecision::Approve => OpStatus::Ready,
+                ApprovalDecision::Deny => OpStatus::Denied,
+            };
+            self.op_set_status(&approval.operation_id, next, actor, decided_by, None)?;
+        }
         Ok(approval)
     }
 
@@ -913,6 +927,52 @@ impl MigrationDb {
         actor_id: &str,
     ) -> Result<Checkpoint> {
         let _ = self.run(run_id)?;
+        if kind.trim().is_empty() || reference.trim().is_empty() {
+            return Err(MigrationDbError::Validation(
+                "checkpoint kind and reference must be non-empty".into(),
+            ));
+        }
+        if reference.split(['/', '\\']).any(|part| part == "..")
+            || reference.split(['/', '\\']).any(|part| {
+                matches!(
+                    part.to_ascii_lowercase().as_str(),
+                    "secrets" | "private_keys"
+                )
+            })
+            || [".pem", ".key"]
+                .iter()
+                .any(|suffix| reference.to_ascii_lowercase().ends_with(suffix))
+        {
+            return Err(MigrationDbError::Validation(
+                "checkpoint reference is not an approved non-secret location".into(),
+            ));
+        }
+        if let Some(operation_id) = operation_id {
+            let operation = self.operation(operation_id)?;
+            if operation.run_id != run_id {
+                return Err(MigrationDbError::Validation(format!(
+                    "operation {operation_id} does not belong to run {run_id}"
+                )));
+            }
+        }
+        let checkpoint_hash = hash.map(str::to_string).unwrap_or_else(|| {
+            sha256_hex(
+                canonical_json(&json!({
+                    "kind": kind,
+                    "reference": reference,
+                    "metadata": metadata,
+                }))
+                .as_bytes(),
+            )
+        });
+        if let Some(existing) = self.checkpoints(run_id)?.into_iter().find(|checkpoint| {
+            checkpoint.operation_id.as_deref() == operation_id
+                && checkpoint.checkpoint_kind == kind
+                && checkpoint.checkpoint_ref == reference
+                && checkpoint.checkpoint_hash.as_deref() == Some(checkpoint_hash.as_str())
+        }) {
+            return Ok(existing);
+        }
         let id = self.next_id("checkpoint")?;
         let row = Checkpoint {
             id: id.clone(),
@@ -920,7 +980,7 @@ impl MigrationDb {
             operation_id: operation_id.map(str::to_string),
             checkpoint_kind: kind.to_string(),
             checkpoint_ref: reference.to_string(),
-            checkpoint_hash: hash.map(str::to_string),
+            checkpoint_hash: Some(checkpoint_hash),
             metadata_json: metadata,
             created_at_utc: now_utc(),
         };
@@ -961,13 +1021,33 @@ impl MigrationDb {
         actor_id: &str,
     ) -> Result<Rollback> {
         let _ = self.run(run_id)?;
+        if rollback_type.trim().is_empty() || !plan.is_object() {
+            return Err(MigrationDbError::Validation(
+                "rollback type must be non-empty and plan must be a JSON object".into(),
+            ));
+        }
+        let approval_required = if let Some(operation_id) = operation_id {
+            let operation = self.operation(operation_id)?;
+            if operation.run_id != run_id {
+                return Err(MigrationDbError::Validation(format!(
+                    "operation {operation_id} does not belong to run {run_id}"
+                )));
+            }
+            operation.risk.requires_approval()
+        } else {
+            false
+        };
         let id = self.next_id("rollback")?;
         let row = Rollback {
             id: id.clone(),
             run_id: run_id.to_string(),
             operation_id: operation_id.map(str::to_string),
             rollback_type: rollback_type.to_string(),
-            status: RollbackStatus::Planned,
+            status: if approval_required {
+                RollbackStatus::AwaitingApproval
+            } else {
+                RollbackStatus::Planned
+            },
             plan_json: plan,
             result_json: None,
             created_at_utc: now_utc(),
@@ -989,6 +1069,12 @@ impl MigrationDb {
             json!({"rollback_id": id, "type": rollback_type}),
             None,
         )?;
+        if approval_required {
+            // Approval rows are already scoped to run + operation and are
+            // hash-ledgered.  No operation status is changed here: this is an
+            // authorization for the rollback handle, not a replay of work.
+            self.request_approval(operation_id.expect("checked above"), actor, actor_id)?;
+        }
         Ok(row)
     }
 
@@ -997,6 +1083,57 @@ impl MigrationDb {
         ids.iter()
             .map(|id| self.must_get(store::ROLLBACKS, id, "rollback"))
             .collect()
+    }
+
+    /// Move a rollback handle through its fail-closed lifecycle.  The only
+    /// route out of `awaiting_approval` requires an approved decision for the
+    /// linked operation; terminal handles cannot be replayed accidentally.
+    pub fn rollback_set_status(
+        &self,
+        rollback_id: &str,
+        to: RollbackStatus,
+        actor: ActorType,
+        actor_id: &str,
+        result: Option<Value>,
+    ) -> Result<Rollback> {
+        let mut rollback: Rollback = self.must_get(store::ROLLBACKS, rollback_id, "rollback")?;
+        check_rollback_transition(rollback.status, to)?;
+        if rollback.status == RollbackStatus::AwaitingApproval && to == RollbackStatus::Planned {
+            let operation_id = rollback.operation_id.as_deref().ok_or_else(|| {
+                MigrationDbError::ApprovalRequired(format!(
+                    "rollback {rollback_id} has no operation approval scope"
+                ))
+            })?;
+            let approved = self
+                .approvals(&rollback.run_id)?
+                .into_iter()
+                .any(|approval| {
+                    approval.operation_id == operation_id
+                        && approval.status == ApprovalStatus::Approved
+                });
+            if !approved {
+                return Err(MigrationDbError::ApprovalRequired(format!(
+                    "rollback {rollback_id} requires an approved decision"
+                )));
+            }
+        }
+        let from = rollback.status;
+        rollback.status = to;
+        if result.is_some() {
+            rollback.result_json = result.clone();
+        }
+        self.put(store::ROLLBACKS, rollback_id, &rollback, false)?;
+        self.append_event(
+            &rollback.run_id,
+            "rollback.status_changed",
+            None,
+            actor,
+            Some(actor_id),
+            rollback.operation_id.as_deref(),
+            json!({"rollback_id": rollback_id, "from": from.as_str(), "to": to.as_str(), "result": result}),
+            None,
+        )?;
+        Ok(rollback)
     }
 
     pub fn record_agent_session(

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "REQ-041_TWO_REPO_INTEGRATION",
-  "generated_at": "2026-07-05T05:18:43+00:00",
+  "generated_at": "2026-07-28T11:13:09+00:00",
   "packet": {
     "title": "Implement two-repo integration",
     "goal": "Wire envctl database commands and nu_plugin commands through shared protocol and executable task packets",
@@ -61,7 +61,7 @@
         "view": "event",
         "run_id": "run-req041-two-repo",
         "event_seq": 1,
-        "time": "2026-07-05T05:18:43+00:00",
+        "time": "2026-07-28T11:13:09+00:00",
         "phase": "04-shared",
         "event_type": "integration_run_started",
         "actor": "agent",
@@ -81,7 +81,7 @@
         "view": "event",
         "run_id": "run-req041-two-repo",
         "event_seq": 2,
-        "time": "2026-07-05T05:18:43+00:00",
+        "time": "2026-07-28T11:13:09+00:00",
         "phase": "04-shared",
         "event_type": "agent_control_operation_enqueued",
         "actor": "agent",
@@ -101,7 +101,7 @@
         "view": "event",
         "run_id": "run-req041-two-repo",
         "event_seq": 3,
-        "time": "2026-07-05T05:18:43+00:00",
+        "time": "2026-07-28T11:13:09+00:00",
         "phase": "04-shared",
         "event_type": "agent_control_operation_enqueued",
         "actor": "agent",
@@ -121,7 +121,7 @@
         "view": "event",
         "run_id": "run-req041-two-repo",
         "event_seq": 4,
-        "time": "2026-07-05T05:18:43+00:00",
+        "time": "2026-07-28T11:13:09+00:00",
         "phase": null,
         "event_type": "agent_control_approval_approved",
         "actor": "human",
@@ -141,7 +141,7 @@
         "view": "event",
         "run_id": "run-req041-two-repo",
         "event_seq": 5,
-        "time": "2026-07-05T05:18:43+00:00",
+        "time": "2026-07-28T11:13:09+00:00",
         "phase": "04-shared",
         "event_type": "plugin_projection_ready",
         "actor": "plugin",
@@ -161,7 +161,7 @@
         "view": "proof",
         "run_id": "",
         "event_seq": 0,
-        "time": "2026-07-05T05:18:43+00:00",
+        "time": "2026-07-28T11:13:09+00:00",
         "phase": "04-shared",
         "event_type": "proof_record",
         "actor": "integration-agent",
@@ -218,7 +218,7 @@
       "event_count": 5,
       "chain_valid": true,
       "errors": [],
-      "head_event_hash": "sha256:4dcd0e4f617b5d169dec30bbc4461f0285462354bd82dc29061821c44e89f351"
+      "head_event_hash": "sha256:ef7081d0d85e47e275faa8a49c8b86d81b7b00e9b15879f67fe38dbcce55d58b"
     },
     "approval_decision": {
       "status": "decided",
@@ -227,7 +227,7 @@
       "operation_id": "op-d58d31a4a1239324874c37dc",
       "operation_status": "ready",
       "event_seq": 4,
-      "event_hash": "sha256:f3661294883547fc036427f3150622ff7d5e40b262f686c31124857087d0111a"
+      "event_hash": "sha256:1d64dcb3771189bb1aae77de475b3fef9fa59b5da5680aaba8b7fd8d4f1d3882"
     }
   }
 }

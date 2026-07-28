@@ -25,6 +25,105 @@
         }
       }
     },
+    "/migration/runs/{run_id}/operations": {
+      "post": {
+        "summary": "Enqueue a controlled migration operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "operation_type",
+                  "risk",
+                  "actor_type",
+                  "actor_id",
+                  "authority"
+                ],
+                "properties": {
+                  "operation_type": {
+                    "type": "string"
+                  },
+                  "risk": {
+                    "type": "string",
+                    "enum": [
+                      "R0",
+                      "R1",
+                      "R2",
+                      "R3",
+                      "R4",
+                      "R5"
+                    ]
+                  },
+                  "actor_type": {
+                    "type": "string",
+                    "enum": [
+                      "system",
+                      "agent",
+                      "human",
+                      "plugin",
+                      "external"
+                    ]
+                  },
+                  "actor_id": {
+                    "type": "string"
+                  },
+                  "authority": {
+                    "type": "string",
+                    "enum": [
+                      "read_only",
+                      "safe_execute",
+                      "approval_request",
+                      "operator",
+                      "admin"
+                    ]
+                  },
+                  "phase": {
+                    "type": "string"
+                  },
+                  "parent_operation_id": {
+                    "type": "string"
+                  },
+                  "recipe_step_id": {
+                    "type": "string"
+                  },
+                  "target_scope": {
+                    "type": "string"
+                  },
+                  "input_json": {
+                    "type": "object"
+                  },
+                  "command_redacted": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "idempotency_key": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "operation enqueued"
+          }
+        }
+      }
+    },
     "/migration/runs/{run_id}/events": {
       "get": {
         "summary": "Stream or list run events",
@@ -41,6 +140,214 @@
         "responses": {
           "200": {
             "description": "events"
+          }
+        }
+      }
+    },
+    "/migration/operations/{operation_id}/transition": {
+      "post": {
+        "summary": "Apply a control transition to an operation",
+        "parameters": [
+          {
+            "name": "operation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "trigger",
+                  "actor_type",
+                  "actor_id",
+                  "authority"
+                ],
+                "properties": {
+                  "trigger": {
+                    "type": "string"
+                  },
+                  "actor_type": {
+                    "type": "string",
+                    "enum": [
+                      "system",
+                      "agent",
+                      "human",
+                      "plugin",
+                      "external"
+                    ]
+                  },
+                  "actor_id": {
+                    "type": "string"
+                  },
+                  "authority": {
+                    "type": "string",
+                    "enum": [
+                      "read_only",
+                      "safe_execute",
+                      "approval_request",
+                      "operator",
+                      "admin"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "operation transition applied"
+          }
+        }
+      }
+    },
+    "/migration/runs/{run_id}/leases": {
+      "post": {
+        "summary": "Acquire a visible run-scoped lease",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "target_scope",
+                  "actor_type",
+                  "actor_id",
+                  "authority"
+                ],
+                "properties": {
+                  "target_scope": {
+                    "type": "string"
+                  },
+                  "actor_type": {
+                    "type": "string",
+                    "enum": [
+                      "system",
+                      "agent",
+                      "human",
+                      "plugin",
+                      "external"
+                    ]
+                  },
+                  "actor_id": {
+                    "type": "string"
+                  },
+                  "authority": {
+                    "type": "string",
+                    "enum": [
+                      "read_only",
+                      "safe_execute",
+                      "approval_request",
+                      "operator",
+                      "admin"
+                    ]
+                  },
+                  "operation_id": {
+                    "type": "string"
+                  },
+                  "lease_id": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "lease acquired or existing lease error details returned"
+          }
+        }
+      }
+    },
+    "/migration/runs/{run_id}/leases/{lease_id}/release": {
+      "post": {
+        "summary": "Release a visible run-scoped lease",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "actor_type",
+                  "actor_id",
+                  "authority"
+                ],
+                "properties": {
+                  "actor_type": {
+                    "type": "string",
+                    "enum": [
+                      "system",
+                      "agent",
+                      "human",
+                      "plugin",
+                      "external"
+                    ]
+                  },
+                  "actor_id": {
+                    "type": "string"
+                  },
+                  "authority": {
+                    "type": "string",
+                    "enum": [
+                      "read_only",
+                      "safe_execute",
+                      "approval_request",
+                      "operator",
+                      "admin"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "lease released"
           }
         }
       }

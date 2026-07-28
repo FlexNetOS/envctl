@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-133_DEPRECATION_MAP",
   "status": "passed",
-  "generated_at": "2026-07-04T23:28:24+00:00",
+  "generated_at": "2026-07-28T09:30:31+00:00",
   "summary": {
     "retired": 1,
     "replaced": 2,
@@ -21,7 +21,7 @@
       "artifact_id": "02-target-state-deprecation-map-md",
       "run_id": "run-art-133-deprecation-map",
       "path": "migration-artifacts/02-target-state/deprecation-map.md",
-      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
       "producer_operation_id": "produce-02-target-state-deprecation-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -52,7 +52,7 @@
       "artifact_id": "art-133-deprecation-map-md",
       "run_id": "run-art-133-deprecation-map",
       "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
-      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
       "producer_operation_id": "produce-02-target-state-deprecation-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -73,7 +73,7 @@
       "artifact_id": "art-133-deprecation-map-json",
       "run_id": "run-art-133-deprecation-map",
       "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
-      "content_hash": "sha256:a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
+      "content_hash": "sha256:37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512",
       "producer_operation_id": "produce-02-target-state-deprecation-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -98,7 +98,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "migration-artifacts/02-target-state/deprecation-map.md",
-      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
       "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -181,7 +181,7 @@
       "artifact_type": "task_local_markdown_artifact",
       "status": "complete",
       "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
-      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "content_hash": "sha256:095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
       "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -227,7 +227,7 @@
       "artifact_type": "machine_readable_record",
       "status": "complete",
       "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
-      "content_hash": "sha256:a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
+      "content_hash": "sha256:37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512",
       "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -265,9 +265,9 @@
     }
   ],
   "checksums": {
-    "migration-artifacts/02-target-state/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
-    "migration-artifacts/art-133_deprecation_map/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
-    "migration-artifacts/art-133_deprecation_map/deprecation-map.json": "a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa"
+    "migration-artifacts/02-target-state/deprecation-map.md": "095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.md": "095d96707dbfe0d6ea8fbd4151493c17734380d003c73ceafd6dc187db36f2dc",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.json": "37462ff20a9d3aad6d3d53d266edf8eaf601d88f80e03ff519a8a67811219512"
   },
   "validation": {
     "artifact_file_exists": true,

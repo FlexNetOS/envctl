@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-101_DIRECTORY_TREE",
   "status": "completed",
-  "started_at": "2026-07-04T23:20:52+00:00",
-  "completed_at": "2026-07-04T23:21:04+00:00",
+  "started_at": "2026-07-28T11:07:26+00:00",
+  "completed_at": "2026-07-28T11:07:26+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-02",
   "model_tag": "gpt-5.3-spark",
@@ -25,11 +25,11 @@
     "artifact_files_exist": true,
     "registry_hashes_recorded": true,
     "registered_artifact_count": 2,
-    "directory_count": 72280,
-    "blocked_files_skipped": 140,
+    "directory_count": 2192,
+    "blocked_files_skipped": 4,
     "registered_hashes": {
-      "art101-directory-tree-md": "sha256:36f9e2fd8de21ab7159357711cf584544a582665d646ca97ff76a70c540f9ce3",
-      "art101-directory-tree-json": "sha256:7bd00e1a2af6bf9df9c6f63bbeb478662b11fbc463eb512a59f0d000d1d99341"
+      "art101-directory-tree-md": "sha256:f3de3b1e29aa8797b2da1cfc761dfb0530884d0f848378106609097a33581c63",
+      "art101-directory-tree-json": "sha256:a2cc5832a49443279016d15452b1f4f9ad93a3f87a17d619cfba5ff4d004c62b"
     },
     "validation_scorecard": [
       4,
@@ -41,12 +41,12 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_directory_tree_artifact.py": "5410da69db2abd175fa3fd6c73e4e523da505d8ecc00ad0f2e1d2efde28fc94a",
-    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.md": "36f9e2fd8de21ab7159357711cf584544a582665d646ca97ff76a70c540f9ce3",
-    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.json": "7bd00e1a2af6bf9df9c6f63bbeb478662b11fbc463eb512a59f0d000d1d99341",
-    "execution-framework/state/ART-101_DIRECTORY_TREE.heartbeat.json": "535c79eb2c9a3f0ec4fbc16c6d9584743dffb9fc0ec7073344644c4f54ab472c",
-    "execution-framework/logs/ART-101_DIRECTORY_TREE.log": "0c2d33428592430001b9fa216bdd8a64d1421483a220b7fee6e5f1afc154bd23",
-    "execution-framework/proof_records/ART-101_DIRECTORY_TREE.proof.json": "479d296c75fcd31c915a856d879a6dc8d87426af56b52c4951b0a516114ae2de",
-    "execution-framework/proof_records/proof_ledger.jsonl": "09c4883cf292a26010f67f2d709c715e2fcca5f286c7a75bc997cdb0c720e4a5"
+    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.md": "f3de3b1e29aa8797b2da1cfc761dfb0530884d0f848378106609097a33581c63",
+    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.json": "a2cc5832a49443279016d15452b1f4f9ad93a3f87a17d619cfba5ff4d004c62b",
+    "execution-framework/state/ART-101_DIRECTORY_TREE.heartbeat.json": "36f585f7ccc7ae4d03778f5e5a361a8beb3e2888c33837167e02351fd627fb37",
+    "execution-framework/logs/ART-101_DIRECTORY_TREE.log": "f5dbb3890c8935d3d9550ee2d67ae66db51134f04f9af33414741fc17b922905",
+    "execution-framework/proof_records/ART-101_DIRECTORY_TREE.proof.json": "61977c9e9eb51b0bb203e3576b56a92d56aaf8f7fccdff9a4a5184eb6e607716",
+    "execution-framework/proof_records/proof_ledger.jsonl": "bf985b29c229a3296c02c29a3a2f2e85858bd9e4887cc558e3a46f0511b6182c"
   },
   "logs_uri": "logs/ART-101_DIRECTORY_TREE.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

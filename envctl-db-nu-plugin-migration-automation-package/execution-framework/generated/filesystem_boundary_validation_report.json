@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-042_FILESYSTEM_BOUNDS",
   "status": "passed",
-  "generated_at": "2026-07-04T23:19:35+00:00",
+  "generated_at": "2026-07-28T10:56:44+00:00",
   "summary": {
     "allowed_path_count": 4,
     "blocked_path_count": 5,

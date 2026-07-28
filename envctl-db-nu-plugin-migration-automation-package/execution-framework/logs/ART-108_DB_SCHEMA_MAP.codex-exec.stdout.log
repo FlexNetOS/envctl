@@ -5662,7 +5662,7 @@ index 0000000000000000000000000000000000000000..be9d71b9b6903cfe830dcd36f11bd701
 +    constraints = []
 +    for clause in create_table_body(sql):
 +        upper = clause.upper()
-+        first_token = clause.split(None, 1)[0].strip('"`[]') if clause.split(None, 1) else ""
++        first_<REDACTED:SECRET> 1)[0].strip('"`[]') if clause.split(None, 1) else ""
 +        explicit_name = None
 +        if upper.startswith("CONSTRAINT "):
 +            tokens = clause.split(None, 2)
@@ -6417,7 +6417,7 @@ index 0000000000000000000000000000000000000000..be9d71b9b6903cfe830dcd36f11bd701
 +    constraints = []
 +    for clause in create_table_body(sql):
 +        upper = clause.upper()
-+        first_token = clause.split(None, 1)[0].strip('"`[]') if clause.split(None, 1) else ""
++        first_<REDACTED:SECRET> 1)[0].strip('"`[]') if clause.split(None, 1) else ""
 +        explicit_name = None
 +        if upper.startswith("CONSTRAINT "):
 +            tokens = clause.split(None, 2)
@@ -7179,7 +7179,7 @@ index 0000000000000000000000000000000000000000..be9d71b9b6903cfe830dcd36f11bd701
 +    constraints = []
 +    for clause in create_table_body(sql):
 +        upper = clause.upper()
-+        first_token = clause.split(None, 1)[0].strip('"`[]') if clause.split(None, 1) else ""
++        first_<REDACTED:SECRET> 1)[0].strip('"`[]') if clause.split(None, 1) else ""
 +        explicit_name = None
 +        if upper.startswith("CONSTRAINT "):
 +            tokens = clause.split(None, 2)
@@ -8008,7 +8008,7 @@ index 0000000000000000000000000000000000000000..be9d71b9b6903cfe830dcd36f11bd701
 +    constraints = []
 +    for clause in create_table_body(sql):
 +        upper = clause.upper()
-+        first_token = clause.split(None, 1)[0].strip('"`[]') if clause.split(None, 1) else ""
++        first_<REDACTED:SECRET> 1)[0].strip('"`[]') if clause.split(None, 1) else ""
 +        explicit_name = None
 +        if upper.startswith("CONSTRAINT "):
 +            tokens = clause.split(None, 2)
@@ -8786,7 +8786,7 @@ index 0000000000000000000000000000000000000000..be9d71b9b6903cfe830dcd36f11bd701
 +    constraints = []
 +    for clause in create_table_body(sql):
 +        upper = clause.upper()
-+        first_token = clause.split(None, 1)[0].strip('"`[]') if clause.split(None, 1) else ""
++        first_<REDACTED:SECRET> 1)[0].strip('"`[]') if clause.split(None, 1) else ""
 +        explicit_name = None
 +        if upper.startswith("CONSTRAINT "):
 +            tokens = clause.split(None, 2)

@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
   "status": "passed",
-  "generated_at": "2026-07-05T04:32:27+00:00",
+  "generated_at": "2026-07-28T08:52:55+00:00",
   "fixture": {
     "run_id": "run-req026",
     "safe_operation_id": "op-req026-safe",
@@ -137,7 +137,7 @@
       "checkpoint_ref": "history/pre_execution_framework_manifest.json",
       "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
       "metadata_json": "{\"boundary\":\"before approval-gated target mutation\",\"repeat_safe\":false,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
-      "created_at_utc": "2026-07-05T04:32:27.865Z",
+      "created_at_utc": "2026-07-28T08:52:55.090Z",
       "metadata": {
         "boundary": "before approval-gated target mutation",
         "repeat_safe": false,
@@ -152,7 +152,7 @@
       "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
       "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
       "metadata_json": "{\"boundary\":\"before repeatable artifact regeneration\",\"repeat_safe\":true,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
-      "created_at_utc": "2026-07-05T04:32:27.865Z",
+      "created_at_utc": "2026-07-28T08:52:55.090Z",
       "metadata": {
         "boundary": "before repeatable artifact regeneration",
         "repeat_safe": true,
@@ -182,7 +182,7 @@
     "event_count": 8,
     "chain_valid": true,
     "errors": [],
-    "head_event_hash": "sha256:20485f9d87c9a1e03d57f6fe6fd9937b548596104a6439070c243356aa1cb9d0"
+    "head_event_hash": "sha256:b5e57ea446c6a7817815de72eadde3863d27ccd7f768b296bffbd97b7d761fdf"
   },
   "errors": [],
   "evidence": [

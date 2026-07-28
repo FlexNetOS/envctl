@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-112_CODE_OWNERSHIP",
   "status": "completed",
-  "started_at": "2026-07-04T23:19:29+00:00",
-  "completed_at": "2026-07-04T23:19:29+00:00",
+  "started_at": "2026-07-28T11:28:48+00:00",
+  "completed_at": "2026-07-28T11:28:48+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-13",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art112_code_ownership.py",
     "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
@@ -25,7 +25,7 @@
     "schema_version": "1.0",
     "task_id": "ART-112_CODE_OWNERSHIP",
     "status": "passed",
-    "generated_at": "2026-07-04T23:19:29+00:00",
+    "generated_at": "2026-07-28T11:28:48+00:00",
     "artifact_paths": [
       "migration-artifacts/art-112_code_ownership/code_ownership_map.json",
       "migration-artifacts/art-112_code_ownership/code_ownership_map.md"
@@ -36,7 +36,7 @@
         "artifact_id": "art112-code-ownership-json",
         "run_id": "run-art112",
         "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
-        "content_hash": "sha256:0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+        "content_hash": "sha256:21ec8270b565f3e820fae91ea07a823819cc8acd19b32679291f095d2857e876",
         "producer_operation_id": "op-art112-generate",
         "contract_id": "contract-art112",
         "evidence_ids": [
@@ -62,7 +62,7 @@
         "artifact_id": "art112-code-ownership-markdown",
         "run_id": "run-art112",
         "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
-        "content_hash": "sha256:f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+        "content_hash": "sha256:2354dd8721bfedbc1bd0b06637e412beb43179fa500632eaf49f79aeac4a2933",
         "producer_operation_id": "op-art112-generate",
         "contract_id": "contract-art112",
         "evidence_ids": [
@@ -91,7 +91,7 @@
         "artifact_type": "code_ownership_map_json",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
-        "content_hash": "sha256:0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+        "content_hash": "sha256:21ec8270b565f3e820fae91ea07a823819cc8acd19b32679291f095d2857e876",
         "generated_by_operation_id": "op-art112-generate",
         "evidence": {
           "contract_id": "contract-art112",
@@ -153,7 +153,7 @@
         "artifact_type": "code_ownership_map_markdown",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
-        "content_hash": "sha256:f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+        "content_hash": "sha256:2354dd8721bfedbc1bd0b06637e412beb43179fa500632eaf49f79aeac4a2933",
         "generated_by_operation_id": "op-art112-generate",
         "evidence": {
           "contract_id": "contract-art112",
@@ -228,11 +228,12 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art112_code_ownership.py": "04d646c8261cb5acf5ab79deac0360df96bde2b1dd4477872fcd28fa2f6c57f4",
-    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json": "0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
-    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md": "f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
-    "execution-framework/logs/ART-112_CODE_OWNERSHIP.log": "76cf21a6cfd695982cf1618b9e53f05ecf294aacaf21127d7d20c7dd888c824c",
-    "execution-framework/state/ART-112_CODE_OWNERSHIP.heartbeat.json": "e1c1a7f8182a5eab3740b73931e838e032c858b19dcec8561f591ffb9e3cb0ed",
-    "execution-framework/proof_records/proof_ledger.jsonl": "f65d6ea2d3c8cebdc10ca628e3dc3f6bfc644837a7adec80a6022574857fff82"
+    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json": "21ec8270b565f3e820fae91ea07a823819cc8acd19b32679291f095d2857e876",
+    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md": "2354dd8721bfedbc1bd0b06637e412beb43179fa500632eaf49f79aeac4a2933",
+    "execution-framework/logs/ART-112_CODE_OWNERSHIP.log": "0e11e249e1e7d0e2b0f799163f64247514f5315f6239e5cedcb115c9bdd1ce7b",
+    "execution-framework/state/ART-112_CODE_OWNERSHIP.heartbeat.json": "9782b6230a497841f37cc16a05d72ca99a131001ff7abdf3b61d81e3e53a57d2",
+    "execution-framework/proof_records/ART-112_CODE_OWNERSHIP.proof.json": "e5dd489ab0e0302ec03ad607db2c13e827ce0f3de43ba7c1fc73bb4d0cf8b7ac",
+    "execution-framework/proof_records/proof_ledger.jsonl": "38aaa194dcbcbd14239d4a59a3c6673fcacc6027d01fbf4cfcd29987996f9d2d"
   },
   "logs_uri": "logs/ART-112_CODE_OWNERSHIP.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

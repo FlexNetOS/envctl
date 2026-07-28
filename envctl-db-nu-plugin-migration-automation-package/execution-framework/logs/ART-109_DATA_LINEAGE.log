@@ -2,24 +2,24 @@
   "schema_version": "1.0",
   "task_id": "ART-109_DATA_LINEAGE",
   "status": "passed",
-  "generated_at": "2026-07-04T23:29:00+00:00",
+  "generated_at": "2026-07-28T11:22:48+00:00",
   "artifact_summary": {
-    "field_count": 183,
+    "field_count": 184,
     "critical_field_count": 27,
     "sql_table_count": 16,
     "schema_source_count": 37,
     "target_files_scanned": 2500,
-    "fields_with_target_references": 14,
+    "fields_with_target_references": 45,
     "protocol_record_count": 14
   },
-  "completed_at": "2026-07-04T23:29:00+00:00",
+  "completed_at": "2026-07-28T11:22:48+00:00",
   "registry_results": [
     {
       "artifact_row_id": "artifact-9c84a78ea4dfa74c2cdcf126",
       "artifact_id": "04-data-migration-data-lineage-map-md",
       "run_id": "run-art109-data-lineage",
       "path": "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
-      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
       "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -43,7 +43,7 @@
       "artifact_id": "art-109-data-lineage-map-md",
       "run_id": "run-art109-data-lineage",
       "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
-      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
       "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -67,7 +67,7 @@
       "artifact_id": "art-109-data-lineage-map-json",
       "run_id": "run-art109-data-lineage",
       "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json",
-      "content_hash": "sha256:51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
+      "content_hash": "sha256:d315bd094463712b51960416d85973b2b66ddcf47d3d059b84523c7c0bdd8939",
       "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -96,7 +96,7 @@
       "artifact_type": "data_lineage_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
-      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
       "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -155,7 +155,7 @@
       "artifact_type": "data_lineage_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
-      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
       "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -214,7 +214,7 @@
       "artifact_type": "data_lineage_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json",
-      "content_hash": "sha256:51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
+      "content_hash": "sha256:d315bd094463712b51960416d85973b2b66ddcf47d3d059b84523c7c0bdd8939",
       "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

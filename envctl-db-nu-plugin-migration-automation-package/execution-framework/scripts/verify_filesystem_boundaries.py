@@ -8,8 +8,6 @@ import fnmatch
 import json
 import posixpath
 
-from jsonschema import Draft202012Validator
-
 from _common import append_proof, file_checksums, now, package_root, root, write_json
 
 
@@ -153,6 +151,57 @@ def boundary_schema() -> dict:
     }
 
 
+def validate_schema_shape(config: dict) -> list[str]:
+    """Validate the generated policy without requiring a third-party runtime package."""
+    errors: list[str] = []
+    required = {
+        "schema_version": str,
+        "task_id": str,
+        "scope": str,
+        "allowed_paths": list,
+        "blocked_paths": list,
+        "safe_workspaces": list,
+        "rules": list,
+    }
+    for field, field_type in required.items():
+        if field not in config:
+            errors.append(f"schema: missing required field {field!r}")
+        elif not isinstance(config[field], field_type):
+            errors.append(f"schema: {field!r} must be a {field_type.__name__}")
+
+    for field, expected_mode in (("allowed_paths", "allow"), ("blocked_paths", "block")):
+        entries = config.get(field, [])
+        if not entries:
+            errors.append(f"schema: {field!r} must not be empty")
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                errors.append(f"schema: {field}[{index}] must be an object")
+                continue
+            for key in ("id", "pattern", "mode", "description"):
+                if not isinstance(entry.get(key), str) or not entry[key]:
+                    errors.append(f"schema: {field}[{index}].{key} must be a non-empty string")
+            if entry.get("mode") != expected_mode:
+                errors.append(f"schema: {field}[{index}].mode must be {expected_mode!r}")
+
+    workspaces = config.get("safe_workspaces", [])
+    if not workspaces:
+        errors.append("schema: 'safe_workspaces' must not be empty")
+    for index, workspace in enumerate(workspaces):
+        if not isinstance(workspace, dict):
+            errors.append(f"schema: safe_workspaces[{index}] must be an object")
+            continue
+        for key in ("id", "path", "purpose", "write_policy"):
+            if not isinstance(workspace.get(key), str) or not workspace[key]:
+                errors.append(
+                    f"schema: safe_workspaces[{index}].{key} must be a non-empty string"
+                )
+    if not config.get("rules") or not all(
+        isinstance(rule, str) and rule for rule in config.get("rules", [])
+    ):
+        errors.append("schema: 'rules' must be a non-empty array of non-empty strings")
+    return errors
+
+
 def build_config(packet: dict, redaction_patterns: list[str]) -> dict:
     allowed_patterns = packet["allowed_paths"]
     blocked_patterns = packet["blocked_paths"]
@@ -288,12 +337,7 @@ def build_config(packet: dict, redaction_patterns: list[str]) -> dict:
 
 
 def validate_config(config: dict, schema: dict, packet: dict) -> dict:
-    errors = []
-    Draft202012Validator.check_schema(schema)
-    schema_errors = sorted(
-        Draft202012Validator(schema).iter_errors(config), key=lambda err: err.path
-    )
-    errors.extend(f"schema: {error.message}" for error in schema_errors)
+    errors = validate_schema_shape(config)
 
     declared_allowed = [entry["pattern"] for entry in config["allowed_paths"]]
     declared_blocked = [entry["pattern"] for entry in config["blocked_paths"]]

@@ -1,10 +1,10 @@
 # Migration Wave Plan
 
 - Task: `ART-120_WAVE_PLAN`
-- Generated at: `2026-07-04T23:28:32+00:00`
+- Generated at: `2026-07-28T11:37:43+00:00`
 - Target: `flexnetos-vs-lifeos`
 - Primary root: `/home/flexnetos/FlexNetOS`
-- Compare root present: `False`
+- Compare root present: `True`
 - Safety mode: `approval-gated`
 
 ## Sequence
@@ -13,11 +13,11 @@
 |---|---|---|---|---|---:|---:|
 | W0 Control-plane contract lock | envctl database, artifact registry, shared schemas, target descriptor, security and filesystem guardrails | Execution framework package is present and task graph packets have been generated. | REQ-020 through REQ-025, REQ-040, REQ-042 through REQ-044, and REQ-200 have completed proof records. | Cutover artifacts need durable schema, registry hash capture, redaction policy, and a target descriptor before any migration batch can be trusted. | 11 | 0 |
 | W1 Inventory and ownership baseline | system inventory, repository map, directory tree, dependency maps, toolchain map, ownership map, debug entrypoint map | W0 proof records exist and registry rows can store generated hashes. | Current-state and code-analysis artifacts have canonical markdown plus task-local JSON where applicable. | The migration must know what exists, who owns it, and how modules call each other before runtime or data movement is sequenced. | 8 | 0 |
-| W2 Configuration, infrastructure, and access baseline | environment matrix, configuration inventory, infrastructure topology, IAM/security matrix, observability map | W1 dependency and ownership artifacts are complete. | Configuration and access surfaces have redacted, registry-linked evidence. | Config, IAM, infrastructure, and telemetry define the safety envelope for any service or data move. | 4 | 1 |
-| W3 Runtime, interface, and data contract mapping | runtime dependencies, data flow, schema map, lineage, API catalog, event/message map | W2 safety and observability baselines are available. | Runtime, API, event, and data artifacts are registered and reconciliation candidates are known. | Runtime dependencies and contracts should move before business cutover planning, because they expose ordering constraints and parity checks. | 0 | 6 |
-| W4 Governance and business readiness | business process map, wave plan, risk register, decision log, readiness scorecard, business capability map, RACI | W1 through W3 describe system, runtime, and data surfaces well enough to plan moves. | Governance artifacts expose risks, decisions, owners, and readiness gaps for validation. | Governance should freeze the sequence and ownership after the technical dependency map is visible, not before. | 5 | 3 |
-| W5 Validation, parity, and release evidence | validation reconciliation, test coverage, golden dataset, parity dashboard, shadow traffic, unit validation | Governance plan, risk, and readiness artifacts are registered. | VER-300 and follow-on verification lanes can consume registered artifact hashes and evidence links. | Validation runs last among planning waves so it checks the planned move sequence against actual artifacts and parity evidence. | 2 | 4 |
-| W6 Cutover, rollback, and decommission controls | rollback checkpoints, replay engine, cutover checklist, rollback plan, deprecation map, exception inventory, technical debt ledger, release handoff | W5 validation has passed or has explicit human-approved exceptions. | Release packaging and handoff can proceed with documented rollback and decommission evidence. | Irreversible or release-facing steps wait for validation, rollback checkpoints, and exception handling to be explicit. | 1 | 10 |
+| W2 Configuration, infrastructure, and access baseline | environment matrix, configuration inventory, infrastructure topology, IAM/security matrix, observability map | W1 dependency and ownership artifacts are complete. | Configuration and access surfaces have redacted, registry-linked evidence. | Config, IAM, infrastructure, and telemetry define the safety envelope for any service or data move. | 5 | 0 |
+| W3 Runtime, interface, and data contract mapping | runtime dependencies, data flow, schema map, lineage, API catalog, event/message map | W2 safety and observability baselines are available. | Runtime, API, event, and data artifacts are registered and reconciliation candidates are known. | Runtime dependencies and contracts should move before business cutover planning, because they expose ordering constraints and parity checks. | 6 | 0 |
+| W4 Governance and business readiness | business process map, wave plan, risk register, decision log, readiness scorecard, business capability map, RACI | W1 through W3 describe system, runtime, and data surfaces well enough to plan moves. | Governance artifacts expose risks, decisions, owners, and readiness gaps for validation. | Governance should freeze the sequence and ownership after the technical dependency map is visible, not before. | 8 | 0 |
+| W5 Validation, parity, and release evidence | validation reconciliation, test coverage, golden dataset, parity dashboard, shadow traffic, unit validation | Governance plan, risk, and readiness artifacts are registered. | VER-300 and follow-on verification lanes can consume registered artifact hashes and evidence links. | Validation runs last among planning waves so it checks the planned move sequence against actual artifacts and parity evidence. | 6 | 0 |
+| W6 Cutover, rollback, and decommission controls | rollback checkpoints, replay engine, cutover checklist, rollback plan, deprecation map, exception inventory, technical debt ledger, release handoff | W5 validation has passed or has explicit human-approved exceptions. | Release packaging and handoff can proceed with documented rollback and decommission evidence. | Irreversible or release-facing steps wait for validation, rollback checkpoints, and exception handling to be explicit. | 11 | 0 |
 
 ## Wave Task Detail
 
@@ -64,7 +64,7 @@
 | ART-115_CONFIG_INVENTORY | Build Configuration inventory | completed | proof_records/ART-115_CONFIG_INVENTORY.proof.json |
 | ART-116_INFRA_TOPOLOGY | Build Infrastructure topology map | passed | proof_records/ART-116_INFRA_TOPOLOGY.proof.json |
 | ART-117_IAM_MATRIX | Build IAM/security access matrix | completed | proof_records/ART-117_IAM_MATRIX.proof.json |
-| ART-118_OBSERVABILITY | Build Observability map | pending | proof_records/ART-118_OBSERVABILITY.proof.json |
+| ART-118_OBSERVABILITY | Build Observability map | completed | proof_records/ART-118_OBSERVABILITY.proof.json |
 
 ### W3 - Runtime, interface, and data contract mapping
 
@@ -72,12 +72,12 @@
 
 | task | title | status | proof |
 |---|---|---|---|
-| ART-106_RUNTIME_DEP_MAP | Build Runtime dependency map | pending | proof_records/ART-106_RUNTIME_DEP_MAP.proof.json |
-| ART-107_DATA_FLOW_GRAPH | Build Data flow graph | pending | proof_records/ART-107_DATA_FLOW_GRAPH.proof.json |
-| ART-108_DB_SCHEMA_MAP | Build Database schema map | pending | proof_records/ART-108_DB_SCHEMA_MAP.proof.json |
-| ART-109_DATA_LINEAGE | Build Data lineage map | pending | proof_records/ART-109_DATA_LINEAGE.proof.json |
-| ART-110_API_CATALOG | Build API contract catalog | pending | proof_records/ART-110_API_CATALOG.proof.json |
-| ART-111_EVENT_MAP | Build Event/message contract map | pending | proof_records/ART-111_EVENT_MAP.proof.json |
+| ART-106_RUNTIME_DEP_MAP | Build Runtime dependency map | completed | proof_records/ART-106_RUNTIME_DEP_MAP.proof.json |
+| ART-107_DATA_FLOW_GRAPH | Build Data flow graph | completed | proof_records/ART-107_DATA_FLOW_GRAPH.proof.json |
+| ART-108_DB_SCHEMA_MAP | Build Database schema map | completed | proof_records/ART-108_DB_SCHEMA_MAP.proof.json |
+| ART-109_DATA_LINEAGE | Build Data lineage map | completed | proof_records/ART-109_DATA_LINEAGE.proof.json |
+| ART-110_API_CATALOG | Build API contract catalog | completed | proof_records/ART-110_API_CATALOG.proof.json |
+| ART-111_EVENT_MAP | Build Event/message contract map | completed | proof_records/ART-111_EVENT_MAP.proof.json |
 
 ### W4 - Governance and business readiness
 
@@ -85,14 +85,14 @@
 
 | task | title | status | proof |
 |---|---|---|---|
-| ART-119_BUSINESS_PROCESS | Build Business process map | pending | proof_records/ART-119_BUSINESS_PROCESS.proof.json |
-| ART-120_WAVE_PLAN | Build Migration wave plan | pending | proof_records/ART-120_WAVE_PLAN.proof.json |
+| ART-119_BUSINESS_PROCESS | Build Business process map | completed | proof_records/ART-119_BUSINESS_PROCESS.proof.json |
+| ART-120_WAVE_PLAN | Build Migration wave plan | completed | proof_records/ART-120_WAVE_PLAN.proof.json |
 | ART-125_RISK_REGISTER | Build Risk register | completed | proof_records/ART-125_RISK_REGISTER.proof.json |
 | ART-126_DECISION_LOG | Build Decision log / ADRs | completed | proof_records/ART-126_DECISION_LOG.proof.json |
 | ART-127_BLAST_RADIUS | Build Blast-radius map | completed | proof_records/ART-127_BLAST_RADIUS.proof.json |
 | ART-128_READINESS_SCORECARD | Build Migration readiness scorecard | completed | proof_records/ART-128_READINESS_SCORECARD.proof.json |
 | ART-129_BUSINESS_CAPABILITY | Build Business capability map | completed | proof_records/ART-129_BUSINESS_CAPABILITY.proof.json |
-| ART-135_RACI | Build Ownership/RACI matrix | pending | proof_records/ART-135_RACI.proof.json |
+| ART-135_RACI | Build Ownership/RACI matrix | completed | proof_records/ART-135_RACI.proof.json |
 
 ### W5 - Validation, parity, and release evidence
 
@@ -100,12 +100,12 @@
 
 | task | title | status | proof |
 |---|---|---|---|
-| ART-123_VALIDATION_RECONCILIATION | Build Validation and reconciliation reports | pending | proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json |
-| ART-124_TEST_COVERAGE | Build Test coverage matrix | pending | proof_records/ART-124_TEST_COVERAGE.proof.json |
+| ART-123_VALIDATION_RECONCILIATION | Build Validation and reconciliation reports | completed | proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json |
+| ART-124_TEST_COVERAGE | Build Test coverage matrix | completed | proof_records/ART-124_TEST_COVERAGE.proof.json |
 | ART-130_SHADOW_TRAFFIC | Build Shadow traffic comparison report | completed | proof_records/ART-130_SHADOW_TRAFFIC.proof.json |
 | ART-131_GOLDEN_DATASET | Build Golden dataset | completed | proof_records/ART-131_GOLDEN_DATASET.proof.json |
-| ART-132_PARITY_DASHBOARD | Build Parity dashboard | pending | proof_records/ART-132_PARITY_DASHBOARD.proof.json |
-| VER-300_UNIT_VALIDATION | Run unit/integration validation | pending | proof_records/VER-300_UNIT_VALIDATION.proof.json |
+| ART-132_PARITY_DASHBOARD | Build Parity dashboard | completed | proof_records/ART-132_PARITY_DASHBOARD.proof.json |
+| VER-300_UNIT_VALIDATION | Run unit/integration validation | completed | proof_records/VER-300_UNIT_VALIDATION.proof.json |
 
 ### W6 - Cutover, rollback, and decommission controls
 
@@ -113,17 +113,17 @@
 
 | task | title | status | proof |
 |---|---|---|---|
-| REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS | Implement checkpoints and rollback handles | pending | proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json |
-| REQ-027_ENVCTL_REPLAY_ENGINE | Implement replay/reproduce engine | pending | proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json |
-| REQ-041_TWO_REPO_INTEGRATION | Implement two-repo integration | pending | proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json |
-| REQ-045_RUN_REPLAY | Implement run/replay templates | pending | proof_records/REQ-045_RUN_REPLAY.proof.json |
-| ART-121_CUTOVER | Build Cutover checklist | pending | proof_records/ART-121_CUTOVER.proof.json |
-| ART-122_ROLLBACK | Build Rollback plan | pending | proof_records/ART-122_ROLLBACK.proof.json |
+| REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS | Implement checkpoints and rollback handles | completed | proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json |
+| REQ-027_ENVCTL_REPLAY_ENGINE | Implement replay/reproduce engine | completed | proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json |
+| REQ-041_TWO_REPO_INTEGRATION | Implement two-repo integration | completed | proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json |
+| REQ-045_RUN_REPLAY | Implement run/replay templates | completed | proof_records/REQ-045_RUN_REPLAY.proof.json |
+| ART-121_CUTOVER | Build Cutover checklist | completed | proof_records/ART-121_CUTOVER.proof.json |
+| ART-122_ROLLBACK | Build Rollback plan | completed | proof_records/ART-122_ROLLBACK.proof.json |
 | ART-133_DEPRECATION_MAP | Build Deprecation map | completed | proof_records/ART-133_DEPRECATION_MAP.proof.json |
-| ART-134_EXCEPTION_INVENTORY | Build Exception inventory | pending | proof_records/ART-134_EXCEPTION_INVENTORY.proof.json |
-| ART-136_TECH_DEBT_LEDGER | Build Technical debt ledger | pending | proof_records/ART-136_TECH_DEBT_LEDGER.proof.json |
-| REL-400_PACKAGE_ARCHIVE | Create upgraded package archive | pending | proof_records/REL-400_PACKAGE_ARCHIVE.proof.json |
-| REL-401_HANDOFF | Prepare final handoff | pending | proof_records/REL-401_HANDOFF.proof.json |
+| ART-134_EXCEPTION_INVENTORY | Build Exception inventory | completed | proof_records/ART-134_EXCEPTION_INVENTORY.proof.json |
+| ART-136_TECH_DEBT_LEDGER | Build Technical debt ledger | completed | proof_records/ART-136_TECH_DEBT_LEDGER.proof.json |
+| REL-400_PACKAGE_ARCHIVE | Create upgraded package archive | completed | proof_records/REL-400_PACKAGE_ARCHIVE.proof.json |
+| REL-401_HANDOFF | Prepare final handoff | completed | proof_records/REL-401_HANDOFF.proof.json |
 
 ## Validation Links
 

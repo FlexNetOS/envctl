@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-123_VALIDATION_RECONCILIATION",
   "status": "completed",
-  "started_at": "2026-07-04T23:29:16+00:00",
-  "completed_at": "2026-07-04T23:29:16+00:00",
+  "started_at": "2026-07-28T11:49:34+00:00",
+  "completed_at": "2026-07-28T11:49:34+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-24",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art123_validation_reconciliation.py",
     "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
@@ -41,9 +41,9 @@
       0
     ],
     "registered_output_hashes": {
-      "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
-      "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "sha256:69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9",
-      "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963"
+      "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "sha256:2d3760b782487f30d1ff8f2ce26f67db7469033347c6773039b0d6b87a8dc339",
+      "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "sha256:992e174d19999e77912db2c2f0e6919739b8ee06d141762acef2d23e8f4e32fa",
+      "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "sha256:2d3760b782487f30d1ff8f2ce26f67db7469033347c6773039b0d6b87a8dc339"
     },
     "evidence_by_kind": {
       "artifact_registry_link": 24,
@@ -54,14 +54,14 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art123_validation_reconciliation.py": "3d9643735787580e001218b30815388fd7f8c30859deb29512c26866fe52b9f9",
-    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
-    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9",
-    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
-    "execution-framework/generated/art123_validation_reconciliation_report.json": "0a105f49dbf425c1026c713c472cf55edf4accd463e587d486f19b2b5420a3d7",
-    "execution-framework/logs/ART-123_VALIDATION_RECONCILIATION.log": "0a105f49dbf425c1026c713c472cf55edf4accd463e587d486f19b2b5420a3d7",
-    "execution-framework/state/ART-123_VALIDATION_RECONCILIATION.heartbeat.json": "ed53e357e836c06dea9bb5be72b7e174ac4a0b68a69daa34334515a72aa30999",
-    "execution-framework/proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json": "649456b8cf0c1b30f723829d29513e8cc3885851f7f2f03c342cdf715eac47fa",
-    "execution-framework/proof_records/proof_ledger.jsonl": "1d4deb5456dc021abe00ef304a9e857319c08f4bfd1fdd615de062cdc40915a8"
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "2d3760b782487f30d1ff8f2ce26f67db7469033347c6773039b0d6b87a8dc339",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "992e174d19999e77912db2c2f0e6919739b8ee06d141762acef2d23e8f4e32fa",
+    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "2d3760b782487f30d1ff8f2ce26f67db7469033347c6773039b0d6b87a8dc339",
+    "execution-framework/generated/art123_validation_reconciliation_report.json": "bce0f14d0cbf828de3cfc4ac2a697acffdfc965c06cf4cf735aae335cad0170c",
+    "execution-framework/logs/ART-123_VALIDATION_RECONCILIATION.log": "bce0f14d0cbf828de3cfc4ac2a697acffdfc965c06cf4cf735aae335cad0170c",
+    "execution-framework/state/ART-123_VALIDATION_RECONCILIATION.heartbeat.json": "a9d3a16cb8c1a20160e6c6071b87b643c5624441673dc4772d16a713b7b39bb7",
+    "execution-framework/proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json": "c50f3738925d9071a6537601007b631f3ff60cdb46b6ac20337fc6159d949079",
+    "execution-framework/proof_records/proof_ledger.jsonl": "dbcf7562f2e3c7dde6dedd9cd01ce7138ecc6ca643aff498eaed273f47d58a70"
   },
   "logs_uri": "logs/ART-123_VALIDATION_RECONCILIATION.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

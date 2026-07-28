@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-117_IAM_MATRIX",
   "status": "passed",
-  "generated_at": "2026-07-04T23:19:57+00:00",
+  "generated_at": "2026-07-28T11:37:46+00:00",
   "artifact_paths": {
     "markdown": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
     "json": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
@@ -13,7 +13,7 @@
       "artifact_id": "art-117-iam-security-access-matrix-md",
       "run_id": "run-art-117-iam-matrix",
       "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
-      "content_hash": "sha256:c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+      "content_hash": "sha256:ffdee8fe0fb5af2d943fe5cb4bc3cacf617b8dacbbc633f27f422e29852fb8ca",
       "producer_operation_id": "op-art-117-generate-iam-matrix",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -46,7 +46,7 @@
       "artifact_id": "art-117-iam-security-access-matrix-json",
       "run_id": "run-art-117-iam-matrix",
       "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
-      "content_hash": "sha256:3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+      "content_hash": "sha256:5dc8b9590a96937064412ef0920566b9711cd9c8ce94398e2c971876b208ae37",
       "producer_operation_id": "op-art-117-generate-iam-matrix",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -84,7 +84,7 @@
       "artifact_type": "iam_security_access_matrix",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
-      "content_hash": "sha256:c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+      "content_hash": "sha256:ffdee8fe0fb5af2d943fe5cb4bc3cacf617b8dacbbc633f27f422e29852fb8ca",
       "generated_by_operation_id": "op-art-117-generate-iam-matrix",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -166,7 +166,7 @@
       "artifact_type": "iam_security_access_matrix",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
-      "content_hash": "sha256:3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+      "content_hash": "sha256:5dc8b9590a96937064412ef0920566b9711cd9c8ce94398e2c971876b208ae37",
       "generated_by_operation_id": "op-art-117-generate-iam-matrix",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

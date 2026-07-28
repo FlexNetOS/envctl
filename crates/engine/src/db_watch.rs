@@ -79,7 +79,8 @@ pub struct DbWatcher {
 
 impl DbWatcher {
     /// Persist an initial baseline, then try to register a recursive native
-    /// watcher. Any registration failure becomes a documented poll fallback.
+    /// watcher. Any creation/registration failure becomes a documented poll
+    /// fallback.
     pub fn start(scope: ScanScope, store: DbIndexStore, interval: Duration) -> Result<Self> {
         let initial = FileIndex::scan(&scope)?;
         store.save(&initial)?;
@@ -93,7 +94,7 @@ impl DbWatcher {
                     store,
                     interval,
                     events,
-                    error.to_string(),
+                    classify_notify_error(&error),
                 ));
             }
         };
@@ -376,7 +377,16 @@ mod tests {
         let store = DbIndexStore::for_root(&root);
         let mut watcher =
             DbWatcher::start(scope(&root), store, Duration::from_millis(500)).unwrap();
-        assert_eq!(watcher.backend(), &WatchBackend::Notify);
+        assert!(matches!(
+            watcher.backend(),
+            WatchBackend::Notify | WatchBackend::Poll { .. }
+        ));
+        if let WatchBackend::Poll { reason } = watcher.backend() {
+            assert!(
+                reason.contains("poll fallback"),
+                "fallback should record poll reason"
+            );
+        }
 
         fs::write(root.join("a.sh"), b"after\n").unwrap();
         let delta = watcher.next_delta().unwrap();

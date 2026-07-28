@@ -10,19 +10,47 @@
   "repo_path": "~/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "README.md",
-    "execution-framework/proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json"
+    "proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json"
   ],
   "commands_run": [
     "Google_Drive list_folder/get_document_text/batch_update_document/upload_file/update_file as applicable"
   ],
-  "verification_output": "completed and verified in Drive; see target files and live gap closure report",
+  "verification_output": "closed README navigation backtrace gap; updated root README with v0-v5 history anchors and Codex entry pointers",
   "checksums": {},
   "logs_uri": "execution-framework/logs/MAINT-500_README_NAV_BACKTRACE.log",
   "rollback_point": "Google Drive revision history and package history/v0-v5",
   "evidence": {
-    "task_graph_row": "execution-framework/generated/task_graph.csv#MAINT-500_README_NAV_BACKTRACE",
-    "packet": "execution-framework/generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
-    "proof": "execution-framework/proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json"
+    "task_graph_row": "generated/task_graph.csv#MAINT-500_README_NAV_BACKTRACE",
+    "packet": "generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+    "proof": "proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json",
+    "readme_navigation_backtrace": {
+      "history_v0_v5": [
+        "history/v0/VERSION_MANIFEST.md",
+        "history/v0/Migration_Project_Artifacts.md",
+        "history/v1/VERSION_MANIFEST.md",
+        "history/v1/README.md",
+        "history/v2/VERSION_MANIFEST.md",
+        "history/v2/README.md",
+        "history/v3/VERSION_MANIFEST.md",
+        "history/v3/README.md",
+        "history/v4/VERSION_MANIFEST.md",
+        "history/v4/README.md",
+        "history/v5/VERSION_MANIFEST.md",
+        "history/v5/README.md"
+      ],
+      "codex_entry_points": [
+        "CODEX_FINAL_EXECUTION_PROMPT.md",
+        "prompts/CODEX_FINAL_EXECUTION_PROMPT.md",
+        "generated/task_graph.csv",
+        "generated/execution_manifest.json",
+        "generated/execution_packets/",
+        "state/goal_loop_state.json",
+        "generated/status_report.json",
+        "generated/final_verification_report.json",
+        "proof_records/proof_ledger.jsonl"
+      ]
+    },
+    "verification_output": "updated README.md with explicit v0-v5 history anchor list and Codex execution entry pointers"
   },
   "failure_reason": "",
   "next_action": "none"

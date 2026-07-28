@@ -1,6 +1,6 @@
 # Code Ownership Map
 
-Generated at: `2026-07-04T23:19:29+00:00`
+Generated at: `2026-07-28T11:28:48+00:00`
 Target root: `/home/flexnetos/FlexNetOS`
 
 ## Coverage
@@ -30,25 +30,25 @@ Target root: `/home/flexnetos/FlexNetOS`
 
 ### envctl engine
 
-- `src/envctl/crates/engine/src`: present
-- `src/envctl/Cargo.toml`: present
-- `src/envctl/agent-env.yaml`: present
-- Observed file count: `39`
+- `src/envctl/crates/engine/src`: not observed
+- `src/envctl/Cargo.toml`: not observed
+- `src/envctl/agent-env.yaml`: not observed
+- Observed file count: `0`
 
 ### envctl artifact registry
 
-- `src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py`: present
-- `src/envctl/envctl-db-nu-plugin-migration-automation-package/sql`: present
-- `src/envctl/envctl-db-nu-plugin-migration-automation-package/schemas`: present
-- Observed file count: `13`
+- `src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py`: not observed
+- `src/envctl/envctl-db-nu-plugin-migration-automation-package/sql`: not observed
+- `src/envctl/envctl-db-nu-plugin-migration-automation-package/schemas`: not observed
+- Observed file count: `0`
 
 ### nu_plugin control surface
 
-- `src/nu_plugin/crates/codedb`: present
-- `src/nu_plugin/crates/codedb_mcp`: present
-- `src/nu_plugin/docs`: present
-- `src/nu_plugin/tests`: present
-- Observed file count: `56`
+- `src/nu_plugin/crates/codedb`: not observed
+- `src/nu_plugin/crates/codedb_mcp`: not observed
+- `src/nu_plugin/docs`: not observed
+- `src/nu_plugin/tests`: not observed
+- Observed file count: `0`
 
 ### shared protocol schemas
 
@@ -80,11 +80,11 @@ Target root: `/home/flexnetos/FlexNetOS`
 
 ### runtime secrets and redaction safety
 
-- `src/envctl/crates/secretctl`: present
+- `src/envctl/crates/secretctl`: not observed
 - `src/envctl/crates/secrets-*`: not observed
-- `src/envctl/scripts/classify-secrets.nu`: present
-- `src/nu_plugin/docs/SECURITY_AND_SECRET_POLICY.md`: present
-- Observed file count: `5`
+- `src/envctl/scripts/classify-secrets.nu`: not observed
+- `src/nu_plugin/docs/SECURITY_AND_SECRET_POLICY.md`: not observed
+- Observed file count: `0`
 
 ## Registry Contract
 

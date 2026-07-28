@@ -6,14 +6,12 @@
 
 use super::model::*;
 use super::store;
-use super::{
-    canonical_json, now_utc, sha256_hex, MigrationDb, MigrationDbError, Result,
-};
 use super::views::ReplayReadinessRow;
-use serde_json::Map;
+use super::{canonical_json, now_utc, sha256_hex, MigrationDb, MigrationDbError, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::Map;
 use serde_json::Value;
-use std::collections::{HashSet, BTreeMap};
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 const REPLAY_BLOCKED_REF_PARTS: &[&str] = &[".env", "secrets", "private_keys"];
@@ -491,15 +489,17 @@ impl MigrationDb {
         let mut previous = None;
         for ev in &events {
             if ev.previous_event_hash != previous {
-                event_chain_errors.push(format!(
-                    "event {} previous-hash link broken",
-                    ev.event_seq
-                ));
+                event_chain_errors
+                    .push(format!("event {} previous-hash link broken", ev.event_seq));
             }
             let mut clean = ev.clone();
             clean.event_hash = None;
             let body = serde_json::to_value(&clean)?;
-            let material = format!("{}\n{}", previous.unwrap_or_default(), canonical_json(&body));
+            let material = format!(
+                "{}\n{}",
+                previous.unwrap_or_default(),
+                canonical_json(&body)
+            );
             let recomputed = sha256_hex(material.as_bytes());
             if Some(&recomputed) != ev.event_hash.as_ref() {
                 event_chain_errors.push(format!("event {} hash mismatch", ev.event_seq));
@@ -517,21 +517,15 @@ impl MigrationDb {
             })
             .count();
         if command_mismatches != 0 {
-            event_chain_errors.push(format!(
-                "{command_mismatches} command hash mismatch(es)",
-            ));
+            event_chain_errors.push(format!("{command_mismatches} command hash mismatch(es)",));
         }
 
         let base = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         let evidence_checks = evidence
             .iter()
             .map(|row| {
-                let mut check = file_hash_check(
-                    &row.uri,
-                    row.sha256.as_deref(),
-                    &base,
-                    verify_files,
-                );
+                let mut check =
+                    file_hash_check(&row.uri, row.sha256.as_deref(), &base, verify_files);
                 check.kind = Some(row.evidence_kind.clone());
                 check.operation_id = row.operation_id.clone();
                 check
@@ -643,10 +637,7 @@ impl MigrationDb {
                     .and_then(|item| item.get("phase_id"))
                     .and_then(Value::as_str)
                     .map(ToString::to_string);
-                let checkpoint_refs = checkpoints_by_op
-                    .get(&op.id)
-                    .cloned()
-                    .unwrap_or_default();
+                let checkpoint_refs = checkpoints_by_op.get(&op.id).cloned().unwrap_or_default();
                 let replay_action = if op.status == OpStatus::Succeeded {
                     "verify_only"
                 } else {
@@ -685,8 +676,7 @@ impl MigrationDb {
             sha256_hex(material.as_bytes())
         };
         let stored_reproducibility_hash = run.reproducibility_hash.clone();
-        let reproducibility_hash_matches =
-            matches!((&stored_reproducibility_hash, recomputed_reproducibility_hash.as_str()),
+        let reproducibility_hash_matches = matches!((&stored_reproducibility_hash, recomputed_reproducibility_hash.as_str()),
                 (Some(stored), recomputed) if stored == recomputed);
 
         let has_blocking_refs = evidence_checks
@@ -699,9 +689,7 @@ impl MigrationDb {
             errors.extend(event_chain_errors.iter().cloned());
         }
         if command_mismatches != 0 {
-            errors.push(format!(
-                "{command_mismatches} command hash mismatches"
-            ));
+            errors.push(format!("{command_mismatches} command hash mismatches"));
         }
         if !evidence_mismatches.is_empty() {
             errors.push(format!(
@@ -725,7 +713,10 @@ impl MigrationDb {
             errors.push("apply replay requires closed approvals".to_string());
         }
         if !non_deterministic.is_empty() && request.mode == ReplayRequestMode::Apply {
-            errors.push("apply replay requires manual handling for non-deterministic operations".to_string());
+            errors.push(
+                "apply replay requires manual handling for non-deterministic operations"
+                    .to_string(),
+            );
         }
 
         let status = if matches!(request.mode, ReplayRequestMode::Apply) && !errors.is_empty() {
@@ -831,10 +822,7 @@ impl MigrationDb {
     }
 }
 
-fn select_operations(
-    operations: &[Operation],
-    operation_ids: &[String],
-) -> Result<Vec<Operation>> {
+fn select_operations(operations: &[Operation], operation_ids: &[String]) -> Result<Vec<Operation>> {
     if operation_ids.is_empty() {
         return Ok(operations.to_vec());
     }
@@ -894,14 +882,19 @@ fn is_blocked_reference(raw_uri: &str) -> bool {
     let part_hit = normalized
         .split('/')
         .filter(|part| !part.is_empty())
-        .any(|part| REPLAY_BLOCKED_REF_PARTS.iter().any(|blocked| part == *blocked));
+        .any(|part| REPLAY_BLOCKED_REF_PARTS.contains(&part));
     let suffix_hit = REPLAY_BLOCKED_REF_SUFFIXES
         .iter()
         .any(|suffix| normalized.ends_with(suffix));
     part_hit || suffix_hit
 }
 
-fn file_hash_check(uri: &str, expected: Option<&str>, base: &Path, verify_files: bool) -> ReplayHashCheck {
+fn file_hash_check(
+    uri: &str,
+    expected: Option<&str>,
+    base: &Path,
+    verify_files: bool,
+) -> ReplayHashCheck {
     if uri.is_empty() {
         return ReplayHashCheck {
             uri: None,
@@ -927,9 +920,7 @@ fn file_hash_check(uri: &str, expected: Option<&str>, base: &Path, verify_files:
         };
     }
 
-    let base = base
-        .canonicalize()
-        .unwrap_or_else(|_| base.to_path_buf());
+    let base = base.canonicalize().unwrap_or_else(|_| base.to_path_buf());
     let candidate = {
         let raw = PathBuf::from(uri.replace('\\', "/"));
         if raw.is_absolute() {
@@ -977,7 +968,9 @@ fn file_hash_check(uri: &str, expected: Option<&str>, base: &Path, verify_files:
         };
     }
     let actual = if verify_files {
-        std::fs::read(&candidate).ok().map(|bytes| sha256_hex(&bytes))
+        std::fs::read(&candidate)
+            .ok()
+            .map(|bytes| sha256_hex(&bytes))
     } else {
         None
     };
@@ -1051,14 +1044,20 @@ fn safe_next_action(
         return "request human approval before apply replay".to_string();
     }
     if !non_deterministic.is_empty() {
-        return "dry-run only: manual/non-deterministic operations require operator handling".to_string();
+        return "dry-run only: manual/non-deterministic operations require operator handling"
+            .to_string();
     }
-    if request.mode == ReplayRequestMode::DryRun && matches!(status, ReplayResultStatus::Pass | ReplayResultStatus::Partial)
+    if request.mode == ReplayRequestMode::DryRun
+        && matches!(
+            status,
+            ReplayResultStatus::Pass | ReplayResultStatus::Partial
+        )
     {
         return "safe to produce replay command plan; apply remains approval-gated".to_string();
     }
     if request.mode == ReplayRequestMode::Apply && status == ReplayResultStatus::Pass {
-        return "safe to re-run deterministic operations from recorded descriptors and hashes".to_string();
+        return "safe to re-run deterministic operations from recorded descriptors and hashes"
+            .to_string();
     }
     "stop: replay result is not clean".to_string()
 }

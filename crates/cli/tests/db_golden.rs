@@ -100,6 +100,68 @@ fn db_symbols_json_is_byte_identical_across_runs() {
 }
 
 #[test]
+fn db_impact_json_is_byte_identical_across_runs() {
+    let fx = fixture("impact");
+    let args = &["db", "impact", "--symbol", "META_ROOT", "--json"];
+    let a = run_json(args, Some(&fx));
+    let b = run_json(args, Some(&fx));
+    assert_eq!(a, b, "db impact --json must be deterministic across runs");
+    let value: serde_json::Value = serde_json::from_str(&a).unwrap();
+    assert_eq!(value["normalized_symbol"], "META_ROOT");
+    assert_eq!(value["symbol"], "META_ROOT");
+    let _ = std::fs::remove_dir_all(&fx);
+}
+
+#[test]
+fn db_refactor_json_is_byte_identical_across_runs() {
+    let fx = fixture("refactor");
+    let args = &[
+        "db",
+        "refactor",
+        "--from",
+        "META_ROOT",
+        "--to",
+        "LIFE_OS_ROOT",
+        "--json",
+    ];
+    let a = run_json(args, Some(&fx));
+    let b = run_json(args, Some(&fx));
+    assert_eq!(a, b, "db refactor --json must be deterministic across runs");
+    let value: serde_json::Value = serde_json::from_str(&a).unwrap();
+    assert_eq!(value["plan"]["mode"], "plan");
+    let _ = std::fs::remove_dir_all(&fx);
+}
+
+#[test]
+fn db_deploy_json_is_byte_identical_across_runs() {
+    let fx = fixture("deploy");
+    let stage = fx.join("deploy-stage");
+    let target = fx.join("deploy-target");
+    std::fs::create_dir_all(&stage).unwrap();
+    std::fs::create_dir_all(&target).unwrap();
+    std::fs::write(stage.join("hooks-ready.sh"), b"cd $META_ROOT\n").unwrap();
+
+    let args = [
+        "db",
+        "deploy",
+        "--kind",
+        "hooks",
+        "--target",
+        target.to_str().unwrap(),
+        "--stage",
+        stage.to_str().unwrap(),
+        "--json",
+    ];
+    let a = run_json(&args, Some(&fx));
+    let b = run_json(&args, Some(&fx));
+    assert_eq!(a, b, "db deploy --json must be deterministic across runs");
+    let value: serde_json::Value = serde_json::from_str(&a).unwrap();
+    assert!(value["plan"]["steps"][0]["rollback_ref"].is_null());
+    assert!(value["promoted"].is_null());
+    let _ = std::fs::remove_dir_all(&fx);
+}
+
+#[test]
 fn db_symbols_kind_and_name_filters_return_only_matching_occurrences() {
     let fx = fixture("symbol-filters");
     let output = run_json(

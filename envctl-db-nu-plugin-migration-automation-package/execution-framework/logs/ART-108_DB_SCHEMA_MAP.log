@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-108_DB_SCHEMA_MAP",
-  "generated_at": "2026-07-04T23:28:33+00:00",
+  "generated_at": "2026-07-28T11:20:31+00:00",
   "status": "passed",
   "run_id": "run-art108-db-schema-map",
   "operation_id": "op-art108-generate-db-schema-map",
@@ -12,7 +12,7 @@
       "artifact_id": "art-108-db-schema-map-json",
       "run_id": "run-art108-db-schema-map",
       "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
-      "content_hash": "sha256:497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
+      "content_hash": "sha256:c44abdac2f4039c47a3696f9ce09bbc9e52d27c0fda95c4737ea55708d9d35e9",
       "producer_operation_id": "op-art108-generate-db-schema-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -46,7 +46,7 @@
       "artifact_id": "art-108-db-schema-map-md",
       "run_id": "run-art108-db-schema-map",
       "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
-      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
       "producer_operation_id": "op-art108-generate-db-schema-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -80,7 +80,7 @@
       "artifact_id": "04-data-migration-schema-map-md",
       "run_id": "run-art108-db-schema-map",
       "path": "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
-      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
       "producer_operation_id": "op-art108-generate-db-schema-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -113,7 +113,7 @@
       "artifact_id": "04-data-migration-database-schema-map-md",
       "run_id": "run-art108-db-schema-map",
       "path": "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
-      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
       "producer_operation_id": "op-art108-generate-db-schema-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -151,7 +151,7 @@
       "artifact_type": "database_schema_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
-      "content_hash": "sha256:497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
+      "content_hash": "sha256:c44abdac2f4039c47a3696f9ce09bbc9e52d27c0fda95c4737ea55708d9d35e9",
       "generated_by_operation_id": "op-art108-generate-db-schema-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -241,7 +241,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
-      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
       "generated_by_operation_id": "op-art108-generate-db-schema-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -331,7 +331,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
-      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
       "generated_by_operation_id": "op-art108-generate-db-schema-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -416,7 +416,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
-      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
       "generated_by_operation_id": "op-art108-generate-db-schema-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

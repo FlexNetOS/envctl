@@ -1,6 +1,6 @@
 # ART-108 Database Schema Map
 
-Generated: `2026-07-04T23:28:33+00:00`
+Generated: `2026-07-28T11:20:31+00:00`
 Backend: `sqlite`
 Runtime: `python sqlite3 in-memory`
 

@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-109_DATA_LINEAGE",
   "status": "completed",
-  "started_at": "2026-07-04T23:29:00+00:00",
-  "completed_at": "2026-07-04T23:29:00+00:00",
+  "started_at": "2026-07-28T11:22:48+00:00",
+  "completed_at": "2026-07-28T11:22:48+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-10",
   "model_tag": "gpt-5.3-spark",
@@ -27,24 +27,24 @@
     "schema_version": "1.0",
     "task_id": "ART-109_DATA_LINEAGE",
     "status": "passed",
-    "generated_at": "2026-07-04T23:29:00+00:00",
+    "generated_at": "2026-07-28T11:22:48+00:00",
     "artifact_summary": {
-      "field_count": 183,
+      "field_count": 184,
       "critical_field_count": 27,
       "sql_table_count": 16,
       "schema_source_count": 37,
       "target_files_scanned": 2500,
-      "fields_with_target_references": 14,
+      "fields_with_target_references": 45,
       "protocol_record_count": 14
     },
-    "completed_at": "2026-07-04T23:29:00+00:00",
+    "completed_at": "2026-07-28T11:22:48+00:00",
     "registry_results": [
       {
         "artifact_row_id": "artifact-9c84a78ea4dfa74c2cdcf126",
         "artifact_id": "04-data-migration-data-lineage-map-md",
         "run_id": "run-art109-data-lineage",
         "path": "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
-        "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+        "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
         "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -68,7 +68,7 @@
         "artifact_id": "art-109-data-lineage-map-md",
         "run_id": "run-art109-data-lineage",
         "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
-        "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+        "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
         "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -92,7 +92,7 @@
         "artifact_id": "art-109-data-lineage-map-json",
         "run_id": "run-art109-data-lineage",
         "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json",
-        "content_hash": "sha256:51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
+        "content_hash": "sha256:d315bd094463712b51960416d85973b2b66ddcf47d3d059b84523c7c0bdd8939",
         "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -121,7 +121,7 @@
         "artifact_type": "data_lineage_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
-        "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+        "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
         "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -180,7 +180,7 @@
         "artifact_type": "data_lineage_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
-        "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+        "content_hash": "sha256:deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
         "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -239,7 +239,7 @@
         "artifact_type": "data_lineage_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json",
-        "content_hash": "sha256:51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
+        "content_hash": "sha256:d315bd094463712b51960416d85973b2b66ddcf47d3d059b84523c7c0bdd8939",
         "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -301,13 +301,14 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art109_data_lineage.py": "ab517b76e7d30444c76f0102ba368e1ceed47fa2512255e36a66f42730c67ba0",
-    "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md": "d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
-    "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md": "d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
-    "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json": "51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
-    "execution-framework/generated/art109_data_lineage_report.json": "7c3f155e4e7025801ff48716a9f4a356909891074b968f9da06e489ee6286b63",
-    "execution-framework/state/ART-109_DATA_LINEAGE.heartbeat.json": "f4db287a73371004448ebc6de6a61203400353e8cd33020fb6dc879ed3fddd18",
-    "execution-framework/logs/ART-109_DATA_LINEAGE.log": "7c3f155e4e7025801ff48716a9f4a356909891074b968f9da06e489ee6286b63",
-    "execution-framework/proof_records/proof_ledger.jsonl": "8a9699154b7c6eae46590b4dea065dd8fe94a9436d48a1ae2b6d2f5b40c1a517"
+    "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md": "deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
+    "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md": "deb9e0adcc62025462bea5b00becb211bbd6649ad9af62189871e855938e35f4",
+    "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json": "d315bd094463712b51960416d85973b2b66ddcf47d3d059b84523c7c0bdd8939",
+    "execution-framework/generated/art109_data_lineage_report.json": "aaa2c7da04b3acaf5724d3200aba2b07b09b9af3a132c2aee3f937079d9c8802",
+    "execution-framework/state/ART-109_DATA_LINEAGE.heartbeat.json": "51d20b1b8b13807a2616eb73e3277eedc4f9594360c39d25156c0de2c50f4951",
+    "execution-framework/logs/ART-109_DATA_LINEAGE.log": "aaa2c7da04b3acaf5724d3200aba2b07b09b9af3a132c2aee3f937079d9c8802",
+    "execution-framework/proof_records/ART-109_DATA_LINEAGE.proof.json": "ddaa6a35d46edce13fa234e4a8404fb430793d9ad2df5536f1df2ad40acca440",
+    "execution-framework/proof_records/proof_ledger.jsonl": "2cdcffdfa0f73aefa9548194401c25285197e58e549a447fd31096b20087a842"
   },
   "logs_uri": "logs/ART-109_DATA_LINEAGE.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-115_CONFIG_INVENTORY",
   "status": "completed",
-  "started_at": "2026-07-04T23:23:26+00:00",
-  "completed_at": "2026-07-04T23:23:26+00:00",
+  "started_at": "2026-07-28T11:34:26+00:00",
+  "completed_at": "2026-07-28T11:34:26+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-16",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_config_inventory.py",
     "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md",
@@ -27,15 +27,15 @@
     "schema_version": "1.0",
     "task_id": "ART-115_CONFIG_INVENTORY",
     "status": "passed",
-    "generated_at": "2026-07-04T23:23:26+00:00",
+    "generated_at": "2026-07-28T11:34:26+00:00",
     "summary": {
-      "scanned_files": 60000,
-      "scanned_text_files": 37344,
-      "config_file_count": 8052,
-      "env_var_reference_count": 16332,
-      "feature_flag_reference_count": 5188,
-      "secret_reference_count": 1409,
-      "blocked_path_count": 7
+      "scanned_files": 0,
+      "scanned_text_files": 0,
+      "config_file_count": 0,
+      "env_var_reference_count": 0,
+      "feature_flag_reference_count": 0,
+      "secret_reference_count": 0,
+      "blocked_path_count": 0
     },
     "outputs": {
       "task_json": "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.json",
@@ -54,7 +54,7 @@
       "artifact_id": "01-current-state-configuration-inventory-md",
       "run_id": "run-art-115-config-inventory",
       "path": "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md",
-      "content_hash": "sha256:fa80fa1358b3a84d458b6cad1a4489263a0edd527a3e9582d6cbbfac9acef81c",
+      "content_hash": "sha256:0224dc54b9952c025e9fb0a86531490aaaebd57ebeca39f6270ca4db403ac72a",
       "producer_operation_id": "produce-01-current-state-configuration-inventory-md",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -84,7 +84,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md",
-      "content_hash": "sha256:fa80fa1358b3a84d458b6cad1a4489263a0edd527a3e9582d6cbbfac9acef81c",
+      "content_hash": "sha256:0224dc54b9952c025e9fb0a86531490aaaebd57ebeca39f6270ca4db403ac72a",
       "generated_by_operation_id": "produce-01-current-state-configuration-inventory-md",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -146,14 +146,15 @@
     }
   },
   "checksums": {
-    "execution-framework/scripts/generate_config_inventory.py": "5e4c9fc606e094cfbdc408905696a313bce1753272aa9434837d8c4c8a25f140",
-    "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md": "fa80fa1358b3a84d458b6cad1a4489263a0edd527a3e9582d6cbbfac9acef81c",
-    "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.md": "fa80fa1358b3a84d458b6cad1a4489263a0edd527a3e9582d6cbbfac9acef81c",
-    "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.json": "68141c969cebc195578b0386a3013405c05ca488edb322550405a8e93d96c6af",
-    "execution-framework/generated/art115_config_inventory_report.json": "3a71956424a480df4c99763f9adb1ef71c5b601190ebc1917676e919012e30f8",
-    "execution-framework/state/ART-115_CONFIG_INVENTORY.heartbeat.json": "578852d2375d8a329ddf8e117f42c52e3f96d3bdb9a1bc4a54cd8869f013ee95",
-    "execution-framework/logs/ART-115_CONFIG_INVENTORY.log": "3a71956424a480df4c99763f9adb1ef71c5b601190ebc1917676e919012e30f8",
-    "execution-framework/proof_records/proof_ledger.jsonl": "5c6fc1b3b083e9da483dd1ff694bc1f14ec37227f1f1f16290c849b80ea9df1b"
+    "execution-framework/scripts/generate_config_inventory.py": "e1f1bb84432d7e54060c1c569d7e66eb9871b9d388ebf536adb7ce2089aa6d69",
+    "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md": "0224dc54b9952c025e9fb0a86531490aaaebd57ebeca39f6270ca4db403ac72a",
+    "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.md": "0224dc54b9952c025e9fb0a86531490aaaebd57ebeca39f6270ca4db403ac72a",
+    "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.json": "bfd6bd661980cef04ae7bb4dd5b756b5029b16df75a86f71f862781cac3a753f",
+    "execution-framework/generated/art115_config_inventory_report.json": "724f1cb59c45615349f55d7cc21f018f1cdabc5b72e7156c98a83ee7a6ec968a",
+    "execution-framework/state/ART-115_CONFIG_INVENTORY.heartbeat.json": "ca1eea953c695074cbb6301d38c878adb93b21e6a0b3a70874a85556a95d958a",
+    "execution-framework/logs/ART-115_CONFIG_INVENTORY.log": "724f1cb59c45615349f55d7cc21f018f1cdabc5b72e7156c98a83ee7a6ec968a",
+    "execution-framework/proof_records/ART-115_CONFIG_INVENTORY.proof.json": "b438430525b43e6e452bc48f8afd1a4b71e1d62fd7d3f8f05cc194b0f21ed8fd",
+    "execution-framework/proof_records/proof_ledger.jsonl": "8329470b5d0917d4767a99524d093cb5ae8a87faf255616be8b99ec411de5eb9"
   },
   "logs_uri": "logs/ART-115_CONFIG_INVENTORY.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

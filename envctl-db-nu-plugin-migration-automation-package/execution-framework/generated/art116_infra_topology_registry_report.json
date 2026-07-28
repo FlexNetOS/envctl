@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-116_INFRA_TOPOLOGY",
-  "generated_at": "2026-07-04T23:20:52+00:00",
+  "generated_at": "2026-07-28T11:31:38+00:00",
   "status": "passed",
   "run_id": "run-art116",
   "operation_id": "op-art116-generate",
@@ -12,7 +12,7 @@
       "artifact_id": "art-116-infra-topology-json",
       "run_id": "run-art116",
       "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
-      "content_hash": "sha256:7bf629405a5276ff75ccabc6b18d279b4d0dfb00cf1b2605b3ab754328afa094",
+      "content_hash": "sha256:fab85dbb9664de2df2d173bdc0e205d6bdf31a7e3e16625d941fa142463c6480",
       "producer_operation_id": "op-art116-generate",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -42,7 +42,7 @@
       "artifact_id": "art-116-infra-topology-md",
       "run_id": "run-art116",
       "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
-      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "content_hash": "sha256:c05fa4c4e6e129b9cf606117bdd7656675ed9b33ea741d422a4f77ab46fe452f",
       "producer_operation_id": "op-art116-generate",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -72,7 +72,7 @@
       "artifact_id": "08-operations-infrastructure-topology-map-md",
       "run_id": "run-art116",
       "path": "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
-      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "content_hash": "sha256:c05fa4c4e6e129b9cf606117bdd7656675ed9b33ea741d422a4f77ab46fe452f",
       "producer_operation_id": "op-art116-generate",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -107,7 +107,7 @@
       "artifact_type": "machine_readable_topology",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
-      "content_hash": "sha256:7bf629405a5276ff75ccabc6b18d279b4d0dfb00cf1b2605b3ab754328afa094",
+      "content_hash": "sha256:fab85dbb9664de2df2d173bdc0e205d6bdf31a7e3e16625d941fa142463c6480",
       "generated_by_operation_id": "op-art116-generate",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -181,7 +181,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
-      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "content_hash": "sha256:c05fa4c4e6e129b9cf606117bdd7656675ed9b33ea741d422a4f77ab46fe452f",
       "generated_by_operation_id": "op-art116-generate",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -255,7 +255,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
-      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "content_hash": "sha256:c05fa4c4e6e129b9cf606117bdd7656675ed9b33ea741d422a4f77ab46fe452f",
       "generated_by_operation_id": "op-art116-generate",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

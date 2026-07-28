@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-132_PARITY_DASHBOARD",
   "title": "Parity dashboard",
-  "generated_at": "2026-07-04T23:29:06+00:00",
+  "generated_at": "2026-07-28T10:02:19+00:00",
   "status": "complete_with_live_capture_gap",
   "scope": {
     "target_id": "flexnetos-vs-lifeos",
@@ -26,9 +26,9 @@
   "source_hashes": {
     "examples/target-descriptors/flexnetos-vs-lifeos.yaml": "sha256:71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190",
     "execution-framework/generated/package_scan.json": "sha256:0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487",
-    "execution-framework/generated/envctl_migration_db_model.json": "sha256:7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
-    "execution-framework/generated/envctl_artifact_registry_report.json": "sha256:b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
-    "execution-framework/generated/envctl_validation_evidence_report.json": "sha256:0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+    "execution-framework/generated/envctl_migration_db_model.json": "sha256:494ba4e90d62c06522875f0d257c1914fd09141346872572114c446e17b13eb6",
+    "execution-framework/generated/envctl_artifact_registry_report.json": "sha256:adecb3542e1437c611f18604b170ed63e2ba2861cd43d053f30354894d16432e",
+    "execution-framework/generated/envctl_validation_evidence_report.json": "sha256:f28f76c36e46718a8593e22a0351da1599ce9ca41ccc0505c53027159841d67f",
     "execution-framework/generated/validation_evidence/parity.json": "sha256:8a25eddbe76cae5aad05e65e21baa67041ad41fd798deb7fc60c12bcda8e4d8d",
     "execution-framework/generated/shared_protocol_manifest.json": "sha256:846beff278ee11a96b7eb9aa45bff6b476ee1fc406fcfb3cea3de92c79d057ca",
     "execution-framework/generated/shared_protocol_validation_report.json": "sha256:0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
@@ -123,8 +123,8 @@
       "old_source": "packet queue",
       "new_source": "proof status report and live visuals",
       "old_value": {
-        "completed": 54,
-        "pending": 24,
+        "completed": 78,
+        "pending": 0,
         "failed": 0,
         "blocked": 0,
         "unknown": 2
@@ -146,7 +146,7 @@
           "approval_blocker_count": 2
         }
       },
-      "status": "warn",
+      "status": "pass",
       "evidence_refs": [
         "execution-framework/generated/status_from_proofs.json",
         "execution-framework/generated/live_visuals.json"

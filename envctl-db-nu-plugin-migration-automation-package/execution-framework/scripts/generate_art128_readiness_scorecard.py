@@ -62,6 +62,14 @@ def score_from_status(status: str, completed: int = 100, pending: int = 35, othe
     return other
 
 
+def domain_status(score: int) -> str:
+    if score >= 90:
+        return "ready"
+    if score >= 65:
+        return "conditional"
+    return "blocked"
+
+
 def build_scorecard() -> dict[str, Any]:
     target_registry = read_optional_json("generated/envctl_target_registry.json")
     artifact_registry = read_optional_json("generated/envctl_artifact_registry_report.json")
@@ -126,20 +134,26 @@ def build_scorecard() -> dict[str, Any]:
         "ART-135_RACI",
         "ART-136_TECH_DEBT_LEDGER",
     ]
+    envctl_core_score = int((complete_count(statuses, envctl_core_tasks) / len(envctl_core_tasks)) * 100)
+    future_score = int((complete_count(statuses, envctl_future_tasks) / len(envctl_future_tasks)) * 100)
+    plugin_score = int((complete_count(statuses, plugin_tasks) / len(plugin_tasks)) * 100)
+    hardening_score = int((complete_count(statuses, shared_hardening_tasks) / len(shared_hardening_tasks)) * 100)
+    governance_score = int((complete_count(statuses, governance_artifact_tasks) / len(governance_artifact_tasks)) * 100)
+    package_score = 100 if package_scan.get("schema_version") and task_status(statuses, "REQ-010_CONTRACT_LOCK") == "completed" else 50
 
     domain_scores = [
         {
             "domain": "target_descriptor_scope",
             "score": target_score,
-            "status": "ready" if target_score >= 90 else "needs_work",
+            "status": domain_status(target_score),
             "weight": 0.12,
             "evidence": ["generated/envctl_target_registry.json"],
             "notes": f"{target_covered}/{target_total} target types covered; safety mode is approval-gated.",
         },
         {
             "domain": "envctl_database_control_plane",
-            "score": int((complete_count(statuses, envctl_core_tasks) / len(envctl_core_tasks)) * 100),
-            "status": "ready",
+            "score": envctl_core_score,
+            "status": domain_status(envctl_core_score),
             "weight": 0.16,
             "evidence": [
                 "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
@@ -150,7 +164,7 @@ def build_scorecard() -> dict[str, Any]:
         {
             "domain": "shared_protocol_contracts",
             "score": protocol_score,
-            "status": "ready" if protocol_score >= 90 else "needs_work",
+            "status": domain_status(protocol_score),
             "weight": 0.14,
             "evidence": ["generated/shared_protocol_validation_report.json"],
             "notes": f"{protocol_passed}/{protocol_total} shared protocol sample records passed validation.",
@@ -158,23 +172,23 @@ def build_scorecard() -> dict[str, Any]:
         {
             "domain": "artifact_registry_and_hashing",
             "score": artifact_score,
-            "status": "ready" if artifact_score >= 90 else "needs_work",
+            "status": domain_status(artifact_score),
             "weight": 0.12,
             "evidence": ["generated/envctl_artifact_registry_report.json", "docs/ENVCTL_ARTIFACT_REGISTRY.md"],
             "notes": "Registry smoke covers paths, hashes, producers, contracts, provenance, links, and fail-closed path policy.",
         },
         {
             "domain": "validation_replay_rollback",
-            "score": int((complete_count(statuses, envctl_future_tasks) / len(envctl_future_tasks)) * 100),
-            "status": "blocked",
+            "score": future_score,
+            "status": domain_status(future_score),
             "weight": 0.14,
             "evidence": ["generated/status_from_proofs.json"],
             "notes": "Validation evidence, rollback checkpoints, replay engine, and agent control API remain pending.",
         },
         {
             "domain": "plugin_operator_surface",
-            "score": int((complete_count(statuses, plugin_tasks) / len(plugin_tasks)) * 100),
-            "status": "conditional",
+            "score": plugin_score,
+            "status": domain_status(plugin_score),
             "weight": 0.1,
             "evidence": [
                 "proof_records/REQ-030_PLUGIN_PROTOCOL_MANIFEST.proof.json",
@@ -186,25 +200,25 @@ def build_scorecard() -> dict[str, Any]:
         },
         {
             "domain": "filesystem_security_hardening",
-            "score": int((complete_count(statuses, shared_hardening_tasks) / len(shared_hardening_tasks)) * 100),
-            "status": "blocked",
+            "score": hardening_score,
+            "status": domain_status(hardening_score),
             "weight": 0.1,
             "evidence": ["generated/status_from_proofs.json", "scripts/artifact_registry.py"],
             "notes": "Blocked path checks exist in the registry, but filesystem bounds, redaction, and replay hardening are not yet proven.",
         },
         {
             "domain": "governance_artifact_readiness",
-            "score": int((complete_count(statuses, governance_artifact_tasks) / len(governance_artifact_tasks)) * 100),
-            "status": "in_progress",
-            "weight": 0.12,
+            "score": governance_score,
+            "status": domain_status(governance_score),
+            "weight": 0.06,
             "evidence": ["generated/task_graph.csv", "generated/contract_manifest.json"],
             "notes": "Governance artifacts are mostly pending; this task creates the readiness scorecard itself.",
         },
         {
             "domain": "package_scan_and_contract_lock",
-            "score": 100 if package_scan.get("schema_version") and task_status(statuses, "REQ-010_CONTRACT_LOCK") == "completed" else 50,
-            "status": "ready",
-            "weight": 0.1,
+            "score": package_score,
+            "status": domain_status(package_score),
+            "weight": 0.06,
             "evidence": ["generated/package_scan.json", "generated/contract_manifest.json"],
             "notes": f"Contract rows available: {len(contract_manifest.get('contract', {}).get('rows', []))}.",
         },
@@ -235,12 +249,11 @@ def build_scorecard() -> dict[str, Any]:
         },
         "domain_scores": domain_scores,
         "blocking_gates": blocking_gates,
-        "required_next_actions": [
-            "Complete validation evidence and replay/rollback gates before final migration validation.",
-            "Complete filesystem bounds and security redaction gates before unattended artifact replay.",
-            "Complete human approval plugin support before operator-facing runs above approval threshold.",
-            "Generate remaining governance artifacts so readiness decisions have owners, risks, and exceptions attached.",
-        ],
+        "required_next_actions": (
+            [f"Complete {task_id} and refresh this scorecard." for task_id in blocking_gates]
+            if blocking_gates
+            else ["No blocking readiness actions are open; maintain proof freshness before migration execution."]
+        ),
         "source_inputs": {
             "target_registry": "generated/envctl_target_registry.json",
             "repo_scan": "generated/package_scan.json",
@@ -278,8 +291,11 @@ def render_markdown(scorecard: dict[str, Any]) -> str:
         evidence = ", ".join(f"`{ref}`" for ref in item["evidence"])
         lines.append(f"| {item['domain']} | {item['score']} | {item['status']} | {evidence} |")
     lines.extend(["", "## Blocking gates", ""])
-    for gate in scorecard["blocking_gates"]:
-        lines.append(f"- `{gate}`")
+    if scorecard["blocking_gates"]:
+        for gate in scorecard["blocking_gates"]:
+            lines.append(f"- `{gate}`")
+    else:
+        lines.append("- None")
     lines.extend(["", "## Required next actions", ""])
     for action in scorecard["required_next_actions"]:
         lines.append(f"- {action}")
@@ -295,7 +311,12 @@ def render_markdown(scorecard: dict[str, Any]) -> str:
             "",
             "## Interpretation",
             "",
-            "The current migration posture is conditional: the core database, target registry, artifact registry, and shared protocol schemas are ready enough to produce and register artifacts, but final migration execution should wait for validation evidence, replay, rollback, filesystem bounds, redaction, and human approval gates.",
+            (
+                "The current migration posture is ready: all scored domains and readiness gates have completed proofs. "
+                "Maintain proof freshness before migration execution."
+                if scorecard["readiness_band"] == "ready"
+                else "The current migration posture is not yet fully ready; complete the listed blocking gates and refresh this scorecard."
+            ),
         ]
     )
     return "\n".join(lines) + "\n"

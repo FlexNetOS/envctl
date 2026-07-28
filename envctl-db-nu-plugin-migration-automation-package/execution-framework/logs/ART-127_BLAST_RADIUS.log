@@ -2,16 +2,16 @@
   "schema_version": "1.0",
   "task_id": "ART-127_BLAST_RADIUS",
   "status": "passed",
-  "generated_at": "2026-07-04T23:19:11+00:00",
+  "generated_at": "2026-07-28T11:53:33+00:00",
   "artifacts": {
     "json": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
     "md": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md",
     "canonical_md": "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md"
   },
   "artifact_hashes": {
-    "json": "sha256:6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
-    "md": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
-    "canonical_md": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08"
+    "json": "sha256:f4a22f01324088c1609c68bb4b90adfe94d4b7035b92ae51daa1a1a5b1d82dbc",
+    "md": "sha256:f63e88957e7a7e13c71971e004ee95152f5b7a3d35ec71463f7f27337c7dbb0e",
+    "canonical_md": "sha256:f63e88957e7a7e13c71971e004ee95152f5b7a3d35ec71463f7f27337c7dbb0e"
   },
   "registry_results": [
     {
@@ -19,7 +19,7 @@
       "artifact_id": "01-current-state-blast-radius-map-md",
       "run_id": "run-art-127-blast-radius",
       "path": "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
-      "content_hash": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+      "content_hash": "sha256:f63e88957e7a7e13c71971e004ee95152f5b7a3d35ec71463f7f27337c7dbb0e",
       "producer_operation_id": "op-art-127-generate-blast-radius",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -47,7 +47,7 @@
       "artifact_id": "art-127-blast-radius-map-json",
       "run_id": "run-art-127-blast-radius",
       "path": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
-      "content_hash": "sha256:6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
+      "content_hash": "sha256:f4a22f01324088c1609c68bb4b90adfe94d4b7035b92ae51daa1a1a5b1d82dbc",
       "producer_operation_id": "op-art-127-generate-blast-radius",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -77,7 +77,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
-      "content_hash": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+      "content_hash": "sha256:f63e88957e7a7e13c71971e004ee95152f5b7a3d35ec71463f7f27337c7dbb0e",
       "generated_by_operation_id": "op-art-127-generate-blast-radius",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -143,7 +143,7 @@
       "artifact_type": "machine_readable_record",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
-      "content_hash": "sha256:6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
+      "content_hash": "sha256:f4a22f01324088c1609c68bb4b90adfe94d4b7035b92ae51daa1a1a5b1d82dbc",
       "generated_by_operation_id": "op-art-127-generate-blast-radius",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "status": "pass",
+  "generated_at": "2026-07-28T12:23:29Z",
+  "recipe_summary": {
+    "recipe_id": "flexnetos-codex-package-target-adapter",
+    "version": "1.0.0",
+    "phase_count": 4,
+    "operation_count": 8,
+    "approval_gate_phases": [
+      "04-approved-apply"
+    ],
+    "target_descriptor_id": "flexnetos-vs-lifeos"
+  },
+  "checks": {
+    "recipe_shape_valid": true,
+    "approval_gate_present": true,
+    "high_risk_apply_present": true,
+    "replay_dependency_declared": true,
+    "comparison_dependency_declared": true,
+    "blocked_paths_preserved": true,
+    "allowed_paths_only": true,
+    "documentation_checks_passed": true,
+    "secret_exposure_status_pass": true
+  },
+  "warnings": [
+    "Prior package source is not materialized in this task sandbox; it remains a declared caller-supplied read-only input.",
+    "Dependency proof for REQ-201_FLEXNETOS_LIFEOS_COMPARISON is not materialized in this task sandbox; execution must supply it before apply.",
+    "Dependency proof for REQ-027_ENVCTL_REPLAY_ENGINE is not materialized in this task sandbox; execution must supply it before apply."
+  ],
+  "errors": [],
+  "secret_scan": {
+    "paths": [
+      "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+      "generated/flexnetos_adapter_recipe.json",
+      "scripts/verify_flexnetos_adapter_recipe.py"
+    ],
+    "findings": []
+  },
+  "allowed_paths": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "scripts/verify_flexnetos_adapter_recipe.py",
+    "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+    "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+    "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"
+  ],
+  "sha256": {
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md": "sha256:cad812b2a7dea580369f3aefa253421a8cb339157190f7349e1f5bacff708eb7",
+    "generated/flexnetos_adapter_recipe.json": "sha256:9d5a28e3df07dfba6f26fb8d58e221a4287a8e4a5bbd033806a99687e5b8a5be",
+    "scripts/verify_flexnetos_adapter_recipe.py": "sha256:dbd5640ca33d47228c1246d03312cca35c2c37bd92761b97e8285a3a886518c5"
+  }
+}

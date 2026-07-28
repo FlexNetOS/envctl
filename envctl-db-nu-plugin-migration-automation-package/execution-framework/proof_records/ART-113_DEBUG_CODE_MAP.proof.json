@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-113_DEBUG_CODE_MAP",
   "status": "completed",
-  "started_at": "2026-07-04T23:21:07+00:00",
-  "completed_at": "2026-07-04T23:21:07+00:00",
+  "started_at": "2026-07-28T11:30:41+00:00",
+  "completed_at": "2026-07-28T11:30:41+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-14",
   "model_tag": "gpt-5.3-spark",
@@ -27,7 +27,7 @@
     "schema_version": "1.0",
     "task_id": "ART-113_DEBUG_CODE_MAP",
     "status": "passed",
-    "generated_at": "2026-07-04T23:21:07+00:00",
+    "generated_at": "2026-07-28T11:30:41+00:00",
     "artifact_summary": {
       "entry_point_count": 160,
       "control_flow_count": 160,
@@ -38,14 +38,14 @@
       "runbook_signal_count": 160,
       "hotspot_count": 80
     },
-    "completed_at": "2026-07-04T23:21:07+00:00",
+    "completed_at": "2026-07-28T11:30:41+00:00",
     "registry_results": [
       {
         "artifact_row_id": "artifact-2a048c89bc2f357b586cc0af",
         "artifact_id": "03-code-analysis-code-map-for-debugging-md",
         "run_id": "run-art113-debug-code-map",
         "path": "execution-framework/migration-artifacts/03-code-analysis/code-map-for-debugging.md",
-        "content_hash": "sha256:42a220931a73b445a71f1f07ce5cf7d5e2c401a0be7a16b9ae5605687673bcbc",
+        "content_hash": "sha256:39953077da650f68dd98d2b709c3a12f39a23e2b943f50976f51d68c28386d5c",
         "producer_operation_id": "produce-03-code-analysis-code-map-for-debugging-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -69,7 +69,7 @@
         "artifact_id": "art-113-debug-code-map-md",
         "run_id": "run-art113-debug-code-map",
         "path": "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.md",
-        "content_hash": "sha256:42a220931a73b445a71f1f07ce5cf7d5e2c401a0be7a16b9ae5605687673bcbc",
+        "content_hash": "sha256:39953077da650f68dd98d2b709c3a12f39a23e2b943f50976f51d68c28386d5c",
         "producer_operation_id": "produce-03-code-analysis-code-map-for-debugging-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -93,7 +93,7 @@
         "artifact_id": "art-113-debug-code-map-json",
         "run_id": "run-art113-debug-code-map",
         "path": "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.json",
-        "content_hash": "sha256:9b514d9928155b747546a364d1d62af7790f4b73fda904a50f58364b48066490",
+        "content_hash": "sha256:b2ad8ad4306847cebbf042eca6bbe0a0e9325897feb6d2deee6799953d8f1dad",
         "producer_operation_id": "produce-03-code-analysis-code-map-for-debugging-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -122,7 +122,7 @@
         "artifact_type": "debug_code_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/03-code-analysis/code-map-for-debugging.md",
-        "content_hash": "sha256:42a220931a73b445a71f1f07ce5cf7d5e2c401a0be7a16b9ae5605687673bcbc",
+        "content_hash": "sha256:39953077da650f68dd98d2b709c3a12f39a23e2b943f50976f51d68c28386d5c",
         "generated_by_operation_id": "produce-03-code-analysis-code-map-for-debugging-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -181,7 +181,7 @@
         "artifact_type": "debug_code_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.md",
-        "content_hash": "sha256:42a220931a73b445a71f1f07ce5cf7d5e2c401a0be7a16b9ae5605687673bcbc",
+        "content_hash": "sha256:39953077da650f68dd98d2b709c3a12f39a23e2b943f50976f51d68c28386d5c",
         "generated_by_operation_id": "produce-03-code-analysis-code-map-for-debugging-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -240,7 +240,7 @@
         "artifact_type": "debug_code_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.json",
-        "content_hash": "sha256:9b514d9928155b747546a364d1d62af7790f4b73fda904a50f58364b48066490",
+        "content_hash": "sha256:b2ad8ad4306847cebbf042eca6bbe0a0e9325897feb6d2deee6799953d8f1dad",
         "generated_by_operation_id": "produce-03-code-analysis-code-map-for-debugging-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -302,13 +302,14 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art113_debug_code_map.py": "c3dac856dc4cca9cd6e36cef0abd5f1bc15da39ddd9ab1f5db7fbc21df989d86",
-    "execution-framework/migration-artifacts/03-code-analysis/code-map-for-debugging.md": "42a220931a73b445a71f1f07ce5cf7d5e2c401a0be7a16b9ae5605687673bcbc",
-    "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.md": "42a220931a73b445a71f1f07ce5cf7d5e2c401a0be7a16b9ae5605687673bcbc",
-    "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.json": "9b514d9928155b747546a364d1d62af7790f4b73fda904a50f58364b48066490",
-    "execution-framework/generated/art113_debug_code_map_report.json": "0aa693f94de6424ca070a1ab6a37c9c97f919544924ea94d0aeb15eab0b95f9f",
-    "execution-framework/state/ART-113_DEBUG_CODE_MAP.heartbeat.json": "3ca3d3452cb7737db538abae381a74647e53ac5e49f8cf2fa251ec045d33377d",
-    "execution-framework/logs/ART-113_DEBUG_CODE_MAP.log": "0aa693f94de6424ca070a1ab6a37c9c97f919544924ea94d0aeb15eab0b95f9f",
-    "execution-framework/proof_records/proof_ledger.jsonl": "14086aa5f3b286487ce91e7508de87a9590fa01dfa774335dc7be30e3868959b"
+    "execution-framework/migration-artifacts/03-code-analysis/code-map-for-debugging.md": "39953077da650f68dd98d2b709c3a12f39a23e2b943f50976f51d68c28386d5c",
+    "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.md": "39953077da650f68dd98d2b709c3a12f39a23e2b943f50976f51d68c28386d5c",
+    "execution-framework/migration-artifacts/art-113_debug_code_map/debug-code-map.json": "b2ad8ad4306847cebbf042eca6bbe0a0e9325897feb6d2deee6799953d8f1dad",
+    "execution-framework/generated/art113_debug_code_map_report.json": "685e8219c86d7c0d5f3748c330de1532e3a74fadfc031483dbd147e2e106868f",
+    "execution-framework/state/ART-113_DEBUG_CODE_MAP.heartbeat.json": "7479c0e12eeb5d86cf738ed393884c94c6bfba530e139ccc09266e07996bfead",
+    "execution-framework/logs/ART-113_DEBUG_CODE_MAP.log": "685e8219c86d7c0d5f3748c330de1532e3a74fadfc031483dbd147e2e106868f",
+    "execution-framework/proof_records/ART-113_DEBUG_CODE_MAP.proof.json": "c1bc7fc000132b32ba495970d433d6904d41c8fc91c9fd24eedc4b25515854f8",
+    "execution-framework/proof_records/proof_ledger.jsonl": "9dc002b4e710a171a391f4a669af6da629c9b6d983750eea263196e7ff9e94a6"
   },
   "logs_uri": "logs/ART-113_DEBUG_CODE_MAP.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

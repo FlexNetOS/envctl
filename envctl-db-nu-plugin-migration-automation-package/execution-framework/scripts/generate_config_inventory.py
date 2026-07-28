@@ -529,12 +529,30 @@ def register_artifact(conn: sqlite3.Connection, outputs: dict[str, str], invento
     return {"registry_result": result, "artifact_row": fetch_artifact(conn, RUN_ID, "01-current-state-configuration-inventory-md")}
 
 
-def verify_outputs(outputs: dict[str, str], registry_payload: dict[str, Any], inventory: dict[str, Any]) -> dict[str, Any]:
+def persistent_registry_hash(db_path: Path) -> str | None:
+    """Read the committed artifact hash from the shared envctl registry."""
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            """
+            SELECT content_hash
+            FROM envctl_migration_artifacts
+            WHERE run_id = ? AND artifact_id = ?
+            """,
+            (RUN_ID, "01-current-state-configuration-inventory-md"),
+        ).fetchone()
+    return row[0] if row else None
+
+
+def verify_outputs(
+    outputs: dict[str, str], registry_payload: dict[str, Any], inventory: dict[str, Any], db_path: Path
+) -> dict[str, Any]:
+    registered_hash = persistent_registry_hash(db_path)
     checks = {
         "task_json_exists": (package_root() / outputs["task_json"]).is_file(),
         "task_md_exists": (package_root() / outputs["task_md"]).is_file(),
         "canonical_md_exists": (package_root() / outputs["canonical_md"]).is_file(),
-        "registry_hash_recorded": bool(registry_payload["registry_result"].get("content_hash")),
+        "registry_hash_recorded": bool(registered_hash)
+        and registered_hash == registry_payload["registry_result"].get("content_hash"),
         "secret_values_captured": inventory["scan_policy"]["secret_values_captured"],
     }
     return {
@@ -555,11 +573,19 @@ def main() -> int:
     inventory = walk_inventory(target_root)
     outputs = write_outputs(inventory, contract_row)
 
-    conn = sqlite3.connect(":memory:")
-    apply_migrations(conn, package_root())
+    db_path = root() / "generated" / "envctl.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA foreign_keys = ON")
+    schema_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'envctl_migration_artifacts'"
+    ).fetchone()
+    if schema_exists is None:
+        apply_migrations(conn, package_root())
     seed_art115_fixture(conn, target_root)
     registry_payload = register_artifact(conn, outputs, inventory)
-    verification = verify_outputs(outputs, registry_payload, inventory)
+    verification = verify_outputs(outputs, registry_payload, inventory, db_path)
+    conn.close()
 
     report_path = root() / "generated" / "art115_config_inventory_report.json"
     report_path.write_text(json.dumps(verification, indent=2, sort_keys=False) + "\n", encoding="utf-8")

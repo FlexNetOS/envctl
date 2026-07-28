@@ -27,16 +27,24 @@ NU_PLUGIN_REPO="$(realpath "$NU_PLUGIN_REPO")"
 [[ -d "$ENVCTL_REPO" ]] || { echo "envctl repo not found" >&2; exit 1; }
 [[ -d "$NU_PLUGIN_REPO" ]] || { echo "nu_plugin repo not found" >&2; exit 1; }
 
+copy_namespaced_tree() {
+  local source_dir="$1"
+  local destination_dir="$2"
+
+  mkdir -p "$destination_dir"
+  cp -R "$source_dir"/. "$destination_dir"/
+}
+
 mkdir -p "$ENVCTL_REPO/.codex/prompts" "$ENVCTL_REPO/.codex/agents" "$NU_PLUGIN_REPO/.codex/prompts" "$NU_PLUGIN_REPO/.codex/agents"
 cp "$SCRIPT_DIR/codex/AGENTS.envctl.md.template" "$ENVCTL_REPO/AGENTS.envctl-migration-automation.md"
 cp "$SCRIPT_DIR/codex/AGENTS.nu_plugin.md.template" "$NU_PLUGIN_REPO/AGENTS.nu-plugin-migration-automation.md"
-cp -R "$SCRIPT_DIR/prompts" "$ENVCTL_REPO/.codex/prompts/envctl-migration-automation"
-cp -R "$SCRIPT_DIR/schemas" "$ENVCTL_REPO/.codex/prompts/envctl-migration-automation-schemas"
-cp -R "$SCRIPT_DIR/sql" "$ENVCTL_REPO/.codex/prompts/envctl-migration-automation-sql"
-cp -R "$SCRIPT_DIR/prompts" "$NU_PLUGIN_REPO/.codex/prompts/envctl-migration-automation"
-cp -R "$SCRIPT_DIR/schemas" "$NU_PLUGIN_REPO/.codex/prompts/envctl-migration-automation-schemas"
-cp -R "$SCRIPT_DIR/codex/agents" "$ENVCTL_REPO/.codex/agents/envctl-migration-automation"
-cp -R "$SCRIPT_DIR/codex/agents" "$NU_PLUGIN_REPO/.codex/agents/envctl-migration-automation"
+copy_namespaced_tree "$SCRIPT_DIR/prompts" "$ENVCTL_REPO/.codex/prompts/envctl-migration-automation"
+copy_namespaced_tree "$SCRIPT_DIR/schemas" "$ENVCTL_REPO/.codex/prompts/envctl-migration-automation-schemas"
+copy_namespaced_tree "$SCRIPT_DIR/sql" "$ENVCTL_REPO/.codex/prompts/envctl-migration-automation-sql"
+copy_namespaced_tree "$SCRIPT_DIR/prompts" "$NU_PLUGIN_REPO/.codex/prompts/envctl-migration-automation"
+copy_namespaced_tree "$SCRIPT_DIR/schemas" "$NU_PLUGIN_REPO/.codex/prompts/envctl-migration-automation-schemas"
+copy_namespaced_tree "$SCRIPT_DIR/codex/agents" "$ENVCTL_REPO/.codex/agents/envctl-migration-automation"
+copy_namespaced_tree "$SCRIPT_DIR/codex/agents" "$NU_PLUGIN_REPO/.codex/agents/envctl-migration-automation"
 
 echo "Installed additive prompts into:"
 echo "  $ENVCTL_REPO"

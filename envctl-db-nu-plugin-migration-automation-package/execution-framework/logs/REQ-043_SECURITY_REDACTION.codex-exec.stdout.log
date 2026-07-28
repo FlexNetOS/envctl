@@ -19570,7 +19570,7 @@ index 0000000000000000000000000000000000000000..3172bd55326601fec3fd550e4b4a7536
 +from _common import package_root, root, sha256_file
 +
 +
-+REDACTION_TOKEN = "<REDACTED:SECRET>"
++REDACTION_<REDACTED:SECRET>
 +
 +DEFAULT_BLOCKED_PATHS = [
 +    "**/.env",
@@ -19953,26 +19953,24 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +    return [
 +        {
 +            "name": "generic-api-key",
-+            "input": {"command": "tool --set api_key=example-secret-value"},
++            "input": {"command": "tool --set <REDACTED:SECRET>},
 +            "blocked_fragments": ["example-secret-value"],
 +        },
 +        {
 +            "name": "bearer-header",
-+            "input": {"header": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456"},
++            "input": {"header": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyz123456"],
 +        },
 +        {
 +            "name": "aws-secret",
-+            "input": {"env": "aws_secret_access_key=abcdefghijklmnopqrstuvwxyzABCDEF1234567890"},
++            "input": {"env": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyzABCDEF1234567890"],
 +        },
 +        {
 +            "name": "private-key-block",
 +            "input": {
 +                "pem": (
-+                    "-----BEGIN PRIVATE KEY-----\n"
-+                    "abc123privatekeymaterial\n"
-+                    "-----END PRIVATE KEY-----"
++                    "<REDACTED:SECRET>"
 +                )
 +            },
 +            "blocked_fragments": ["abc123privatekeymaterial"],
@@ -19982,8 +19980,8 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +            "input": {
 +                "proof": {
 +                    "commands_run": [
-+                        "nu -c 'let token = secret-token-value'",
-+                        "curl -H 'Authorization: Bearer nestedtoken1234567890'",
++                        "nu -c 'let <REDACTED:SECRET>,
++                        "curl -H '<REDACTED:SECRET>'",
 +                    ]
 +                }
 +            },
@@ -20218,7 +20216,7 @@ index 0000000000000000000000000000000000000000..3172bd55326601fec3fd550e4b4a7536
 +from _common import package_root, root, sha256_file
 +
 +
-+REDACTION_TOKEN = "<REDACTED:SECRET>"
++REDACTION_<REDACTED:SECRET>
 +
 +DEFAULT_BLOCKED_PATHS = [
 +    "**/.env",
@@ -20601,26 +20599,24 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +    return [
 +        {
 +            "name": "generic-api-key",
-+            "input": {"command": "tool --set api_key=example-secret-value"},
++            "input": {"command": "tool --set <REDACTED:SECRET>},
 +            "blocked_fragments": ["example-secret-value"],
 +        },
 +        {
 +            "name": "bearer-header",
-+            "input": {"header": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456"},
++            "input": {"header": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyz123456"],
 +        },
 +        {
 +            "name": "aws-secret",
-+            "input": {"env": "aws_secret_access_key=abcdefghijklmnopqrstuvwxyzABCDEF1234567890"},
++            "input": {"env": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyzABCDEF1234567890"],
 +        },
 +        {
 +            "name": "private-key-block",
 +            "input": {
 +                "pem": (
-+                    "-----BEGIN PRIVATE KEY-----\n"
-+                    "abc123privatekeymaterial\n"
-+                    "-----END PRIVATE KEY-----"
++                    "<REDACTED:SECRET>"
 +                )
 +            },
 +            "blocked_fragments": ["abc123privatekeymaterial"],
@@ -20630,8 +20626,8 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +            "input": {
 +                "proof": {
 +                    "commands_run": [
-+                        "nu -c 'let token = secret-token-value'",
-+                        "curl -H 'Authorization: Bearer nestedtoken1234567890'",
++                        "nu -c 'let <REDACTED:SECRET>,
++                        "curl -H '<REDACTED:SECRET>'",
 +                    ]
 +                }
 +            },
@@ -20917,7 +20913,7 @@ index 0000000000000000000000000000000000000000..3172bd55326601fec3fd550e4b4a7536
 +from _common import package_root, root, sha256_file
 +
 +
-+REDACTION_TOKEN = "<REDACTED:SECRET>"
++REDACTION_<REDACTED:SECRET>
 +
 +DEFAULT_BLOCKED_PATHS = [
 +    "**/.env",
@@ -21300,26 +21296,24 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +    return [
 +        {
 +            "name": "generic-api-key",
-+            "input": {"command": "tool --set api_key=example-secret-value"},
++            "input": {"command": "tool --set <REDACTED:SECRET>},
 +            "blocked_fragments": ["example-secret-value"],
 +        },
 +        {
 +            "name": "bearer-header",
-+            "input": {"header": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456"},
++            "input": {"header": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyz123456"],
 +        },
 +        {
 +            "name": "aws-secret",
-+            "input": {"env": "aws_secret_access_key=abcdefghijklmnopqrstuvwxyzABCDEF1234567890"},
++            "input": {"env": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyzABCDEF1234567890"],
 +        },
 +        {
 +            "name": "private-key-block",
 +            "input": {
 +                "pem": (
-+                    "-----BEGIN PRIVATE KEY-----\n"
-+                    "abc123privatekeymaterial\n"
-+                    "-----END PRIVATE KEY-----"
++                    "<REDACTED:SECRET>"
 +                )
 +            },
 +            "blocked_fragments": ["abc123privatekeymaterial"],
@@ -21329,8 +21323,8 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +            "input": {
 +                "proof": {
 +                    "commands_run": [
-+                        "nu -c 'let token = secret-token-value'",
-+                        "curl -H 'Authorization: Bearer nestedtoken1234567890'",
++                        "nu -c 'let <REDACTED:SECRET>,
++                        "curl -H '<REDACTED:SECRET>'",
 +                    ]
 +                }
 +            },
@@ -21571,7 +21565,7 @@ index 0000000000000000000000000000000000000000..3172bd55326601fec3fd550e4b4a7536
 +from _common import package_root, root, sha256_file
 +
 +
-+REDACTION_TOKEN = "<REDACTED:SECRET>"
++REDACTION_<REDACTED:SECRET>
 +
 +DEFAULT_BLOCKED_PATHS = [
 +    "**/.env",
@@ -21954,26 +21948,24 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +    return [
 +        {
 +            "name": "generic-api-key",
-+            "input": {"command": "tool --set api_key=example-secret-value"},
++            "input": {"command": "tool --set <REDACTED:SECRET>},
 +            "blocked_fragments": ["example-secret-value"],
 +        },
 +        {
 +            "name": "bearer-header",
-+            "input": {"header": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456"},
++            "input": {"header": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyz123456"],
 +        },
 +        {
 +            "name": "aws-secret",
-+            "input": {"env": "aws_secret_access_key=abcdefghijklmnopqrstuvwxyzABCDEF1234567890"},
++            "input": {"env": "<REDACTED:SECRET>"},
 +            "blocked_fragments": ["abcdefghijklmnopqrstuvwxyzABCDEF1234567890"],
 +        },
 +        {
 +            "name": "private-key-block",
 +            "input": {
 +                "pem": (
-+                    "-----BEGIN PRIVATE KEY-----\n"
-+                    "abc123privatekeymaterial\n"
-+                    "-----END PRIVATE KEY-----"
++                    "<REDACTED:SECRET>"
 +                )
 +            },
 +            "blocked_fragments": ["abc123privatekeymaterial"],
@@ -21983,8 +21975,8 @@ index 0000000000000000000000000000000000000000..e6a8a014165f5b0a4d72cd0632663770
 +            "input": {
 +                "proof": {
 +                    "commands_run": [
-+                        "nu -c 'let token = secret-token-value'",
-+                        "curl -H 'Authorization: Bearer nestedtoken1234567890'",
++                        "nu -c 'let <REDACTED:SECRET>,
++                        "curl -H '<REDACTED:SECRET>'",
 +                    ]
 +                }
 +            },

@@ -780,10 +780,15 @@ struct EnvRef {
     byte_end_in_line: usize,
 }
 
-/// Find `$VAR`, `${VAR}` references on a single line. Bare-word roots are left
-/// to the refactor planner's token-form resolution to avoid false positives on
-/// ordinary identifiers.
+/// Find `$VAR`, `${VAR}` and bare-token references on a single line.
 fn scan_line_env_refs(line: &str) -> Vec<EnvRef> {
+    let mut out = scan_dollar_env_refs(line);
+    out.extend(scan_bare_env_refs(line));
+    out.sort_by_key(|h| h.byte_start);
+    out
+}
+
+fn scan_dollar_env_refs(line: &str) -> Vec<EnvRef> {
     let bytes = line.as_bytes();
     let mut out = Vec::new();
     let mut i = 0;
@@ -828,6 +833,55 @@ fn scan_line_env_refs(line: &str) -> Vec<EnvRef> {
         } else {
             i += 1;
         }
+    }
+    out
+}
+
+/// Find `UPPER_SNAKE` tokens that are not part of `$VAR`/`${VAR}` forms.
+fn scan_bare_env_refs(line: &str) -> Vec<EnvRef> {
+    let bytes = line.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        if !bytes[i].is_ascii_uppercase() {
+            i += 1;
+            continue;
+        }
+
+        let start = i;
+        let mut j = i + 1;
+        while j < bytes.len() && is_var_char(bytes[j]) {
+            j += 1;
+        }
+        if j == start + 1 {
+            i += 1;
+            continue;
+        }
+
+        if start > 0 {
+            let prev = bytes[start - 1];
+            if is_var_char(prev) || prev == b'$' || prev == b'{' {
+                i = j;
+                continue;
+            }
+        }
+        if j < bytes.len() && is_var_char(bytes[j]) {
+            i = j;
+            continue;
+        }
+
+        let name = &line[start..j];
+        if is_var_name(name) {
+            out.push(EnvRef {
+                name: name.to_string(),
+                raw: name.to_string(),
+                byte_start: start,
+                byte_end: j,
+                column: start,
+                byte_end_in_line: j,
+            });
+        }
+        i = j;
     }
     out
 }
@@ -1038,6 +1092,44 @@ mod tests {
             .expect("env occurrence");
         assert_eq!(env_occ.replace_policy, ReplacePolicy::Refuse);
         assert!(!env_occ.replace_candidate);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn detects_bare_uppercase_root_tokens_without_prefix() {
+        let root = tmp("bare-root-tokens");
+        fs::write(
+            root.join("bootstrap.sh"),
+            b"cd META_ROOT\nprintf \"$META_ROOT\\n\"\n",
+        )
+        .unwrap();
+
+        let files = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let symbols = SymbolIndex::build(&files).unwrap();
+
+        let names: Vec<_> = symbols
+            .symbols()
+            .iter()
+            .map(|s| s.normalized_name.as_str())
+            .collect();
+        assert!(names.contains(&"META_ROOT"), "got {names:?}");
+
+        let bare_occ = symbols
+            .occurrences()
+            .iter()
+            .find(|o| o.match_text == "META_ROOT")
+            .expect("bare META_ROOT occurrence");
+        assert_eq!(bare_occ.normalized_text, "META_ROOT");
+        assert!(bare_occ.replace_candidate);
+        assert!(symbols
+            .occurrences()
+            .iter()
+            .any(|o| o.match_text == "$META_ROOT"));
 
         let _ = fs::remove_dir_all(&root);
     }

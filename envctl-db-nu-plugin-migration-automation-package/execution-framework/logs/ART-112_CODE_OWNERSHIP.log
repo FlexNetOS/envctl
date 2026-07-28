@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-112_CODE_OWNERSHIP",
   "status": "passed",
-  "generated_at": "2026-07-04T23:19:29+00:00",
+  "generated_at": "2026-07-28T11:28:48+00:00",
   "artifact_paths": [
     "migration-artifacts/art-112_code_ownership/code_ownership_map.json",
     "migration-artifacts/art-112_code_ownership/code_ownership_map.md"
@@ -13,7 +13,7 @@
       "artifact_id": "art112-code-ownership-json",
       "run_id": "run-art112",
       "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
-      "content_hash": "sha256:0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+      "content_hash": "sha256:21ec8270b565f3e820fae91ea07a823819cc8acd19b32679291f095d2857e876",
       "producer_operation_id": "op-art112-generate",
       "contract_id": "contract-art112",
       "evidence_ids": [
@@ -39,7 +39,7 @@
       "artifact_id": "art112-code-ownership-markdown",
       "run_id": "run-art112",
       "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
-      "content_hash": "sha256:f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+      "content_hash": "sha256:2354dd8721bfedbc1bd0b06637e412beb43179fa500632eaf49f79aeac4a2933",
       "producer_operation_id": "op-art112-generate",
       "contract_id": "contract-art112",
       "evidence_ids": [
@@ -68,7 +68,7 @@
       "artifact_type": "code_ownership_map_json",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
-      "content_hash": "sha256:0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+      "content_hash": "sha256:21ec8270b565f3e820fae91ea07a823819cc8acd19b32679291f095d2857e876",
       "generated_by_operation_id": "op-art112-generate",
       "evidence": {
         "contract_id": "contract-art112",
@@ -130,7 +130,7 @@
       "artifact_type": "code_ownership_map_markdown",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
-      "content_hash": "sha256:f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+      "content_hash": "sha256:2354dd8721bfedbc1bd0b06637e412beb43179fa500632eaf49f79aeac4a2933",
       "generated_by_operation_id": "op-art112-generate",
       "evidence": {
         "contract_id": "contract-art112",

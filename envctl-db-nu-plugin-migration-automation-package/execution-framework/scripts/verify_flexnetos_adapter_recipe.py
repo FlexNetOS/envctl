@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from _common import append_proof, make_proof, now, package_root, read_json, root, sha256_file, write_json
+from _common import make_proof, now, package_root, read_json, root, sha256_file, write_json
 
 
 TASK_ID = "REQ-202_FLEXNETOS_ADAPTER_RECIPE"
@@ -32,6 +32,25 @@ SECRET_PATTERNS = [
     re.compile(r"(?i)(password|secret|token|api[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9_./+=-]{12,}"),
 ]
 
+REQUIRED_PACKAGE_FILES = [
+    "PACKAGE_MANIFEST.json",
+    "prompts/ARTIFACT_CONTRACT_FULL.md",
+    "expected-output/migration-artifacts-tree.md",
+    "prompts/MASTER_PROMPT.md",
+]
+
+RUNTIME_COMMANDS = [
+    "envctl migration package inspect {package_root}",
+    "envctl migration package import {package_root} --name {package_name}",
+    "envctl migration target add --descriptor {target_descriptor}",
+    "envctl migration plan --target {target_id} --contract {contract_id} --recipe {recipe_id}",
+    "envctl migration run {plan_id} --mode approval-gated",
+    "envctl migration events {run_id}",
+    "envctl migration artifacts {run_id}",
+    "envctl migration replay {run_id} --verify-hashes",
+    "envctl migration export {run_id} --format json",
+]
+
 
 def recipe_payload() -> dict[str, Any]:
     return {
@@ -48,6 +67,23 @@ def recipe_payload() -> dict[str, Any]:
             "repo_path_ref": "${ENVCTL_REPO}",
             "filesystem_scope": "repo",
             "source_package_glob": "source/codex-flexnetos-migration-prompt-package/**",
+            "adapter_parameters": {
+                "package_root": {"required": True, "description": "Migration package root to inspect and import."},
+                "package_name": {"required": True, "default": "flexnetos-artifact-contract"},
+                "target_descriptor": {"required": True, "default": "examples/target-descriptors/flexnetos-vs-lifeos.yaml"},
+                "target_id": {"required": True, "default": "flexnetos-vs-lifeos"},
+            },
+            "package_contract": {
+                "required_files": REQUIRED_PACKAGE_FILES,
+                "optional_globs": ["prompts/spark_helpers/*.md", "helpers/*", "schemas/*.json", "migration-artifacts/**"],
+                "import_mapping": {
+                    "PACKAGE_MANIFEST.json": "package provenance and file hashes",
+                    "prompts/ARTIFACT_CONTRACT_FULL.md": "artifact contract record",
+                    "expected-output/migration-artifacts-tree.md": "required artifact tree",
+                    "prompts/MASTER_PROMPT.md": "recipe and operation definitions",
+                },
+            },
+            "runtime_commands": RUNTIME_COMMANDS,
             "reusable_adapter_contract": {
                 "read_only_inputs": [
                     "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
@@ -339,6 +375,16 @@ Convert the earlier FlexNetOS Codex migration package into a reusable envctl mig
 - Human approval required: `true`
 - Verification command: `python3 scripts/verify_flexnetos_adapter_recipe.py`
 
+## Reusable Runtime Contract
+
+Supply `package_root`, `package_name`, `target_descriptor`, and `target_id` to execute this adapter. Before import, the package must contain: {required_files}.
+
+```text
+{runtime_commands}
+```
+
+The `run` command remains approval-gated; no command here authorizes a target mutation without the recorded human decision.
+
 ## Phase Plan
 
 | phase | approval gate | operation count | focus |
@@ -373,6 +419,8 @@ Convert the earlier FlexNetOS Codex migration package into a reusable envctl mig
         proof_uri=packet["proof_uri"],
         report_path=REPORT_PATH,
         warning_section=warning_section,
+        required_files=", ".join(f"`{path}`" for path in REQUIRED_PACKAGE_FILES),
+        runtime_commands="\n".join(RUNTIME_COMMANDS),
     )
 
 
@@ -414,6 +462,18 @@ def validate_recipe_shape(recipe: dict[str, Any]) -> list[str]:
         errors.append("recipe must include at least one approval_gate phase")
     if high_risk_ops == 0:
         errors.append("recipe must include at least one R4 or R5 operation")
+    metadata = recipe.get("metadata", {})
+    if not metadata.get("adapter_parameters", {}).get("package_root", {}).get("required"):
+        errors.append("adapter must require a package_root parameter")
+    if metadata.get("package_contract", {}).get("required_files") != REQUIRED_PACKAGE_FILES:
+        errors.append("package contract required files do not match the adapter contract")
+    commands = metadata.get("runtime_commands", [])
+    if commands != RUNTIME_COMMANDS:
+        errors.append("runtime command contract does not match the adapter contract")
+    if not any("--mode approval-gated" in command for command in commands):
+        errors.append("runtime commands must retain approval-gated execution")
+    if not any("replay" in command and "--verify-hashes" in command for command in commands):
+        errors.append("runtime commands must include hash-verified replay")
     return errors
 
 
@@ -442,7 +502,11 @@ def main() -> None:
     warnings: list[str] = []
 
     source_package_dir = package_base / "source" / "codex-flexnetos-migration-prompt-package"
-    if not source_package_dir.exists():
+    source_package_available = source_package_dir.exists()
+    source_package_required_files = [
+        path for path in REQUIRED_PACKAGE_FILES if (source_package_dir / path).is_file()
+    ] if source_package_available else []
+    if not source_package_available:
         warnings.append(
             "source/codex-flexnetos-migration-prompt-package is not materialized in this workspace; the adapter references the declared source glob from the packet and validated downstream evidence instead."
         )
@@ -496,6 +560,8 @@ def main() -> None:
             for phase in recipe["phases"]
             for operation in phase["operations"]
         ),
+        "runtime_contract_present": recipe["metadata"].get("runtime_commands") == RUNTIME_COMMANDS,
+        "package_contract_present": recipe["metadata"].get("package_contract", {}).get("required_files") == REQUIRED_PACKAGE_FILES,
         "secret_exposure_status_pass": not secret_hits,
     }
 
@@ -541,6 +607,11 @@ def main() -> None:
         },
         "warnings": warnings,
         "errors": errors,
+        "source_package": {
+            "declared_glob": recipe["metadata"]["source_package_glob"],
+            "materialized_in_execution_package": source_package_available,
+            "required_files_present_when_materialized": source_package_required_files,
+        },
         "secret_scan": {
             "paths": [str(path.relative_to(base)) if path.is_relative_to(base) else str(path) for path in scan_paths],
             "findings": secret_hits,
@@ -585,7 +656,6 @@ def main() -> None:
         "execution-framework/state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
         "execution-framework/logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log",
         "execution-framework/proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
-        "execution-framework/proof_records/proof_ledger.jsonl",
     ]
     proof = make_proof(
         TASK_ID,
@@ -601,7 +671,7 @@ def main() -> None:
         "" if report_status == "pass" else "; ".join(errors),
         "unblock VER-300_UNIT_VALIDATION" if report_status == "pass" else "fix REQ-202 validation errors",
     )
-    append_proof(proof)
+    (base / PROOF_PATH).write_text(json.dumps(proof, indent=2) + "\n", encoding="utf-8")
 
     print(
         "flexnetos adapter recipe status={status} phases={phases} operations={operations}".format(

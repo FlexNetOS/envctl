@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-120_WAVE_PLAN",
-  "generated_at": "2026-07-04T23:28:32+00:00",
+  "generated_at": "2026-07-28T11:37:43+00:00",
   "target": {
     "target_id": "flexnetos-vs-lifeos",
     "primary_root": "/home/flexnetos/FlexNetOS",
     "compare_root": "/home/flexnetos/lifeos",
-    "compare_root_exists": false,
+    "compare_root_exists": true,
     "safety_mode": "approval-gated"
   },
   "source_inputs": [
@@ -307,12 +307,12 @@
           "task_id": "ART-118_OBSERVABILITY",
           "title": "Build Observability map",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-118_OBSERVABILITY.proof.json"
         }
       ],
-      "completed_task_count": 4,
-      "pending_task_count": 1
+      "completed_task_count": 5,
+      "pending_task_count": 0
     },
     {
       "wave_id": "W3",
@@ -336,47 +336,47 @@
           "task_id": "ART-106_RUNTIME_DEP_MAP",
           "title": "Build Runtime dependency map",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-106_RUNTIME_DEP_MAP.proof.json"
         },
         {
           "task_id": "ART-107_DATA_FLOW_GRAPH",
           "title": "Build Data flow graph",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-107_DATA_FLOW_GRAPH.proof.json"
         },
         {
           "task_id": "ART-108_DB_SCHEMA_MAP",
           "title": "Build Database schema map",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-108_DB_SCHEMA_MAP.proof.json"
         },
         {
           "task_id": "ART-109_DATA_LINEAGE",
           "title": "Build Data lineage map",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-109_DATA_LINEAGE.proof.json"
         },
         {
           "task_id": "ART-110_API_CATALOG",
           "title": "Build API contract catalog",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-110_API_CATALOG.proof.json"
         },
         {
           "task_id": "ART-111_EVENT_MAP",
           "title": "Build Event/message contract map",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-111_EVENT_MAP.proof.json"
         }
       ],
-      "completed_task_count": 0,
-      "pending_task_count": 6
+      "completed_task_count": 6,
+      "pending_task_count": 0
     },
     {
       "wave_id": "W4",
@@ -402,14 +402,14 @@
           "task_id": "ART-119_BUSINESS_PROCESS",
           "title": "Build Business process map",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-119_BUSINESS_PROCESS.proof.json"
         },
         {
           "task_id": "ART-120_WAVE_PLAN",
           "title": "Build Migration wave plan",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-120_WAVE_PLAN.proof.json"
         },
         {
@@ -451,12 +451,12 @@
           "task_id": "ART-135_RACI",
           "title": "Build Ownership/RACI matrix",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-135_RACI.proof.json"
         }
       ],
-      "completed_task_count": 5,
-      "pending_task_count": 3
+      "completed_task_count": 8,
+      "pending_task_count": 0
     },
     {
       "wave_id": "W5",
@@ -480,14 +480,14 @@
           "task_id": "ART-123_VALIDATION_RECONCILIATION",
           "title": "Build Validation and reconciliation reports",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json"
         },
         {
           "task_id": "ART-124_TEST_COVERAGE",
           "title": "Build Test coverage matrix",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-124_TEST_COVERAGE.proof.json"
         },
         {
@@ -508,19 +508,19 @@
           "task_id": "ART-132_PARITY_DASHBOARD",
           "title": "Build Parity dashboard",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-132_PARITY_DASHBOARD.proof.json"
         },
         {
           "task_id": "VER-300_UNIT_VALIDATION",
           "title": "Run unit/integration validation",
           "phase": "07-verification",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
         }
       ],
-      "completed_task_count": 2,
-      "pending_task_count": 4
+      "completed_task_count": 6,
+      "pending_task_count": 0
     },
     {
       "wave_id": "W6",
@@ -549,42 +549,42 @@
           "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
           "title": "Implement checkpoints and rollback handles",
           "phase": "02-envctl-db",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
         },
         {
           "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
           "title": "Implement replay/reproduce engine",
           "phase": "02-envctl-db",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json"
         },
         {
           "task_id": "REQ-041_TWO_REPO_INTEGRATION",
           "title": "Implement two-repo integration",
           "phase": "04-shared",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json"
         },
         {
           "task_id": "REQ-045_RUN_REPLAY",
           "title": "Implement run/replay templates",
           "phase": "04-shared",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/REQ-045_RUN_REPLAY.proof.json"
         },
         {
           "task_id": "ART-121_CUTOVER",
           "title": "Build Cutover checklist",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-121_CUTOVER.proof.json"
         },
         {
           "task_id": "ART-122_ROLLBACK",
           "title": "Build Rollback plan",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-122_ROLLBACK.proof.json"
         },
         {
@@ -598,33 +598,33 @@
           "task_id": "ART-134_EXCEPTION_INVENTORY",
           "title": "Build Exception inventory",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-134_EXCEPTION_INVENTORY.proof.json"
         },
         {
           "task_id": "ART-136_TECH_DEBT_LEDGER",
           "title": "Build Technical debt ledger",
           "phase": "05-artifacts",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/ART-136_TECH_DEBT_LEDGER.proof.json"
         },
         {
           "task_id": "REL-400_PACKAGE_ARCHIVE",
           "title": "Create upgraded package archive",
           "phase": "08-release",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json"
         },
         {
           "task_id": "REL-401_HANDOFF",
           "title": "Prepare final handoff",
           "phase": "08-release",
-          "status": "pending",
+          "status": "completed",
           "proof_uri": "proof_records/REL-401_HANDOFF.proof.json"
         }
       ],
-      "completed_task_count": 1,
-      "pending_task_count": 10
+      "completed_task_count": 11,
+      "pending_task_count": 0
     }
   ],
   "sequence": [

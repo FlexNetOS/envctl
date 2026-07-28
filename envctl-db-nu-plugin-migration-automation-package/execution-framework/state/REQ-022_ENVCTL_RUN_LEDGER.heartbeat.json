@@ -1,7 +1,7 @@
 {
   "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
   "status": "passed",
-  "updated_at": "2026-07-27T17:56:52Z",
+  "updated_at": "2026-07-28T08:36:26Z",
   "evidence": [
     "execution-framework/generated/envctl_run_ledger_report.json",
     "execution-framework/docs/ENVCTL_RUN_LEDGER.md",

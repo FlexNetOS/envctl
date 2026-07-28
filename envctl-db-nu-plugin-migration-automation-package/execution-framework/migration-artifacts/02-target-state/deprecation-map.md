@@ -3,7 +3,7 @@
 - Task: `ART-133_DEPRECATION_MAP`
 - Contract artifact: `artifact:02-target-state-deprecation-map-md`
 - Canonical path: `migration-artifacts/02-target-state/deprecation-map.md`
-- Generated at: `2026-07-04T23:28:24+00:00`
+- Generated at: `2026-07-28T09:30:31+00:00`
 - Components: 8
 - Retired: 1; replaced: 2; wrapped: 2; preserved: 3
 

@@ -2,7 +2,7 @@
 
 - Task: `REQ-041_TWO_REPO_INTEGRATION`
 - Goal: Wire envctl database commands and nu_plugin commands through shared protocol and executable task packets
-- Generated at: 2026-07-05T05:18:43+00:00
+- Generated at: 2026-07-28T11:13:09+00:00
 - Verification status: passed
 
 ## Verified flow

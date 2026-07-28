@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-118_OBSERVABILITY",
-  "generated_at": "2026-07-04T23:29:39+00:00",
+  "generated_at": "2026-07-28T11:40:01+00:00",
   "status": "passed",
   "run_id": "run-art-118-observability",
   "operation_id": "op-art-118-generate-observability-map",
@@ -17,7 +17,7 @@
       "artifact_id": "art-118-observability-map-md",
       "run_id": "run-art-118-observability",
       "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
-      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "content_hash": "sha256:a32f242d9f6c18fbc43eac41c5af064e4872bb5d3e8d35d6d4c113d2c54abb26",
       "producer_operation_id": "op-art-118-generate-observability-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -54,7 +54,7 @@
       "artifact_id": "art-118-observability-map-json",
       "run_id": "run-art-118-observability",
       "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
-      "content_hash": "sha256:a923513af4aa63f621f5262d46632932bfb80828b70a68fbfd8178b7e21d8e6a",
+      "content_hash": "sha256:647f114d83639ab88c28ed75492a3dbfa6991ac9e4ad4fd0611e67f826f8b951",
       "producer_operation_id": "op-art-118-generate-observability-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -91,7 +91,7 @@
       "artifact_id": "08-operations-observability-map-md",
       "run_id": "run-art-118-observability",
       "path": "execution-framework/migration-artifacts/08-operations/observability-map.md",
-      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "content_hash": "sha256:a32f242d9f6c18fbc43eac41c5af064e4872bb5d3e8d35d6d4c113d2c54abb26",
       "producer_operation_id": "op-art-118-generate-observability-map",
       "contract_id": "contract-full-migration-artifact-contract-1.0.0",
       "evidence_ids": [
@@ -133,7 +133,7 @@
       "artifact_type": "observability_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
-      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "content_hash": "sha256:a32f242d9f6c18fbc43eac41c5af064e4872bb5d3e8d35d6d4c113d2c54abb26",
       "generated_by_operation_id": "op-art-118-generate-observability-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -226,7 +226,7 @@
       "artifact_type": "observability_map",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
-      "content_hash": "sha256:a923513af4aa63f621f5262d46632932bfb80828b70a68fbfd8178b7e21d8e6a",
+      "content_hash": "sha256:647f114d83639ab88c28ed75492a3dbfa6991ac9e4ad4fd0611e67f826f8b951",
       "generated_by_operation_id": "op-art-118-generate-observability-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -319,7 +319,7 @@
       "artifact_type": "migration_artifact",
       "status": "complete",
       "path": "execution-framework/migration-artifacts/08-operations/observability-map.md",
-      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "content_hash": "sha256:a32f242d9f6c18fbc43eac41c5af064e4872bb5d3e8d35d6d4c113d2c54abb26",
       "generated_by_operation_id": "op-art-118-generate-observability-map",
       "evidence": {
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",

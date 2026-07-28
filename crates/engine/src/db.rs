@@ -210,7 +210,24 @@ impl Db {
         release: Option<String>,
         release_profile: &str,
     ) -> Self {
+        Self::from_profiles_with_declared(observed, None, release, release_profile)
+    }
+
+    /// Build the multi-root model and explicitly represent a declared LifeOS root
+    /// alongside the release target root (both may be present simultaneously).
+    /// This preserves current behavior when `declared` is omitted while allowing
+    /// callers to inspect/emit both rows when they are semantically distinct.
+    pub fn from_profiles_with_declared(
+        observed: Option<String>,
+        declared: Option<String>,
+        release: Option<String>,
+        release_profile: &str,
+    ) -> Self {
         let mut db = Self::new();
+        // Keep catalog rows even when a path is not currently resolvable. The
+        // model describes the roots envctl can address, not just the roots set
+        // in this process; callers may therefore compare observed and target
+        // rows before their environment has been fully declared.
         db.push_root(EnvRootRow {
             root_id: "root-meta".into(),
             kind: EnvRootKind::MetaRoot,
@@ -224,6 +241,21 @@ impl Db {
             target_profile: Some("current".into()),
             verifier_status: "observed".into(),
         });
+        if let Some(declared_root) = declared {
+            db.push_root(EnvRootRow {
+                root_id: "root-lifeos-declared".into(),
+                kind: EnvRootKind::LifeOsRoot,
+                role: EnvRootRole::DeclaredCurrent,
+                var_names: vec!["LIFE_OS_ROOT".into(), "LIFEOS_ROOT".into()],
+                absolute_path: Some(declared_root),
+                token_forms: token_forms("LIFE_OS_ROOT"),
+                source: "declared-profile".into(),
+                precedence: 95,
+                active: true,
+                target_profile: Some("declared".into()),
+                verifier_status: "declared".into(),
+            });
+        }
         db.push_root(EnvRootRow {
             root_id: "root-lifeos".into(),
             kind: EnvRootKind::LifeOsRoot,
@@ -354,6 +386,38 @@ mod tests {
             db.root_by_var("LIFEOS_ROOT").map(|r| &r.root_id),
             Some(&"root-lifeos".to_string())
         );
+    }
+
+    #[test]
+    fn multi_root_model_tracks_declared_and_release_targets_separately() {
+        let db = Db::from_profiles_with_declared(
+            Some("/home/u/meta".into()),
+            Some("/home/u/lifeos-declared".into()),
+            Some("/home/u/lifeos-release".into()),
+            "lifeos-release",
+        );
+        let declared = db
+            .roots()
+            .iter()
+            .find(|r| r.role == EnvRootRole::DeclaredCurrent)
+            .expect("declared lifeos root");
+        let release = db
+            .roots()
+            .iter()
+            .find(|r| r.role == EnvRootRole::ReleaseTarget)
+            .expect("release target root");
+
+        assert_eq!(
+            declared.absolute_path.as_deref(),
+            Some("/home/u/lifeos-declared")
+        );
+        assert_eq!(declared.target_profile.as_deref(), Some("declared"));
+        assert_eq!(
+            release.absolute_path.as_deref(),
+            Some("/home/u/lifeos-release")
+        );
+        assert_eq!(release.target_profile.as_deref(), Some("lifeos-release"));
+        assert_eq!(declared.var_names, vec!["LIFE_OS_ROOT", "LIFEOS_ROOT"]);
     }
 
     #[test]

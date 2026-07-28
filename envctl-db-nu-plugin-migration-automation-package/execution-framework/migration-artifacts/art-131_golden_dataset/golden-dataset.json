@@ -3,7 +3,7 @@
   "task_id": "ART-131_GOLDEN_DATASET",
   "title": "Golden Dataset",
   "status": "complete",
-  "generated_at": "2026-07-04T23:28:06+00:00",
+  "generated_at": "2026-07-28T09:58:41+00:00",
   "contract_row": {
     "contract_row_id": "artifact:04-data-migration-golden-dataset-md",
     "artifact_id": "04-data-migration-golden-dataset-md",

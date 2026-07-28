@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "artifact_id": "ART-130_SHADOW_TRAFFIC",
+  "title": "Shadow traffic comparison report",
+  "generated_at": "2026-07-28T09:54:55Z",
+  "status": "not_started",
+  "decision": "pending_evidence",
+  "dependencies": [
+    "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+  ],
+  "comparison_mode": {
+    "old_path_authoritative": true,
+    "new_path_client_visible": false,
+    "write_policy": "idempotent_reads_only_unless_new_path_is_explicitly_dry_run",
+    "evidence_storage": "redacted_or_tokenized_only"
+  },
+  "input_availability": {
+    "target_descriptor": "unavailable",
+    "repository_scan": "unavailable",
+    "envctl_database": "unavailable",
+    "shared_protocol_schema": "unavailable",
+    "captured_comparisons": "unavailable"
+  },
+  "record_contract": {
+    "required_fields": [
+      "comparison_id",
+      "observed_at",
+      "operation",
+      "cohort",
+      "schema_version",
+      "old_outcome",
+      "new_outcome",
+      "comparison_result",
+      "evidence_ref"
+    ],
+    "comparison_results": [
+      "match",
+      "expected_delta",
+      "mismatch",
+      "old_error",
+      "new_error",
+      "timeout",
+      "excluded"
+    ],
+    "normalization_requirements": [
+      "shared_protocol_schema_validation",
+      "documented_volatile_field_exclusions",
+      "approved_delta_identifier_for_intentional_difference"
+    ]
+  },
+  "summary": {
+    "observation_window": null,
+    "eligible_operations": [],
+    "excluded_operations": [],
+    "total_observed": null,
+    "matched": null,
+    "expected_deltas": null,
+    "unapproved_mismatches": null,
+    "old_errors": null,
+    "new_errors": null,
+    "timeouts": null,
+    "old_latency_ms": null,
+    "new_latency_ms": null
+  },
+  "gates": [
+    { "name": "coverage", "status": "pending", "criterion": "Descriptor-defined eligible route, cohort, and window coverage is met." },
+    { "name": "correctness", "status": "pending", "criterion": "No unapproved material mismatches remain." },
+    { "name": "reliability", "status": "pending", "criterion": "No unapproved new-path error or timeout regression." },
+    { "name": "performance", "status": "pending", "criterion": "New path meets its approved latency threshold." },
+    { "name": "data_safety", "status": "pending", "criterion": "Redaction, exclusions, and write isolation are validated." },
+    { "name": "schema", "status": "pending", "criterion": "Every observed record validates against the shared protocol schema." }
+  ],
+  "findings": [],
+  "stop_conditions": [
+    "data_exposure",
+    "write_isolation_failure",
+    "critical_authorization_mismatch",
+    "configured_error_or_timeout_regression_exceeded"
+  ],
+  "next_actions": [
+    "Attach target descriptor, repository scan, envctl policy, and protocol schema version.",
+    "Capture and aggregate redacted shadow comparison records.",
+    "Update summary, findings, and gates with observed evidence before requesting promotion approval."
+  ]
+}

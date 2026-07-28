@@ -4787,7 +4787,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -5171,7 +5171,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -5563,7 +5563,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -6353,7 +6353,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -6749,7 +6749,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -7179,7 +7179,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -7569,7 +7569,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +
@@ -7959,7 +7959,7 @@ index 0000000000000000000000000000000000000000..b52159df39604fc6351777284715b8d6
 +            continue
 +        joined = " ".join(argv)
 +        for blocked in template.get("blocked_inputs", []):
-+            token = blocked.replace("**/", "")
++            <REDACTED:SECRET>, "")
 +            if token in joined:
 +                errors.append(f"{template['command_id']} references blocked input pattern {blocked}")
 +

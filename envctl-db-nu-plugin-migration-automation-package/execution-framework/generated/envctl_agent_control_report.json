@@ -2,8 +2,8 @@
   "schema_version": "1.0",
   "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
   "status": "pass",
-  "started_at": "2026-07-05T04:50:07+00:00",
-  "completed_at": "2026-07-05T04:50:07+00:00",
+  "started_at": "2026-07-28T09:32:28+00:00",
+  "completed_at": "2026-07-28T09:32:28+00:00",
   "fixture": {
     "catalog": {
       "target_id": "target-req022",
@@ -14,8 +14,8 @@
     "run": {
       "run_id": "run-req028-agent-control",
       "status": "created",
-      "started_at_utc": "2026-07-05T04:50:07+00:00",
-      "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249"
+      "started_at_utc": "2026-07-28T09:32:28+00:00",
+      "reproducibility_hash": "sha256:91d470da14eea5d3dd4d598534005d26e39d3dd4564f0014746a139d34ca237a"
     }
   },
   "library": {
@@ -26,7 +26,7 @@
       "approval_id": null,
       "idempotency_key": "sha256:44fb93d7674de548e62dae942d25b1a342bc60bf93f1c785490788128030e5fa",
       "event_seq": 2,
-      "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa"
+      "event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e"
     },
     "duplicate_operation": {
       "status": "existing",
@@ -43,7 +43,7 @@
       "approval_id": "approval-7009de60d9242388cd4351b9",
       "idempotency_key": "sha256:7c7aea9d0339e6578566d41f699471cea0dbe63fc9178e5a511f2eaa417222b9",
       "event_seq": 3,
-      "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8"
+      "event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0"
     },
     "preapproval_refusal": "illegal operation transition: blocked -> running",
     "approval_result": {
@@ -53,7 +53,7 @@
       "operation_id": "op-6f9be8d95cd8148a8bb3618f",
       "operation_status": "ready",
       "event_seq": 5,
-      "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c"
+      "event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920"
     },
     "start_result": {
       "status": "transitioned",
@@ -61,7 +61,7 @@
       "trigger": "start",
       "operation_status": "running",
       "event_seq": 6,
-      "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4"
+      "event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677"
     },
     "complete_result": {
       "status": "transitioned",
@@ -69,7 +69,7 @@
       "trigger": "complete",
       "operation_status": "succeeded",
       "event_seq": 7,
-      "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971"
+      "event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47"
     },
     "denied_operation": {
       "status": "decided",
@@ -78,14 +78,14 @@
       "operation_id": "op-c8eceedeb8160f1dfede8c51",
       "operation_status": "denied",
       "event_seq": 9,
-      "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690"
+      "event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259"
     },
     "lease": {
       "status": "acquired",
       "lease_id": "lease-0c0faeeef53ec38531974330",
       "target_scope": "envctl/sql",
       "event_seq": 10,
-      "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c"
+      "event_hash": "sha256:f56e5457ebd4b37a944128c5f5ffc18a01b8adbb5ace5be4b8577ca5e8c0b98f"
     },
     "blocked_lease": {
       "status": "blocked",
@@ -98,7 +98,7 @@
       "lease_id": "lease-0c0faeeef53ec38531974330",
       "target_scope": "envctl/sql",
       "event_seq": 12,
-      "event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab"
+      "event_hash": "sha256:19b19436677fce7a92d2bbf6226809ef68bbd350c2857f1047ac999b8f7ebf29"
     },
     "status_with_lock": {
       "run_id": "run-req028-agent-control",
@@ -107,7 +107,7 @@
       "failed_operation_count": 0,
       "open_approval_count": 0,
       "artifact_count": 0,
-      "last_event_at_utc": "2026-07-05T04:50:07+00:00",
+      "last_event_at_utc": "2026-07-28T09:32:28+00:00",
       "timeline": [
         {
           "event_seq": 1,
@@ -219,7 +219,7 @@
         "event_count": 11,
         "chain_valid": true,
         "errors": [],
-        "head_event_hash": "sha256:90623ccec32f4781f52549d3a34af1cd0e5faf248c690634d7456c8a9b053317"
+        "head_event_hash": "sha256:749a1e73963e8c721f5d6bf14c591ed05c830dc4f84f2bf26943517f62356032"
       },
       "approvals": {
         "counts": {
@@ -235,8 +235,8 @@
             "requested_by": "helper-envctl-agent-api-01",
             "decided_by": "operator-req028",
             "reason": "operator approves controlled additive smoke operation",
-            "requested_at_utc": "2026-07-05T04:50:07.609Z",
-            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+            "requested_at_utc": "2026-07-28T09:32:28.250Z",
+            "decided_at_utc": "2026-07-28T09:32:28+00:00"
           },
           {
             "id": "approval-e55ee771ce6c5ddabceebcb8",
@@ -246,8 +246,8 @@
             "requested_by": "helper-envctl-agent-api-01",
             "decided_by": "operator-req028",
             "reason": "R4 destructive operation is not approved in verification",
-            "requested_at_utc": "2026-07-05T04:50:07.611Z",
-            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+            "requested_at_utc": "2026-07-28T09:32:28.251Z",
+            "decided_at_utc": "2026-07-28T09:32:28+00:00"
           }
         ]
       },
@@ -265,7 +265,7 @@
           "actor_id": "helper-envctl-agent-api-01",
           "operation_id": "op-6f9be8d95cd8148a8bb3618f",
           "acquired_event_seq": 10,
-          "acquired_at_utc": "2026-07-05T04:50:07+00:00"
+          "acquired_at_utc": "2026-07-28T09:32:28+00:00"
         }
       ],
       "recent_events": [
@@ -278,17 +278,17 @@
           "operation_id": null,
           "payload": {
             "run": {
-              "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249",
+              "reproducibility_hash": "sha256:91d470da14eea5d3dd4d598534005d26e39d3dd4564f0014746a139d34ca237a",
               "run_id": "run-req028-agent-control",
-              "started_at_utc": "2026-07-05T04:50:07+00:00",
+              "started_at_utc": "2026-07-28T09:32:28+00:00",
               "status": "created"
             },
             "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API"
           },
           "evidence_refs": [],
           "previous_event_hash": null,
-          "event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "event_hash": "sha256:2f8f565ade3ec1f070aebd063e88b2d687cc2166afdaa6b26a4714f67843ec21",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 2,
@@ -309,9 +309,9 @@
             "target_scope": "execution-framework/status"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
-          "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:2f8f565ade3ec1f070aebd063e88b2d687cc2166afdaa6b26a4714f67843ec21",
+          "event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 3,
@@ -332,9 +332,9 @@
             "target_scope": "envctl/sql"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
-          "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e",
+          "event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 4,
@@ -350,9 +350,9 @@
             "trigger": "start"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
-          "event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0",
+          "event_hash": "sha256:fc41f156da4b6c33e6856bf8270f4333fdff116f815d6b83102b69bb93cb06c8",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 5,
@@ -369,9 +369,9 @@
             "reason": "operator approves controlled additive smoke operation"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
-          "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:fc41f156da4b6c33e6856bf8270f4333fdff116f815d6b83102b69bb93cb06c8",
+          "event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 6,
@@ -393,9 +393,9 @@
             "trigger": "start"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
-          "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920",
+          "event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 7,
@@ -417,9 +417,9 @@
             "trigger": "complete"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
-          "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677",
+          "event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 8,
@@ -440,9 +440,9 @@
             "target_scope": "envctl/cutover"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
-          "event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47",
+          "event_hash": "sha256:e6191e34f349ea0a921df81368cdf52e16bf489b9d7e6d7ba95004311601669d",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 9,
@@ -459,9 +459,9 @@
             "reason": "R4 destructive operation is not approved in verification"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
-          "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:e6191e34f349ea0a921df81368cdf52e16bf489b9d7e6d7ba95004311601669d",
+          "event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 10,
@@ -477,9 +477,9 @@
             "target_scope": "envctl/sql"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
-          "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259",
+          "event_hash": "sha256:f56e5457ebd4b37a944128c5f5ffc18a01b8adbb5ace5be4b8577ca5e8c0b98f",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         }
       ]
     },
@@ -490,7 +490,7 @@
       "failed_operation_count": 0,
       "open_approval_count": 0,
       "artifact_count": 0,
-      "last_event_at_utc": "2026-07-05T04:50:07+00:00",
+      "last_event_at_utc": "2026-07-28T09:32:28+00:00",
       "timeline": [
         {
           "event_seq": 1,
@@ -609,7 +609,7 @@
         "event_count": 12,
         "chain_valid": true,
         "errors": [],
-        "head_event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab"
+        "head_event_hash": "sha256:19b19436677fce7a92d2bbf6226809ef68bbd350c2857f1047ac999b8f7ebf29"
       },
       "approvals": {
         "counts": {
@@ -625,8 +625,8 @@
             "requested_by": "helper-envctl-agent-api-01",
             "decided_by": "operator-req028",
             "reason": "operator approves controlled additive smoke operation",
-            "requested_at_utc": "2026-07-05T04:50:07.609Z",
-            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+            "requested_at_utc": "2026-07-28T09:32:28.250Z",
+            "decided_at_utc": "2026-07-28T09:32:28+00:00"
           },
           {
             "id": "approval-e55ee771ce6c5ddabceebcb8",
@@ -636,8 +636,8 @@
             "requested_by": "helper-envctl-agent-api-01",
             "decided_by": "operator-req028",
             "reason": "R4 destructive operation is not approved in verification",
-            "requested_at_utc": "2026-07-05T04:50:07.611Z",
-            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+            "requested_at_utc": "2026-07-28T09:32:28.251Z",
+            "decided_at_utc": "2026-07-28T09:32:28+00:00"
           }
         ]
       },
@@ -657,17 +657,17 @@
           "operation_id": null,
           "payload": {
             "run": {
-              "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249",
+              "reproducibility_hash": "sha256:91d470da14eea5d3dd4d598534005d26e39d3dd4564f0014746a139d34ca237a",
               "run_id": "run-req028-agent-control",
-              "started_at_utc": "2026-07-05T04:50:07+00:00",
+              "started_at_utc": "2026-07-28T09:32:28+00:00",
               "status": "created"
             },
             "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API"
           },
           "evidence_refs": [],
           "previous_event_hash": null,
-          "event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "event_hash": "sha256:2f8f565ade3ec1f070aebd063e88b2d687cc2166afdaa6b26a4714f67843ec21",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 2,
@@ -688,9 +688,9 @@
             "target_scope": "execution-framework/status"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
-          "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:2f8f565ade3ec1f070aebd063e88b2d687cc2166afdaa6b26a4714f67843ec21",
+          "event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 3,
@@ -711,9 +711,9 @@
             "target_scope": "envctl/sql"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
-          "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e",
+          "event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 4,
@@ -729,9 +729,9 @@
             "trigger": "start"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
-          "event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0",
+          "event_hash": "sha256:fc41f156da4b6c33e6856bf8270f4333fdff116f815d6b83102b69bb93cb06c8",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 5,
@@ -748,9 +748,9 @@
             "reason": "operator approves controlled additive smoke operation"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
-          "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:fc41f156da4b6c33e6856bf8270f4333fdff116f815d6b83102b69bb93cb06c8",
+          "event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 6,
@@ -772,9 +772,9 @@
             "trigger": "start"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
-          "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920",
+          "event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 7,
@@ -796,9 +796,9 @@
             "trigger": "complete"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
-          "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677",
+          "event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 8,
@@ -819,9 +819,9 @@
             "target_scope": "envctl/cutover"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
-          "event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47",
+          "event_hash": "sha256:e6191e34f349ea0a921df81368cdf52e16bf489b9d7e6d7ba95004311601669d",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 9,
@@ -838,9 +838,9 @@
             "reason": "R4 destructive operation is not approved in verification"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
-          "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:e6191e34f349ea0a921df81368cdf52e16bf489b9d7e6d7ba95004311601669d",
+          "event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "event_seq": 10,
@@ -856,9 +856,9 @@
             "target_scope": "envctl/sql"
           },
           "evidence_refs": [],
-          "previous_event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
-          "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
-          "created_at_utc": "2026-07-05T04:50:07+00:00"
+          "previous_event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259",
+          "event_hash": "sha256:f56e5457ebd4b37a944128c5f5ffc18a01b8adbb5ace5be4b8577ca5e8c0b98f",
+          "created_at_utc": "2026-07-28T09:32:28+00:00"
         }
       ]
     }
@@ -876,7 +876,7 @@
     },
     "enqueue": {
       "approval_id": null,
-      "event_hash": "sha256:9020d4fe2c4c0418528cbfbfac3094ce930846c332e024877dcf963725f423bd",
+      "event_hash": "sha256:8831d612631dca5b4ee8e741cd0944903f4adae2be16aa54c770f7a9ae707d19",
       "event_seq": 13,
       "idempotency_key": "sha256:ed0b03e85672ae2da2318057870394f1c84f5db9af0c80ddbd20992926ea1f27",
       "operation_id": "op-c0a4bf391f700534ac2e2057",
@@ -891,7 +891,7 @@
     "failed_operation_count": 0,
     "open_approval_count": 0,
     "artifact_count": 0,
-    "last_event_at_utc": "2026-07-05T04:50:07+00:00",
+    "last_event_at_utc": "2026-07-28T09:32:28+00:00",
     "timeline": [
       {
         "event_seq": 1,
@@ -1025,7 +1025,7 @@
       "event_count": 13,
       "chain_valid": true,
       "errors": [],
-      "head_event_hash": "sha256:9020d4fe2c4c0418528cbfbfac3094ce930846c332e024877dcf963725f423bd"
+      "head_event_hash": "sha256:8831d612631dca5b4ee8e741cd0944903f4adae2be16aa54c770f7a9ae707d19"
     },
     "approvals": {
       "counts": {
@@ -1041,8 +1041,8 @@
           "requested_by": "helper-envctl-agent-api-01",
           "decided_by": "operator-req028",
           "reason": "operator approves controlled additive smoke operation",
-          "requested_at_utc": "2026-07-05T04:50:07.609Z",
-          "decided_at_utc": "2026-07-05T04:50:07+00:00"
+          "requested_at_utc": "2026-07-28T09:32:28.250Z",
+          "decided_at_utc": "2026-07-28T09:32:28+00:00"
         },
         {
           "id": "approval-e55ee771ce6c5ddabceebcb8",
@@ -1052,8 +1052,8 @@
           "requested_by": "helper-envctl-agent-api-01",
           "decided_by": "operator-req028",
           "reason": "R4 destructive operation is not approved in verification",
-          "requested_at_utc": "2026-07-05T04:50:07.611Z",
-          "decided_at_utc": "2026-07-05T04:50:07+00:00"
+          "requested_at_utc": "2026-07-28T09:32:28.251Z",
+          "decided_at_utc": "2026-07-28T09:32:28+00:00"
         }
       ]
     },
@@ -1073,17 +1073,17 @@
         "operation_id": null,
         "payload": {
           "run": {
-            "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249",
+            "reproducibility_hash": "sha256:91d470da14eea5d3dd4d598534005d26e39d3dd4564f0014746a139d34ca237a",
             "run_id": "run-req028-agent-control",
-            "started_at_utc": "2026-07-05T04:50:07+00:00",
+            "started_at_utc": "2026-07-28T09:32:28+00:00",
             "status": "created"
           },
           "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API"
         },
         "evidence_refs": [],
         "previous_event_hash": null,
-        "event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "event_hash": "sha256:2f8f565ade3ec1f070aebd063e88b2d687cc2166afdaa6b26a4714f67843ec21",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 2,
@@ -1104,9 +1104,9 @@
           "target_scope": "execution-framework/status"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
-        "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:2f8f565ade3ec1f070aebd063e88b2d687cc2166afdaa6b26a4714f67843ec21",
+        "event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 3,
@@ -1127,9 +1127,9 @@
           "target_scope": "envctl/sql"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
-        "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:50fd737455b6b8551179a16ec86e9b6cec38f67f4bdc83067f0a31116bce306e",
+        "event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 4,
@@ -1145,9 +1145,9 @@
           "trigger": "start"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
-        "event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:20dfee5acb76f28edaafa2e62c128ea36e8277b98e870154d24bcbde0aaaf3e0",
+        "event_hash": "sha256:fc41f156da4b6c33e6856bf8270f4333fdff116f815d6b83102b69bb93cb06c8",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 5,
@@ -1164,9 +1164,9 @@
           "reason": "operator approves controlled additive smoke operation"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
-        "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:fc41f156da4b6c33e6856bf8270f4333fdff116f815d6b83102b69bb93cb06c8",
+        "event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 6,
@@ -1188,9 +1188,9 @@
           "trigger": "start"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
-        "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:a6c866cef9b29c49611311d8a2a99391ae911a6de366ac2430e4f9ea387ab920",
+        "event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 7,
@@ -1212,9 +1212,9 @@
           "trigger": "complete"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
-        "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:4e060fd33f951836308b09c72e9b85d1ca544889251dfd9b908c0b3101e97677",
+        "event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 8,
@@ -1235,9 +1235,9 @@
           "target_scope": "envctl/cutover"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
-        "event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:3502f1cc5c766ec385c5f11c007ecec1107a490a26c40155464b79a3b70ccd47",
+        "event_hash": "sha256:e6191e34f349ea0a921df81368cdf52e16bf489b9d7e6d7ba95004311601669d",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 9,
@@ -1254,9 +1254,9 @@
           "reason": "R4 destructive operation is not approved in verification"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
-        "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:e6191e34f349ea0a921df81368cdf52e16bf489b9d7e6d7ba95004311601669d",
+        "event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 10,
@@ -1272,9 +1272,9 @@
           "target_scope": "envctl/sql"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
-        "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:0b72cff625469d8788a245bf59c266d1760bad995c131a8e3a3c1f82f6685259",
+        "event_hash": "sha256:f56e5457ebd4b37a944128c5f5ffc18a01b8adbb5ace5be4b8577ca5e8c0b98f",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 11,
@@ -1290,9 +1290,9 @@
           "target_scope": "envctl/sql"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
-        "event_hash": "sha256:90623ccec32f4781f52549d3a34af1cd0e5faf248c690634d7456c8a9b053317",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:f56e5457ebd4b37a944128c5f5ffc18a01b8adbb5ace5be4b8577ca5e8c0b98f",
+        "event_hash": "sha256:749a1e73963e8c721f5d6bf14c591ed05c830dc4f84f2bf26943517f62356032",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 12,
@@ -1308,9 +1308,9 @@
           "target_scope": "envctl/sql"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:90623ccec32f4781f52549d3a34af1cd0e5faf248c690634d7456c8a9b053317",
-        "event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:749a1e73963e8c721f5d6bf14c591ed05c830dc4f84f2bf26943517f62356032",
+        "event_hash": "sha256:19b19436677fce7a92d2bbf6226809ef68bbd350c2857f1047ac999b8f7ebf29",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       },
       {
         "event_seq": 13,
@@ -1331,9 +1331,9 @@
           "target_scope": "execution-framework/proof_records"
         },
         "evidence_refs": [],
-        "previous_event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab",
-        "event_hash": "sha256:9020d4fe2c4c0418528cbfbfac3094ce930846c332e024877dcf963725f423bd",
-        "created_at_utc": "2026-07-05T04:50:07+00:00"
+        "previous_event_hash": "sha256:19b19436677fce7a92d2bbf6226809ef68bbd350c2857f1047ac999b8f7ebf29",
+        "event_hash": "sha256:8831d612631dca5b4ee8e741cd0944903f4adae2be16aa54c770f7a9ae707d19",
+        "created_at_utc": "2026-07-28T09:32:28+00:00"
       }
     ]
   },

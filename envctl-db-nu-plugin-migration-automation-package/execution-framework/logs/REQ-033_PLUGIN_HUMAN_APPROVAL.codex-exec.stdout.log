@@ -13402,7 +13402,7 @@ exec
             &config_path,
             r#"
 model = "gpt-5-codex"
-OPENAI_API_KEY = "sk-test-secret"
+OPENAI_<REDACTED:SECRET>
 
 [mcp_servers.primary]
 command = "/usr/bin/codedb-mcp"

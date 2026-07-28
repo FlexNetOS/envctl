@@ -15,6 +15,7 @@
 //! the CLI renders.
 
 pub mod api;
+pub mod descriptor;
 pub mod machine;
 pub mod model;
 pub mod replay;
@@ -28,10 +29,14 @@ use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
 pub use api::{ApprovalDecision, OperationSpec, RunBundle, RunSpec, TargetSpec, ValidationSpec};
+pub use descriptor::{
+    load_target_descriptor, parse_target_descriptor, TargetDescriptor, TargetSafety,
+    TargetSafetyMode,
+};
 pub use model::*;
 pub use replay::{
     ReplayCheck, ReplayEventChain, ReplayHashCheck, ReplayHashStatus, ReplayMode,
-    ReplayNonDeterministicOperation, ReplayPlanRow, ReplayRequest, ReplayRequestMode, ReplayReport,
+    ReplayNonDeterministicOperation, ReplayPlanRow, ReplayReport, ReplayRequest, ReplayRequestMode,
     ReplayResult, ReplayResultStatus,
 };
 pub use views::{ApprovalRow, RunStatusRow, ScorecardRow, TimelineRow};

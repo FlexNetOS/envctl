@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "task_id": "VER-304_FINAL_COMPLETENESS",
-  "generated_at": "2026-07-05T06:04:08+00:00",
-  "status": "pass",
+  "generated_at": "2026-07-28T12:44:38+00:00",
+  "status": "failed",
   "packet_summary": {
     "goal": "Prove every source requirement is covered by a task or explicit blocker",
     "repo_target": "filesystem",
@@ -13,19 +13,19 @@
   "dependency_proof": {
     "task_id": "VER-303_GOAL_LOOP_COMPUTE",
     "path": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
-    "status": "completed",
-    "ok": true
+    "status": "failed",
+    "ok": false
   },
   "completeness_validator": {
     "command": "python3 scripts/verify_history_and_completeness.py",
     "exit_code": 0,
     "stdout": [
-      "final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=85"
+      "final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=88"
     ],
     "stderr": []
   },
   "checks": {
-    "dependency_completed": true,
+    "dependency_completed": false,
     "validator_exit_zero": true,
     "final_status_allowed": true,
     "local_package_complete": true,
@@ -37,12 +37,12 @@
   },
   "final_verification_report": {
     "schema_version": "1.0",
-    "generated_at": "2026-07-05T06:04:08+00:00",
+    "generated_at": "2026-07-28T12:44:38+00:00",
     "status": "pass_with_external_blocker",
     "local_package_complete": true,
     "task_count": 80,
     "packet_count": 80,
-    "proof_count": 85,
+    "proof_count": 88,
     "missing_outputs": [],
     "tasks_without_packets": [],
     "packet_missing_fields": [],
@@ -135,48 +135,19 @@
     "unresolved_gaps": [],
     "goal_loop_summary": {
       "schema_version": "1.0",
-      "generated_at": "2026-07-05T06:01:54+00:00",
+      "generated_at": "2026-07-28T12:27:57+00:00",
       "task_count": 80,
-      "complete_count": 77,
-      "failed_count": 0,
-      "pending_count": 3,
-      "runnable_count": 1,
-      "dispatch_count": 1,
+      "complete_count": 76,
+      "failed_count": 4,
+      "pending_count": 0,
+      "runnable_count": 0,
+      "dispatch_count": 0,
       "approval_blocker_count": 0,
-      "blocked_count": 2,
-      "runnable_tasks": [
-        {
-          "task_id": "VER-304_FINAL_COMPLETENESS",
-          "parallel_group": "verification",
-          "max_parallel": 1,
-          "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
-        }
-      ],
-      "dispatch_packets": [
-        {
-          "task_id": "VER-304_FINAL_COMPLETENESS",
-          "parallel_group": "verification",
-          "max_parallel": 1,
-          "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
-        }
-      ],
+      "blocked_count": 0,
+      "runnable_tasks": [],
+      "dispatch_packets": [],
       "approval_blockers": [],
-      "blocked_tasks": [
-        {
-          "task_id": "REL-400_PACKAGE_ARCHIVE",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "VER-304_FINAL_COMPLETENESS"
-          ]
-        },
-        {
-          "task_id": "REL-401_HANDOFF",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "REL-400_PACKAGE_ARCHIVE"
-          ]
-        }
-      ],
+      "blocked_tasks": [],
       "statuses": {
         "EF-001_SCAN_PACKAGE": "complete",
         "EF-002_GAP_REPORT": "complete",
@@ -248,12 +219,12 @@
         "REQ-201_FLEXNETOS_LIFEOS_COMPARISON": "complete",
         "REQ-202_FLEXNETOS_ADAPTER_RECIPE": "complete",
         "VER-300_UNIT_VALIDATION": "complete",
-        "VER-301_SQL_SCHEMA_TEST": "complete",
-        "VER-302_PACKET_SCHEMA_VALIDATION": "complete",
-        "VER-303_GOAL_LOOP_COMPUTE": "complete",
-        "VER-304_FINAL_COMPLETENESS": "pending",
-        "REL-400_PACKAGE_ARCHIVE": "pending",
-        "REL-401_HANDOFF": "pending",
+        "VER-301_SQL_SCHEMA_TEST": "failed",
+        "VER-302_PACKET_SCHEMA_VALIDATION": "failed",
+        "VER-303_GOAL_LOOP_COMPUTE": "failed",
+        "VER-304_FINAL_COMPLETENESS": "failed",
+        "REL-400_PACKAGE_ARCHIVE": "complete",
+        "REL-401_HANDOFF": "complete",
         "MAINT-500_README_NAV_BACKTRACE": "complete",
         "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
         "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
@@ -276,5 +247,7 @@
     ],
     "findings": []
   },
-  "errors": []
+  "errors": [
+    "dependency_completed"
+  ]
 }

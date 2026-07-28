@@ -25,6 +25,24 @@ Convert the earlier FlexNetOS Codex migration package into a reusable envctl mig
 - Human approval required: `true`
 - Verification command: `python3 scripts/verify_flexnetos_adapter_recipe.py`
 
+## Reusable Runtime Contract
+
+Supply `package_root`, `package_name`, `target_descriptor`, and `target_id` to execute this adapter. Before import, the package must contain: `PACKAGE_MANIFEST.json`, `prompts/ARTIFACT_CONTRACT_FULL.md`, `expected-output/migration-artifacts-tree.md`, `prompts/MASTER_PROMPT.md`.
+
+```text
+envctl migration package inspect {package_root}
+envctl migration package import {package_root} --name {package_name}
+envctl migration target add --descriptor {target_descriptor}
+envctl migration plan --target {target_id} --contract {contract_id} --recipe {recipe_id}
+envctl migration run {plan_id} --mode approval-gated
+envctl migration events {run_id}
+envctl migration artifacts {run_id}
+envctl migration replay {run_id} --verify-hashes
+envctl migration export {run_id} --format json
+```
+
+The `run` command remains approval-gated; no command here authorizes a target mutation without the recorded human decision.
+
 ## Phase Plan
 
 | phase | approval gate | operation count | focus |

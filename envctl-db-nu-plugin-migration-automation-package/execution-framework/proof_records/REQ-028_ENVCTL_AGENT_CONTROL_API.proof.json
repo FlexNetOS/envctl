@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
   "status": "completed",
-  "started_at": "2026-07-05T04:50:07+00:00",
-  "completed_at": "2026-07-05T04:50:07+00:00",
+  "started_at": "2026-07-28T09:32:28+00:00",
+  "completed_at": "2026-07-28T09:32:28+00:00",
   "actor": "envctl-runner-agent",
   "helper_id": "helper-envctl-agent-api-01",
   "model_tag": "gpt-5.3-spark",
@@ -31,10 +31,10 @@
   "checksums": {
     "execution-framework/scripts/agent_control_api.py": "c6450006ac22e6aa6608d9436a79bf8e8a4962e568d43bb6f1d37b543225fd7e",
     "execution-framework/scripts/verify_agent_control_api.py": "ed1d259322dfba411a4beadfd1a0a240e338dfabe98be20333740a312f538e0b",
-    "execution-framework/generated/envctl_agent_control_report.json": "791d1fa69aa046a4b7bcd58c510416b3b904d7eb407a244d9673d317198ca2e2",
+    "execution-framework/generated/envctl_agent_control_report.json": "5195399d4fc716b5cf2e2dd910b9f701e00a07418060e52a2ad7a62077c971b7",
     "execution-framework/docs/ENVCTL_AGENT_CONTROL_API.md": "93bd9d0967d9ed4c6dd7817235e72eff97e72980f62ecee31e930dbaf4a664c6",
     "execution-framework/logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log": "539b53cba3d22a94e73c271189c1d90217a0cc33ef462eb7912fcdb0f3b20296",
-    "execution-framework/state/REQ-028_ENVCTL_AGENT_CONTROL_API.heartbeat.json": "9b2e0eb1cea588d8d3068de03615740f5091c33ae8b7d0b3d5f7bb2d09478868"
+    "execution-framework/state/REQ-028_ENVCTL_AGENT_CONTROL_API.heartbeat.json": "d49eab7176ace53b72eb7b07967bb863712c6b205aba9768186052885a69d352"
   },
   "logs_uri": "logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

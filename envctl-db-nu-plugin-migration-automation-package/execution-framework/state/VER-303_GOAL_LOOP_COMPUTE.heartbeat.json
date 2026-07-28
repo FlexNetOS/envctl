@@ -1,8 +1,10 @@
 {
-  "schema_version": "1.0",
   "task_id": "VER-303_GOAL_LOOP_COMPUTE",
-  "status": "pass",
-  "updated_at": "2026-07-05T06:01:26+00:00",
-  "proof_uri": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
-  "validation_report": "generated/ver303_goal_loop_compute_report.json"
+  "status": "blocked",
+  "reason": "Required normalized task graph and proof ledger are absent; declared dependency evidence cannot be verified.",
+  "required_inputs": [
+    "execution-framework/generated/task_graph.normalized.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "next_action": "Obtain the required artifacts through an authorized provider, then recompute the /goal run path."
 }

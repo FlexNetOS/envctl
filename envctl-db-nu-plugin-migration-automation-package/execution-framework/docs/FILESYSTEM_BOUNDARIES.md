@@ -2,7 +2,7 @@
 
 Task: `REQ-042_FILESYSTEM_BOUNDS`
 Scope: `package-root`
-Generated at: `2026-07-04T23:19:35+00:00`
+Generated at: `2026-07-28T10:56:44+00:00`
 
 ## Decision Order
 

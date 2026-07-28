@@ -12,9 +12,9 @@
 //! PostgreSQL service — never a production database.
 
 use envctl_commit_worker::{
-    COMMITTED_TABLE, COMMITTER_ROLE, CURSOR_TABLE, OWNER_PROTOCOL_VERSION, STAGING_TABLE,
     apply_role_and_grant_policy, committed_records, drain_and_commit, reconciliation_cursor,
-    return_projection, verify_witness_chain,
+    return_projection, verify_witness_chain, COMMITTED_TABLE, COMMITTER_ROLE, CURSOR_TABLE,
+    OWNER_PROTOCOL_VERSION, STAGING_TABLE,
 };
 use postgres::{Client, NoTls};
 use std::io::{BufRead, BufReader, Write};
@@ -141,8 +141,16 @@ fn drain_is_ordered_idempotent_and_restart_safe_with_exact_identity() {
         vec![1, 2, 3, 4, 5, 6, 7]
     );
     for record in &records {
-        assert!(!record.commit_txid.is_empty(), "txid missing on {}", record.seq);
-        assert!(!record.commit_lsn.is_empty(), "lsn missing on {}", record.seq);
+        assert!(
+            !record.commit_txid.is_empty(),
+            "txid missing on {}",
+            record.seq
+        );
+        assert!(
+            !record.commit_lsn.is_empty(),
+            "lsn missing on {}",
+            record.seq
+        );
         assert!(record.generation >= 1);
         assert_eq!(
             record.witness.len(),
@@ -173,7 +181,10 @@ fn acknowledgement_never_precedes_durable_commit() {
     // Nothing is visible and nothing is acknowledged.
     assert!(committed_records(&conn).expect("read back").is_empty());
     let cursor = reconciliation_cursor(&conn).expect("cursor");
-    assert_eq!(cursor.acknowledged_seq, 0, "no acknowledgement before durability");
+    assert_eq!(
+        cursor.acknowledged_seq, 0,
+        "no acknowledgement before durability"
+    );
 
     // The retry commits exactly once.
     let receipt = drain_and_commit(&conn, 16, false).expect("retry");
@@ -195,10 +206,8 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
 
     // A minimal in-test owner speaking the exact versioned protocol records
     // every authenticated put.
-    let root = std::env::temp_dir().join(format!(
-        "envctl-return-projection-{}",
-        std::process::id()
-    ));
+    let root =
+        std::env::temp_dir().join(format!("envctl-return-projection-{}", std::process::id()));
     std::fs::create_dir_all(&root).expect("owner root");
     std::fs::write(root.join("owner.token"), "test-owner-token").expect("token");
     let socket_path = root.join("owner.sock");
@@ -223,8 +232,7 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
                         request["value"].as_str().expect("value").to_string(),
                     ));
                 }
-                writeln!(writer, "{}", serde_json::json!({"ok": true, "seq": 1}))
-                    .expect("respond");
+                writeln!(writer, "{}", serde_json::json!({"ok": true, "seq": 1})).expect("respond");
                 line.clear();
             }
             break;
@@ -234,7 +242,10 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
     let first = return_projection(&conn, &root).expect("projection");
     server.join().expect("owner server");
     let recorded_puts = recorded.lock().expect("sink").clone();
-    assert_eq!(recorded_puts, first, "the projection is what actually reached the owner");
+    assert_eq!(
+        recorded_puts, first,
+        "the projection is what actually reached the owner"
+    );
     assert!(
         first
             .iter()
@@ -243,10 +254,8 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
     );
 
     // Determinism: identical committed state projects identical pairs.
-    let second_root = std::env::temp_dir().join(format!(
-        "envctl-return-projection-b-{}",
-        std::process::id()
-    ));
+    let second_root =
+        std::env::temp_dir().join(format!("envctl-return-projection-b-{}", std::process::id()));
     std::fs::create_dir_all(&second_root).expect("owner root b");
     std::fs::write(second_root.join("owner.token"), "test-owner-token").expect("token b");
     let socket_b = second_root.join("owner.sock");
@@ -259,8 +268,7 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
             let mut writer = stream;
             let mut line = String::new();
             while reader.read_line(&mut line).map(|n| n > 0).unwrap_or(false) {
-                writeln!(writer, "{}", serde_json::json!({"ok": true, "seq": 1}))
-                    .expect("respond");
+                writeln!(writer, "{}", serde_json::json!({"ok": true, "seq": 1})).expect("respond");
                 line.clear();
             }
             break;
@@ -268,7 +276,10 @@ fn committed_state_projects_back_deterministically_through_the_owner_protocol() 
     });
     let second = return_projection(&conn, &second_root).expect("projection again");
     server_b.join().expect("owner server b");
-    assert_eq!(first, second, "identical committed state must project identically");
+    assert_eq!(
+        first, second,
+        "identical committed state must project identically"
+    );
 
     std::fs::remove_dir_all(&root).ok();
     std::fs::remove_dir_all(&second_root).ok();

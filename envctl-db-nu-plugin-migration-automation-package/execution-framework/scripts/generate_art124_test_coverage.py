@@ -93,7 +93,10 @@ def coverage_rows(statuses: dict[str, str]) -> list[dict[str, Any]]:
             "owner": "validation-agent",
             "blocks": ["VER-300_UNIT_VALIDATION", "VER-301_SQL_SCHEMA_TEST", "VER-302_PACKET_SCHEMA_VALIDATION"],
             "open_gaps": [
-                "Replay and rollback unit checks remain pending until REQ-026, REQ-027, and REQ-045 complete."
+                "Replay and rollback unit checks require runtime execution evidence; "
+                f"current dependency states are REQ-026={status_for(statuses, 'REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS')}, "
+                f"REQ-027={status_for(statuses, 'REQ-027_ENVCTL_REPLAY_ENGINE')}, and "
+                f"REQ-045={status_for(statuses, 'REQ-045_RUN_REPLAY')}."
             ],
         },
         {
@@ -118,7 +121,8 @@ def coverage_rows(statuses: dict[str, str]) -> list[dict[str, Any]]:
             "owner": "validation-agent",
             "blocks": ["VER-300_UNIT_VALIDATION"],
             "open_gaps": [
-                "REQ-041_TWO_REPO_INTEGRATION is pending, so this matrix does not certify a live envctl-to-nu_plugin run."
+                "A live envctl-to-nu_plugin run remains outside this artifact's fixture evidence; "
+                f"REQ-041_TWO_REPO_INTEGRATION is {status_for(statuses, 'REQ-041_TWO_REPO_INTEGRATION')}."
             ],
         },
         {
@@ -143,7 +147,8 @@ def coverage_rows(statuses: dict[str, str]) -> list[dict[str, Any]]:
             "owner": "validation-agent",
             "blocks": ["VER-300_UNIT_VALIDATION", "VER-303_GOAL_LOOP_COMPUTE", "VER-304_FINAL_COMPLETENESS"],
             "open_gaps": [
-                "Full replay identity remains pending until REQ-045_RUN_REPLAY is complete."
+                "Full replay identity still requires a replay execution record for this matrix; "
+                f"REQ-045_RUN_REPLAY is {status_for(statuses, 'REQ-045_RUN_REPLAY')}."
             ],
         },
         {
@@ -192,7 +197,9 @@ def coverage_rows(statuses: dict[str, str]) -> list[dict[str, Any]]:
             "owner": "security-reproducibility-agent",
             "blocks": ["VER-300_UNIT_VALIDATION", "VER-302_PACKET_SCHEMA_VALIDATION"],
             "open_gaps": [
-                "REQ-033_PLUGIN_HUMAN_APPROVAL and REQ-045_RUN_REPLAY are pending, so end-to-end approval/replay security is not certified here."
+                "End-to-end approval/replay security certification requires execution evidence for this matrix; "
+                f"REQ-033_PLUGIN_HUMAN_APPROVAL is {status_for(statuses, 'REQ-033_PLUGIN_HUMAN_APPROVAL')} and "
+                f"REQ-045_RUN_REPLAY is {status_for(statuses, 'REQ-045_RUN_REPLAY')}."
             ],
         },
         {

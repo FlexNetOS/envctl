@@ -1,7 +1,7 @@
 # Business capability map
 
 Task: `ART-129_BUSINESS_CAPABILITY`
-Generated at: `2026-07-04T23:19:56+00:00`
+Generated at: `2026-07-28T12:02:46+00:00`
 
 ## Scope
 

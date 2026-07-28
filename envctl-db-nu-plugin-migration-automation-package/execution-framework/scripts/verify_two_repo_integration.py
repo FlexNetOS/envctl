@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
+try:
+    from jsonschema import Draft202012Validator
+except ModuleNotFoundError:  # Keep the task packet executable with stdlib-only Python.
+    Draft202012Validator = None  # type: ignore[assignment,misc]
 
 from _common import append_proof, make_proof, now, package_root, read_json, root, write_json
 from agent_control_api import Actor, AgentControlApi
@@ -27,13 +31,105 @@ TRACKED_FILES = [
 ]
 
 
+class StdlibDraft202012Validator:
+    """Small local validator for the shared protocol when jsonschema is absent.
+
+    The execution framework is deliberately runnable with the Python standard
+    library.  This supports the JSON Schema keywords used by the checked-in
+    shared protocol and raises ValueError with the failing JSON path.
+    """
+
+    def __init__(self, schema: dict[str, Any]) -> None:
+        self.schema = schema
+
+    def validate(self, instance: Any) -> None:
+        self._validate(instance, self.schema, "$")
+
+    def _resolve(self, reference: str) -> dict[str, Any]:
+        if not reference.startswith("#/"):
+            raise ValueError(f"unsupported external schema reference: {reference}")
+        node: Any = self.schema
+        for token in reference[2:].split("/"):
+            node = node[token.replace("~1", "/").replace("~0", "~")]
+        if not isinstance(node, dict):
+            raise ValueError(f"schema reference does not resolve to an object: {reference}")
+        return node
+
+    @staticmethod
+    def _is_type(value: Any, expected: str) -> bool:
+        return {
+            "object": isinstance(value, dict),
+            "array": isinstance(value, list),
+            "string": isinstance(value, str),
+            "integer": isinstance(value, int) and not isinstance(value, bool),
+            "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+            "boolean": isinstance(value, bool),
+            "null": value is None,
+        }.get(expected, False)
+
+    def _validate(self, value: Any, schema: dict[str, Any], path: str) -> None:
+        if "$ref" in schema:
+            self._validate(value, self._resolve(schema["$ref"]), path)
+            return
+        for keyword in ("allOf", "anyOf", "oneOf"):
+            choices = schema.get(keyword)
+            if choices is None:
+                continue
+            matches = []
+            for choice in choices:
+                try:
+                    self._validate(value, choice, path)
+                    matches.append(choice)
+                except ValueError:
+                    pass
+            if keyword == "allOf" and len(matches) != len(choices):
+                raise ValueError(f"{path}: does not satisfy allOf")
+            if keyword == "anyOf" and not matches:
+                raise ValueError(f"{path}: does not satisfy anyOf")
+            if keyword == "oneOf" and len(matches) != 1:
+                raise ValueError(f"{path}: must satisfy exactly one oneOf branch")
+        expected = schema.get("type")
+        if expected is not None:
+            expected_types = expected if isinstance(expected, list) else [expected]
+            if not any(self._is_type(value, item) for item in expected_types):
+                raise ValueError(f"{path}: expected type {expected_types}")
+        if "enum" in schema and value not in schema["enum"]:
+            raise ValueError(f"{path}: value is not in enum")
+        if isinstance(value, str):
+            if len(value) < schema.get("minLength", 0):
+                raise ValueError(f"{path}: string is shorter than minLength")
+            if "pattern" in schema and re.search(schema["pattern"], value) is None:
+                raise ValueError(f"{path}: string does not match pattern")
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            if "minimum" in schema and value < schema["minimum"]:
+                raise ValueError(f"{path}: value is below minimum")
+        if isinstance(value, list):
+            if len(value) < schema.get("minItems", 0):
+                raise ValueError(f"{path}: array is shorter than minItems")
+            if "items" in schema:
+                for index, item in enumerate(value):
+                    self._validate(item, schema["items"], f"{path}[{index}]")
+        if isinstance(value, dict):
+            for key in schema.get("required", []):
+                if key not in value:
+                    raise ValueError(f"{path}: missing required property {key!r}")
+            properties = schema.get("properties", {})
+            for key, item in value.items():
+                if key in properties:
+                    self._validate(item, properties[key], f"{path}.{key}")
+                elif schema.get("additionalProperties") is False:
+                    raise ValueError(f"{path}: unexpected property {key!r}")
+
+
 def rel_hash(relpath: str) -> str:
     return "sha256:" + sha256_file(package_root() / relpath)
 
 
-def load_shared_validator() -> Draft202012Validator:
+def load_shared_validator() -> Any:
     schema = read_json("schemas/shared_protocol.schema.json")
-    return Draft202012Validator(schema)
+    if Draft202012Validator is not None:
+        return Draft202012Validator(schema)
+    return StdlibDraft202012Validator(schema)
 
 
 def load_packet() -> dict[str, Any]:

@@ -94,18 +94,18 @@ pub struct DrainReceipt {
 /// Connect over a Unix socket only. TCP without the envctl TLS policy is
 /// refused fail-closed: production credentials never travel unprotected.
 fn connect(conn: &str) -> Result<Client, CommitError> {
-    let has_unix_host = conn
-        .split_whitespace()
-        .any(|part| part.strip_prefix("host=").is_some_and(|h| h.starts_with('/')));
+    let has_unix_host = conn.split_whitespace().any(|part| {
+        part.strip_prefix("host=")
+            .is_some_and(|h| h.starts_with('/'))
+    });
     if !has_unix_host {
         return Err(CommitError::new(
             "the commit worker requires an explicit Unix-socket host; \
              TCP requires the envctl TLS policy",
         ));
     }
-    Client::connect(conn, NoTls).map_err(|_| {
-        CommitError::new("PostgreSQL connection failed; connection details redacted")
-    })
+    Client::connect(conn, NoTls)
+        .map_err(|_| CommitError::new("PostgreSQL connection failed; connection details redacted"))
 }
 
 fn absorb_framed(hasher: &mut Shake256, value: &[u8]) {

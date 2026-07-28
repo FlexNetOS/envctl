@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
   "status": "passed",
-  "generated_at": "2026-07-04T23:18:58+00:00",
+  "generated_at": "2026-07-28T10:23:42+00:00",
   "source_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
   "artifact_descriptor": "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
   "descriptor": {
@@ -33,11 +33,9 @@
     "primary_root_expected": true,
     "compare_root_expected": true,
     "primary_root_exists": true,
-    "compare_root_exists": false
+    "compare_root_exists": true
   },
-  "warnings": [
-    "compare_root is described but not present in this runtime"
-  ],
+  "warnings": [],
   "secret_exclude_patterns": [
     "**/.env",
     "**/secrets/**",

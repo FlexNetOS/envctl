@@ -47,13 +47,12 @@ SQL parser:
 
 | Preset | Resolved intent |
 |---|---|
-| `root-meta` | Symbols whose normalized name is `META_ROOT`. |
-| `root-lifeos` | Symbols whose normalized name is `LIFE_OS_ROOT`. |
-| `hooks-codex` | Indexed files whose path contains `codex`. |
-| `wrappers-broken` | Indexed files whose `file_kind` is `shell`. |
-| `mutable-unsafe` | Files whose `mutable_policy` is `never`. |
-| `symbols-rust-cli` | Rust files used for the structural CLI-symbol view. |
-| `paths-legacy` | Indexed files whose `absolute_path` contains the literal `legacy` substring. |
+| `root:meta` | Symbols whose normalized name is `META_ROOT`. |
+| `root:lifeos` | Symbols whose normalized name is `LIFE_OS_ROOT`. |
+| `hooks:codex` | Indexed files whose path contains `codex`. |
+| `wrappers:broken` | Indexed files whose `file_kind` is `shell`. |
+| `mutable:unsafe` | Files whose `mutable_policy` is `never`. |
+| `paths:legacy` | Indexed files whose `absolute_path` contains the literal `legacy` substring. |
 
 The stable names describe the intended agent workflows, but the current filters are authoritative:
 `wrappers-broken` currently resolves to files whose `file_kind` is `shell`,
@@ -66,7 +65,7 @@ Current query examples:
 
 ```bash
 envctl db query --preset root-meta --json
-envctl db --repo-root /path/to/repo query --preset symbols-rust-cli --json
+envctl db --repo-root /path/to/repo query --preset paths:legacy --json
 ```
 
 For a durable file snapshot, `envctl db scan --json` stores the deterministically ordered index

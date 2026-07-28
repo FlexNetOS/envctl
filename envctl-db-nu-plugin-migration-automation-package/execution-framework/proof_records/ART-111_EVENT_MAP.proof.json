@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-111_EVENT_MAP",
   "status": "completed",
-  "started_at": "2026-07-04T23:29:32+00:00",
-  "completed_at": "2026-07-04T23:29:32+00:00",
+  "started_at": "2026-07-28T11:27:22+00:00",
+  "completed_at": "2026-07-28T11:27:22+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-12",
   "model_tag": "gpt-5.3-spark",
@@ -28,7 +28,7 @@
     "schema_version": "1.0",
     "task_id": "ART-111_EVENT_MAP",
     "status": "passed",
-    "generated_at": "2026-07-04T23:29:32+00:00",
+    "generated_at": "2026-07-28T11:27:22+00:00",
     "artifact_summary": {
       "contract_count": 5,
       "topic_signal_count": 180,
@@ -40,14 +40,14 @@
       "dlq_signal_count": 180,
       "hotspot_count": 100
     },
-    "completed_at": "2026-07-04T23:29:32+00:00",
+    "completed_at": "2026-07-28T11:27:22+00:00",
     "registry_results": [
       {
         "artifact_row_id": "artifact-3cf75ecca8b9bb7732277c72",
         "artifact_id": "05-integrations-event-catalog-md",
         "run_id": "run-art111-event-map",
         "path": "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
-        "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+        "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
         "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -73,7 +73,7 @@
         "artifact_id": "05-integrations-event-message-contract-map-md",
         "run_id": "run-art111-event-map",
         "path": "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
-        "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+        "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
         "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -99,7 +99,7 @@
         "artifact_id": "art-111-event-map-md",
         "run_id": "run-art111-event-map",
         "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
-        "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+        "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
         "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -125,7 +125,7 @@
         "artifact_id": "art-111-event-map-json",
         "run_id": "run-art111-event-map",
         "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json",
-        "content_hash": "sha256:0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
+        "content_hash": "sha256:09a84d9f9411a46531f8dc30cd4ebf4f33a885ac5f8024167c9a160a90588830",
         "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -156,7 +156,7 @@
         "artifact_type": "event_message_contract_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
-        "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+        "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
         "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -218,7 +218,7 @@
         "artifact_type": "event_message_contract_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
-        "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+        "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
         "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -280,7 +280,7 @@
         "artifact_type": "event_message_contract_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
-        "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+        "content_hash": "sha256:0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
         "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -342,7 +342,7 @@
         "artifact_type": "event_message_contract_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json",
-        "content_hash": "sha256:0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
+        "content_hash": "sha256:09a84d9f9411a46531f8dc30cd4ebf4f33a885ac5f8024167c9a160a90588830",
         "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -409,15 +409,15 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art111_event_map.py": "1a3f469d3054734cc7c1730e1b379635b8a61f792d292a2e27b68da41ae0d80e",
-    "execution-framework/migration-artifacts/05-integrations/event-catalog.md": "a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
-    "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md": "a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
-    "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md": "a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
-    "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json": "0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
-    "execution-framework/generated/art111_event_map_registry_report.json": "2880f1dbbe89479e63e0684fb3cfc17598b139db90eaebbf42690e05e9a80756",
-    "execution-framework/state/ART-111_EVENT_MAP.heartbeat.json": "bef42fdece17f2154f6d7fde6a6c92d05f43dbcdf6ac63285f9cc60ae3ec5fb6",
-    "execution-framework/logs/ART-111_EVENT_MAP.log": "2880f1dbbe89479e63e0684fb3cfc17598b139db90eaebbf42690e05e9a80756",
-    "execution-framework/proof_records/ART-111_EVENT_MAP.proof.json": "bf02d2299139ad9af022b2fe09871d809529f3ff4f6e0dcee23e7b77707a7050",
-    "execution-framework/proof_records/proof_ledger.jsonl": "b342562bb4dd4e0c3a030685bc9a6ba96923534101263b4b0fd71701cd0baed6"
+    "execution-framework/migration-artifacts/05-integrations/event-catalog.md": "0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
+    "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md": "0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
+    "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md": "0171dee2e303da9d16244f9eae38f797ffaaacb7defb6dbd6d166f7aa40390bc",
+    "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json": "09a84d9f9411a46531f8dc30cd4ebf4f33a885ac5f8024167c9a160a90588830",
+    "execution-framework/generated/art111_event_map_registry_report.json": "a851587ca7da480269e6b62db6a815190320cf68bf99efe48c3afae2f33e9d6c",
+    "execution-framework/state/ART-111_EVENT_MAP.heartbeat.json": "52c2c53884887974d4dee9a266dddbd2e11fddb971978ede73485dc7a656086c",
+    "execution-framework/logs/ART-111_EVENT_MAP.log": "a851587ca7da480269e6b62db6a815190320cf68bf99efe48c3afae2f33e9d6c",
+    "execution-framework/proof_records/ART-111_EVENT_MAP.proof.json": "2d0ce30ec889a6fedc7302e76b0009fcab0ee474ee37598c227c87811c89951f",
+    "execution-framework/proof_records/proof_ledger.jsonl": "21020e761802fd822698a8786fe136f49fe54b5fe6984f2e4fd6b88669144057"
   },
   "logs_uri": "logs/ART-111_EVENT_MAP.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

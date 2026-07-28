@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-104_TOOLCHAIN_TREE",
   "status": "passed",
-  "generated_at": "2026-07-04T23:22:31+00:00",
+  "generated_at": "2026-07-28T11:09:04+00:00",
   "run_id": "run-art104-toolchain-tree",
   "operation_id": "op-art104-generate-register",
   "contract_id": "contract-art104-toolchain-tree",
@@ -13,7 +13,7 @@
         "artifact_id": "art104-toolchain-tree-md",
         "run_id": "run-art104-toolchain-tree",
         "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
-        "content_hash": "sha256:c8313d75a8f13bd241cf9334483d730da18475762adb9d6dc4e5670ab409fe3b",
+        "content_hash": "sha256:275d99a1b106a62e35115dc4b6b9d6a202bbdf63cb3dadee31d8c7607d2f0676",
         "producer_operation_id": "op-art104-generate-register",
         "contract_id": "contract-art104-toolchain-tree",
         "evidence_ids": [
@@ -42,7 +42,7 @@
         "artifact_type": "toolchain_dependency_tree_markdown",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
-        "content_hash": "sha256:c8313d75a8f13bd241cf9334483d730da18475762adb9d6dc4e5670ab409fe3b",
+        "content_hash": "sha256:275d99a1b106a62e35115dc4b6b9d6a202bbdf63cb3dadee31d8c7607d2f0676",
         "generated_by_operation_id": "op-art104-generate-register",
         "evidence": {
           "contract_id": "contract-art104-toolchain-tree",
@@ -108,7 +108,7 @@
         "artifact_id": "art104-toolchain-tree-json",
         "run_id": "run-art104-toolchain-tree",
         "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
-        "content_hash": "sha256:c73a7ece8c79775c80da22fb230e31743005d6616fdc3e746a27390ca1fd7d9c",
+        "content_hash": "sha256:ab2560d0b15cc5633134307dccdeafd1b72935be2f2e40d27ae60e99bff9e131",
         "producer_operation_id": "op-art104-generate-register",
         "contract_id": "contract-art104-toolchain-tree",
         "evidence_ids": [
@@ -137,7 +137,7 @@
         "artifact_type": "toolchain_dependency_tree_json",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
-        "content_hash": "sha256:c73a7ece8c79775c80da22fb230e31743005d6616fdc3e746a27390ca1fd7d9c",
+        "content_hash": "sha256:ab2560d0b15cc5633134307dccdeafd1b72935be2f2e40d27ae60e99bff9e131",
         "generated_by_operation_id": "op-art104-generate-register",
         "evidence": {
           "contract_id": "contract-art104-toolchain-tree",

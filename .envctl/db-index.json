@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "file_id": "file:5b6998254e483759da6a524974479f69bd192b2b3eb5997287a157dc8b8d4e65",
+      "absolute_path": "./.lifeos-bin/codex",
+      "repo_relative_path": ".lifeos-bin/codex",
+      "logical_owner": null,
+      "file_kind": "other",
+      "parser_hint": "bytes",
+      "content_hash": "5b6998254e483759da6a524974479f69bd192b2b3eb5997287a157dc8b8d4e65",
+      "byte_len": 207,
+      "line_count": 6,
+      "generated": false,
+      "protected": false,
+      "mutable_policy": "read_only",
+      "last_indexed_at": ""
+    },
+    {
+      "file_id": "file:5e0a56e9c70a02b5236deb215e68641282fec354066293fa03366a3061c2f81d",
+      "absolute_path": "./.lifeos-bin/git",
+      "repo_relative_path": ".lifeos-bin/git",
+      "logical_owner": null,
+      "file_kind": "other",
+      "parser_hint": "bytes",
+      "content_hash": "5e0a56e9c70a02b5236deb215e68641282fec354066293fa03366a3061c2f81d",
+      "byte_len": 281,
+      "line_count": 8,
+      "generated": false,
+      "protected": false,
+      "mutable_policy": "read_only",
+      "last_indexed_at": ""
+    }
+  ]
+}

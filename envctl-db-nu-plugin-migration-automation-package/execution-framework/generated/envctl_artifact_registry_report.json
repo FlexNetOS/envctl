@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
   "status": "passed",
-  "generated_at": "2026-07-04T23:14:10+00:00",
+  "generated_at": "2026-07-28T12:09:41+00:00",
   "registry_result": {
     "artifact_row_id": "artifact-dfdcd235057309cce430ae2a",
     "artifact_id": "req024-artifact-registry-sample",

@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-135_RACI",
   "status": "completed",
-  "started_at": "2026-07-04T23:28:55+00:00",
-  "completed_at": "2026-07-04T23:28:55+00:00",
+  "started_at": "2026-07-28T10:07:53+00:00",
+  "completed_at": "2026-07-28T10:07:53+00:00",
   "actor": "artifact-agent",
   "helper_id": "helper-artifact-36",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art135_raci.py",
     "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
@@ -27,7 +27,7 @@
     "schema_version": "1.0",
     "task_id": "ART-135_RACI",
     "status": "passed",
-    "generated_at": "2026-07-04T23:28:55+00:00",
+    "generated_at": "2026-07-28T10:07:53+00:00",
     "artifact_paths": {
       "markdown": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
       "json": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
@@ -39,7 +39,7 @@
         "artifact_id": "art-135-raci-md",
         "run_id": "run-art-135-raci",
         "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
-        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "content_hash": "sha256:561bbe7e3b24d08fca49307603aed00d9cc87736607fefbf93b44afa8797c9fd",
         "producer_operation_id": "op-art-135-generate-raci",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -73,7 +73,7 @@
         "artifact_id": "art-135-raci-json",
         "run_id": "run-art-135-raci",
         "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
-        "content_hash": "sha256:3bf01e3f0fb3dd057015e68bdb3a12a658c6c6b8706d8b9f2abf8244fc8d6a80",
+        "content_hash": "sha256:d49d52a259c8249b515288da9a8f5e65a9f0a181a1aa2a69c014f28a7c8a7981",
         "producer_operation_id": "op-art-135-generate-raci",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -107,7 +107,7 @@
         "artifact_id": "09-governance-ownership-raci-matrix-md",
         "run_id": "run-art-135-raci",
         "path": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
-        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "content_hash": "sha256:561bbe7e3b24d08fca49307603aed00d9cc87736607fefbf93b44afa8797c9fd",
         "producer_operation_id": "op-art-135-generate-raci",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -146,7 +146,7 @@
         "artifact_type": "ownership_raci_matrix",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
-        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "content_hash": "sha256:561bbe7e3b24d08fca49307603aed00d9cc87736607fefbf93b44afa8797c9fd",
         "generated_by_operation_id": "op-art-135-generate-raci",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -238,7 +238,7 @@
         "artifact_type": "ownership_raci_matrix",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
-        "content_hash": "sha256:3bf01e3f0fb3dd057015e68bdb3a12a658c6c6b8706d8b9f2abf8244fc8d6a80",
+        "content_hash": "sha256:d49d52a259c8249b515288da9a8f5e65a9f0a181a1aa2a69c014f28a7c8a7981",
         "generated_by_operation_id": "op-art-135-generate-raci",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -330,7 +330,7 @@
         "artifact_type": "governance_record",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
-        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "content_hash": "sha256:561bbe7e3b24d08fca49307603aed00d9cc87736607fefbf93b44afa8797c9fd",
         "generated_by_operation_id": "op-art-135-generate-raci",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -450,13 +450,14 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art135_raci.py": "1ed524cd8d139d5b76c3c806b9dee8b5494fc70ba71e4c5e7d40f4644994511d",
-    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md": "26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
-    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json": "3bf01e3f0fb3dd057015e68bdb3a12a658c6c6b8706d8b9f2abf8244fc8d6a80",
-    "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md": "26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
-    "execution-framework/generated/art135_raci_registry_report.json": "1b5ac9f6cd03c91b7137945c2f586ad4d75dfcbc8edc1f991cc57328a8a0446b",
-    "execution-framework/state/ART-135_RACI.heartbeat.json": "0ac036928dd7c7a1f73aa2bcd6e4ed6af2e8c36891a6e31669f1e5ece3ef8e12",
-    "execution-framework/logs/ART-135_RACI.log": "1b5ac9f6cd03c91b7137945c2f586ad4d75dfcbc8edc1f991cc57328a8a0446b",
-    "execution-framework/proof_records/proof_ledger.jsonl": "4a8d5512cc2319e81b1dbefea0f1a1f9cac5fa90e8ae09833d4b0748cd2d3dd8"
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md": "561bbe7e3b24d08fca49307603aed00d9cc87736607fefbf93b44afa8797c9fd",
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json": "d49d52a259c8249b515288da9a8f5e65a9f0a181a1aa2a69c014f28a7c8a7981",
+    "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md": "561bbe7e3b24d08fca49307603aed00d9cc87736607fefbf93b44afa8797c9fd",
+    "execution-framework/generated/art135_raci_registry_report.json": "a6c3351a442d9800f836f91bfc670381eb35afcef9d18aca7998b43126a47161",
+    "execution-framework/state/ART-135_RACI.heartbeat.json": "8321c0e642443b8d1595bb058f501f5726a899331a5c8c3b32369eba86f91d63",
+    "execution-framework/logs/ART-135_RACI.log": "a6c3351a442d9800f836f91bfc670381eb35afcef9d18aca7998b43126a47161",
+    "execution-framework/proof_records/ART-135_RACI.proof.json": "e7c357ad53f218c7e886fe31247c29494f1852f808808c55c5a17cad1922213c",
+    "execution-framework/proof_records/proof_ledger.jsonl": "7b2cc999a795bfadb212d99ac8d06497dab9e3590d44d61bbea2858ef9ac9329"
   },
   "logs_uri": "logs/ART-135_RACI.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

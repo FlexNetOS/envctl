@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
   "status": "completed",
-  "started_at": "2026-07-05T04:32:27+00:00",
-  "completed_at": "2026-07-05T04:32:27+00:00",
+  "started_at": "2026-07-28T08:52:55+00:00",
+  "completed_at": "2026-07-28T08:52:55+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-envctl-rollback-01",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/rollback_checkpoints.py",
     "execution-framework/scripts/verify_rollback_checkpoints.py",
@@ -26,7 +26,7 @@
     "schema_version": "1.0",
     "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
     "status": "passed",
-    "generated_at": "2026-07-05T04:32:27+00:00",
+    "generated_at": "2026-07-28T08:52:55+00:00",
     "fixture": {
       "run_id": "run-req026",
       "safe_operation_id": "op-req026-safe",
@@ -161,7 +161,7 @@
         "checkpoint_ref": "history/pre_execution_framework_manifest.json",
         "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
         "metadata_json": "{\"boundary\":\"before approval-gated target mutation\",\"repeat_safe\":false,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
-        "created_at_utc": "2026-07-05T04:32:27.865Z",
+        "created_at_utc": "2026-07-28T08:52:55.090Z",
         "metadata": {
           "boundary": "before approval-gated target mutation",
           "repeat_safe": false,
@@ -176,7 +176,7 @@
         "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
         "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
         "metadata_json": "{\"boundary\":\"before repeatable artifact regeneration\",\"repeat_safe\":true,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
-        "created_at_utc": "2026-07-05T04:32:27.865Z",
+        "created_at_utc": "2026-07-28T08:52:55.090Z",
         "metadata": {
           "boundary": "before repeatable artifact regeneration",
           "repeat_safe": true,
@@ -206,7 +206,7 @@
       "event_count": 8,
       "chain_valid": true,
       "errors": [],
-      "head_event_hash": "sha256:20485f9d87c9a1e03d57f6fe6fd9937b548596104a6439070c243356aa1cb9d0"
+      "head_event_hash": "sha256:b5e57ea446c6a7817815de72eadde3863d27ccd7f768b296bffbd97b7d761fdf"
     },
     "errors": [],
     "evidence": [
@@ -221,11 +221,12 @@
   "checksums": {
     "execution-framework/scripts/rollback_checkpoints.py": "a8fc1af3f83b0c064c5e3bb0ae8f2428427f93cba67e800d4b2491256afe6a3c",
     "execution-framework/scripts/verify_rollback_checkpoints.py": "2bc2fb37486cadc1e47777a71350ab2a66ca436c6ae376248cee933a555b6837",
-    "execution-framework/generated/envctl_rollback_checkpoints_report.json": "8ee3ace6c02fc694e1d3acce7d59a13005767f78e49548d2f541bb71694245dc",
-    "execution-framework/docs/ENVCTL_ROLLBACK_CHECKPOINTS.md": "05599a2535f76fa2e02097c101e00d78ba55eaab880c09e36cf7169546292c7e",
-    "execution-framework/state/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.heartbeat.json": "60780bfead70e54dfa3f1beab7578735ed38f3e21987ce7718acf49e9038f4db",
-    "execution-framework/logs/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.log": "8ee3ace6c02fc694e1d3acce7d59a13005767f78e49548d2f541bb71694245dc",
-    "execution-framework/proof_records/proof_ledger.jsonl": "d7f371bc75586320af9fe86269a73e9423b0a076e12a3de5a48eca4496cc18d6"
+    "execution-framework/generated/envctl_rollback_checkpoints_report.json": "14d0322601785c27485de8757c8a8563338eca79bc0b5313179da42be7120c22",
+    "execution-framework/docs/ENVCTL_ROLLBACK_CHECKPOINTS.md": "98a3dd33a4fea3942f197dbd15e0b8c437584d80d8f8f5f1da53bedf0e41b49a",
+    "execution-framework/state/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.heartbeat.json": "f33b6d912a617da92eedef87e3c4b5d894e16c884acaed924f288a30355e73f3",
+    "execution-framework/logs/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.log": "14d0322601785c27485de8757c8a8563338eca79bc0b5313179da42be7120c22",
+    "execution-framework/proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json": "0d743ded11b09b20ca73a484568423285ba2209f53c6bf3081053ec498f19a20",
+    "execution-framework/proof_records/proof_ledger.jsonl": "c0d48a42c2e7a4e44729344409bec2973d476d78208014b0bf834113369fa31b"
   },
   "logs_uri": "logs/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

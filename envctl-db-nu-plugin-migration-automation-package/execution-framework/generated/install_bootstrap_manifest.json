@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "REQ-044_INSTALL_BOOTSTRAP",
-  "generated_at": "2026-07-04T23:18:33+00:00",
+  "generated_at": "2026-07-28T11:01:28+00:00",
   "source_files": [
     "INSTALL_IN_REPOS.sh",
     "RUN_WITH_CODEX_ENVCTL.sh",

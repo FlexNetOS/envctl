@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
   "status": "completed",
-  "started_at": "2026-07-05T05:57:45+00:00",
-  "completed_at": "2026-07-05T05:57:45+00:00",
+  "started_at": "2026-07-28T12:33:54+00:00",
+  "completed_at": "2026-07-28T12:33:54+00:00",
   "actor": "schema-validation-agent",
   "helper_id": "helper-schema-01",
   "model_tag": "gpt-5.3-spark",
@@ -24,7 +24,7 @@
     "schema_version": "1.0",
     "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
     "status": "pass",
-    "generated_at": "2026-07-05T05:57:45+00:00",
+    "generated_at": "2026-07-28T12:33:54+00:00",
     "packet_summary": {
       "goal": "Validate every execution packet and JSON schema contract",
       "repo_target": "filesystem",
@@ -58,7 +58,7 @@
       "execution_packets": 80,
       "task_graph_rows": 80,
       "schemas": 8,
-      "proof_records": 84
+      "proof_records": 88
     },
     "packet_set_parity": {
       "missing_packets": [],
@@ -1103,11 +1103,11 @@
     "sha256": {
       "execution-framework/generated/task_graph.csv": "b752be4c4cf53cb3db3daf5daaef180ec291269ce67a7bb7f0dbb2e835168009",
       "execution-framework/generated/task_graph.normalized.json": "0a628b5d30eb631e141547100095abd6632d15b1e8903b5589ec37ec9d52786e",
-      "execution-framework/generated/filesystem_boundaries.json": "2afc23d8f58bc096388b56cba0742b1ae46bec95d36b065e890acc5c1fda0eba",
+      "execution-framework/generated/filesystem_boundaries.json": "45b4fb3fc88cb5f3f2e9748fcf948091a4acc9abebbc154a5199387afb35a880",
       "execution-framework/generated/gap_report.json": "3c5bf7490846f4eae56b1d1c1c97dbf44ebc00368393b9e176687f07ee9d1677",
       "execution-framework/generated/upgrade_report.json": "5703caa3d0f99c38bfae6219f6cc4c11ad8089767f90f2dbb4f95670576f966e",
-      "execution-framework/generated/shared_protocol_manifest.json": "846beff278ee11a96b7eb9aa45bff6b476ee1fc406fcfb3cea3de92c79d057ca",
-      "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+      "execution-framework/generated/shared_protocol_manifest.json": "2ac68c18979da81e8a60f1a9a484fa4f267d26b8d897270515960f1c01eb9082",
+      "execution-framework/generated/shared_protocol_validation_report.json": "b2a89a08615b2243cf0e54065afc63e00c88c07df291fea4170985dbc3124564",
       "execution-framework/templates/AGENT_LANE_TEMPLATE.json": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a",
       "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json": "aec4889373e824e1ed9b4bce48744129747aebe8e7147782d6f2c5e98a0de426",
       "execution-framework/schemas/execution_packet.schema.json": "a4305a40557ebea88f5699b6000000750563df9228916c21116b498e2e74a7e0",
@@ -1117,7 +1117,7 @@
       "execution-framework/schemas/gap_report.schema.json": "8889b598049ddf02f8f9fcd38a5504d3d20949d6975de1b7bc45fa1d16c6e647",
       "execution-framework/schemas/upgrade_report.schema.json": "fc5d58a6c441abf2e2fbfd86cb37859350d300924cfe6daeb07a512485e696d9",
       "execution-framework/schemas/filesystem_boundaries.schema.json": "75901030b7fee3fba0aed8447dc8d78520be803627c13959efe1532c96b0a555",
-      "execution-framework/schemas/shared_protocol.schema.json": "a897b67a1ec37804d74cbc60eb1360667d823b4661016a76a29906f016275007"
+      "execution-framework/schemas/shared_protocol.schema.json": "954fa4eae5576637068e03e8f4cc7083eeefad2db94f37c8262f528f48a518a9"
     },
     "secret_scan": {
       "paths": [
@@ -1129,12 +1129,12 @@
     }
   },
   "checksums": {
-    "execution-framework/scripts/verify_ver302_packet_schema_validation.py": "1a8f78e0955cc4af4e7eed57171611146dab481cd0aec2201344d88d61454c2d",
-    "execution-framework/generated/ver302_packet_schema_validation_report.json": "e2b397b75c790ec2a005596c62342b597c60997871303a99084c8f263f9d9259",
-    "execution-framework/state/VER-302_PACKET_SCHEMA_VALIDATION.heartbeat.json": "4135d20a166f43c7dab34ed7922af16ce6a4ab2f3eeae198a743eabff1e69680",
-    "execution-framework/logs/VER-302_PACKET_SCHEMA_VALIDATION.log": "e2b397b75c790ec2a005596c62342b597c60997871303a99084c8f263f9d9259",
-    "execution-framework/proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "60bc1ddf377ed6261fadfb9bc038f15dc8c567ef2c0be79420b29cc58f701dd9",
-    "execution-framework/proof_records/proof_ledger.jsonl": "61e89bf53f472ca2a33f2242471ce58eefdcb03eafb9aeac1f2f309455b53067"
+    "execution-framework/scripts/verify_ver302_packet_schema_validation.py": "b23b9a0821784b715936e772180cdaa1459e9068947c065bda996cc91a1620bc",
+    "execution-framework/generated/ver302_packet_schema_validation_report.json": "9184c7294611f652e5e2d76b44e7d720362d5edc4d99c565942e3dfdfc9e33ac",
+    "execution-framework/state/VER-302_PACKET_SCHEMA_VALIDATION.heartbeat.json": "a62c32ce7eef74a42edcadf17539edac1962e928208cd8ef269e156fca0f58e7",
+    "execution-framework/logs/VER-302_PACKET_SCHEMA_VALIDATION.log": "9184c7294611f652e5e2d76b44e7d720362d5edc4d99c565942e3dfdfc9e33ac",
+    "execution-framework/proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "5f455f9981cb23c55eff6b7f6b057a3dc2c4930b6d6cad707910372bb2588627",
+    "execution-framework/proof_records/proof_ledger.jsonl": "169904947efe935855d73cc5ac56099722d6e66e4f3e4276bbefffea12275ae4"
   },
   "logs_uri": "logs/VER-302_PACKET_SCHEMA_VALIDATION.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

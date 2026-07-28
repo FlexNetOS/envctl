@@ -6,7 +6,7 @@
 
 use super::api::*;
 use super::model::*;
-use super::replay::ReplayMode;
+use super::replay::{ReplayMode, ReplayRequest, ReplayRequestMode, ReplayResultStatus};
 use super::MigrationDb;
 use serde_json::json;
 
@@ -95,7 +95,7 @@ fn target_validation_refuses_bad_specs() {
 }
 
 #[test]
-fn duplicate_target_id_conflicts() {
+fn duplicate_target_id_upserts_descriptor() {
     let db = temp_db("dup");
     let spec = TargetSpec {
         target_id: "same".into(),
@@ -106,8 +106,122 @@ fn duplicate_target_id_conflicts() {
         safety_mode: "fail-closed".into(),
         max_auto_risk: Risk::R1,
     };
-    db.register_target(spec.clone()).expect("first insert");
-    assert!(db.register_target(spec).is_err(), "UNIQUE(target_id)");
+    let first = db.register_target(spec.clone()).expect("first insert");
+    let second = db.register_target(spec).expect("idempotent upsert");
+    assert_eq!(first.id, second.id, "natural target id remains stable");
+    assert_eq!(
+        db.targets().expect("targets").len(),
+        1,
+        "upsert does not duplicate"
+    );
+}
+
+#[test]
+fn descriptor_is_schema_validated_and_authoritative() {
+    let raw = json!({
+        "schema_version": 1,
+        "target_id": "from-descriptor",
+        "target_type": "infrastructure",
+        "primary_root": "/infra",
+        "safety": {"default_mode": "approval-gated", "max_auto_risk": "R3", "allow_network": false, "allow_destructive": false},
+        "artifact_contract": {"name": "contract", "version": 1},
+        "recipe": {"name": "recipe", "version": "1.0.0"}
+    });
+    let (descriptor, parsed_raw) = super::descriptor::parse_target_descriptor(
+        &serde_json::to_string(&raw).expect("json"),
+        Some("json"),
+    )
+    .expect("valid descriptor");
+    let target = temp_db("descriptor")
+        .register_target(descriptor.into_spec(parsed_raw).expect("spec"))
+        .expect("register");
+    assert_eq!(target.target_id, "from-descriptor");
+    assert_eq!(target.target_type, TargetType::Infrastructure);
+    assert_eq!(target.safety_mode, "approval-gated");
+    assert_eq!(target.max_auto_risk, Risk::R3);
+}
+
+#[test]
+fn yaml_descriptor_parses_and_missing_safety_is_rejected() {
+    let yaml = r#"
+schema_version: 1
+target_id: yaml-target
+target_type: codebase
+primary_root: /repo
+safety:
+  default_mode: agent-only
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+artifact_contract:
+  name: contract
+  version: 1
+recipe:
+  name: recipe
+  version: 1
+"#;
+    let (descriptor, raw) =
+        super::descriptor::parse_target_descriptor(yaml, Some("yaml")).expect("yaml descriptor");
+    assert_eq!(
+        descriptor.into_spec(raw).expect("spec").target_id,
+        "yaml-target"
+    );
+
+    let invalid =
+        r#"{"schema_version":1,"target_id":"x","target_type":"codebase","primary_root":"/x"}"#;
+    assert!(super::descriptor::parse_target_descriptor(invalid, Some("json")).is_err());
+}
+
+#[test]
+fn descriptor_extension_fields_are_accepted() {
+    let raw = json!({
+        "schema_version": 1,
+        "target_id": "extensible-target",
+        "target_type": "mixed",
+        "primary_root": "/repo",
+        "compare_root": null,
+        "output_root": "migration-artifacts",
+        "include": ["src/**", "tools/**"],
+        "exclude": [".git/**", "node_modules/**"],
+        "safety": {
+            "default_mode": "agent-only",
+            "max_auto_risk": "R2",
+            "allow_network": false,
+            "allow_destructive": false,
+        },
+        "collectors": {
+            "filesystem": true,
+            "git": true,
+            "apis": false,
+        },
+        "artifact_contract": {"name": "contract", "version": 1},
+        "recipe": {"name": "recipe", "version": "1.0.0"},
+        "metadata": {"purpose": "integration"},
+        "plugin_hints": {"scan": "deep"},
+    });
+
+    let (descriptor, parsed_raw) = super::descriptor::parse_target_descriptor(
+        &serde_json::to_string(&raw).unwrap(),
+        Some("json"),
+    )
+    .expect("extended descriptor");
+    assert_eq!(descriptor.output_root, "migration-artifacts");
+    assert_eq!(descriptor.include.len(), 2);
+    assert_eq!(descriptor.exclude.len(), 2);
+    assert_eq!(descriptor.collectors.get("filesystem"), Some(&true));
+    assert_eq!(descriptor.metadata, json!({"purpose": "integration"}));
+    assert_eq!(
+        descriptor.extensions.get("plugin_hints"),
+        Some(&json!({"scan":"deep"}))
+    );
+
+    let target = descriptor
+        .into_spec(parsed_raw)
+        .expect("target spec from extended descriptor");
+    assert_eq!(target.target_id, "extensible-target");
+    assert_eq!(target.target_type, TargetType::Mixed);
+    assert_eq!(target.safety_mode, "agent-only");
+    assert_eq!(target.max_auto_risk, Risk::R2);
 }
 
 #[test]
@@ -361,6 +475,175 @@ fn evidence_artifacts_validations_rollbacks_recorded_and_queryable() {
 }
 
 #[test]
+fn checkpoints_are_idempotent_and_rollback_handles_fail_closed() {
+    let db = temp_db("rollback-boundary");
+    let run = seed_run(&db, "rollback-boundary");
+    let safe = db
+        .add_operation(
+            OperationSpec {
+                run_id: run.id.clone(),
+                operation_type: "safe".into(),
+                phase: None,
+                risk: Risk::R2,
+                idempotency_key: None,
+                recipe_step_id: None,
+                command_redacted: None,
+                input: None,
+                parent_operation_id: None,
+            },
+            ActorType::Agent,
+            "t",
+        )
+        .expect("safe operation");
+    let first = db
+        .add_checkpoint(
+            &run.id,
+            Some(&safe.id),
+            "artifact",
+            "generated/boundary.json",
+            None,
+            Some(json!({"repeat_safe": true})),
+            ActorType::Agent,
+            "t",
+        )
+        .expect("checkpoint");
+    let duplicate = db
+        .add_checkpoint(
+            &run.id,
+            Some(&safe.id),
+            "artifact",
+            "generated/boundary.json",
+            None,
+            Some(json!({"repeat_safe": true})),
+            ActorType::Agent,
+            "t",
+        )
+        .expect("idempotent checkpoint");
+    assert_eq!(first.id, duplicate.id);
+    assert_eq!(db.checkpoints(&run.id).expect("checkpoints").len(), 1);
+    assert!(db
+        .add_checkpoint(
+            &run.id,
+            Some(&safe.id),
+            "artifact",
+            "secrets/token.txt",
+            None,
+            None,
+            ActorType::Agent,
+            "t"
+        )
+        .is_err());
+
+    let handle = db
+        .plan_rollback(
+            &run.id,
+            Some(&safe.id),
+            "verify-boundary",
+            json!({"checkpoint_id": first.id}),
+            ActorType::Agent,
+            "t",
+        )
+        .expect("safe rollback");
+    let running = db
+        .rollback_set_status(
+            &handle.id,
+            RollbackStatus::Running,
+            ActorType::Agent,
+            "t",
+            None,
+        )
+        .expect("running");
+    let completed = db
+        .rollback_set_status(
+            &running.id,
+            RollbackStatus::Succeeded,
+            ActorType::Agent,
+            "t",
+            Some(json!({"verified": true})),
+        )
+        .expect("succeeded");
+    assert_eq!(completed.status, RollbackStatus::Succeeded);
+    assert!(db
+        .rollback_set_status(
+            &completed.id,
+            RollbackStatus::Running,
+            ActorType::Agent,
+            "t",
+            None
+        )
+        .is_err());
+}
+
+#[test]
+fn risky_rollback_requires_approval_before_planning() {
+    let db = temp_db("rollback-approval");
+    let run = seed_run(&db, "rollback-approval");
+    let risky = db
+        .add_operation(
+            OperationSpec {
+                run_id: run.id.clone(),
+                operation_type: "risky".into(),
+                phase: None,
+                risk: Risk::R4,
+                idempotency_key: None,
+                recipe_step_id: None,
+                command_redacted: None,
+                input: None,
+                parent_operation_id: None,
+            },
+            ActorType::Agent,
+            "t",
+        )
+        .expect("risky operation");
+    let handle = db
+        .plan_rollback(
+            &run.id,
+            Some(&risky.id),
+            "restore-boundary",
+            json!({"checkpoint_ref": "history/manifest.json"}),
+            ActorType::Agent,
+            "t",
+        )
+        .expect("risky rollback");
+    assert_eq!(handle.status, RollbackStatus::AwaitingApproval);
+    assert!(db
+        .rollback_set_status(
+            &handle.id,
+            RollbackStatus::Planned,
+            ActorType::Agent,
+            "t",
+            None
+        )
+        .is_err());
+    let approval = db
+        .approvals(&run.id)
+        .expect("approval")
+        .pop()
+        .expect("approval row");
+    db.approval_decide(
+        &approval.id,
+        ApprovalDecision::Approve,
+        ActorType::Human,
+        "reviewer",
+        "approved rollback",
+        None,
+    )
+    .expect("approve");
+    assert_eq!(
+        db.rollback_set_status(
+            &handle.id,
+            RollbackStatus::Planned,
+            ActorType::Agent,
+            "t",
+            None
+        )
+        .expect("approved plan")
+        .status,
+        RollbackStatus::Planned
+    );
+}
+
+#[test]
 fn run_lifecycle_and_replay_verify() {
     let db = temp_db("replay");
     let run = seed_run(&db, "replay");
@@ -392,6 +675,56 @@ fn run_lifecycle_and_replay_verify() {
     let bundle = db.export_run(&run.id).expect("bundle");
     assert_eq!(bundle.run.id, run.id);
     assert!(!bundle.events.is_empty());
+}
+
+#[test]
+fn replay_request_rehashes_recorded_evidence() {
+    let db = temp_db("replay-request");
+    let run = seed_run(&db, "replay-request");
+    let evidence_path = "Cargo.toml";
+    let evidence_hash = super::sha256_hex(
+        &std::fs::read(evidence_path).expect("workspace Cargo.toml must be available to tests"),
+    );
+    db.add_evidence(
+        &run.id,
+        None,
+        evidence_path,
+        "source",
+        Some(&evidence_hash),
+        false,
+        None,
+        ActorType::Agent,
+        "t",
+    )
+    .expect("record evidence");
+    db.run_set_status(&run.id, RunStatus::Planning, ActorType::Agent, "t", None)
+        .expect("planning");
+    db.run_set_status(&run.id, RunStatus::Running, ActorType::Agent, "t", None)
+        .expect("running");
+    db.run_set_status(&run.id, RunStatus::Validating, ActorType::Agent, "t", None)
+        .expect("validating");
+    db.complete_run(&run.id, ActorType::Agent, "t")
+        .expect("complete");
+
+    let result = db
+        .replay_request(
+            ReplayRequest {
+                replay_id: "replay-request-1".into(),
+                run_id: run.id.clone(),
+                mode: ReplayRequestMode::DryRun,
+                requested_by: "test-agent".into(),
+                operation_ids: Vec::new(),
+                target_descriptor_id: None,
+                reason: None,
+            },
+            true,
+        )
+        .expect("replay request");
+
+    assert_eq!(result.status, ReplayResultStatus::Pass);
+    assert_eq!(result.hash_status.evidence_matches, 1);
+    assert!(result.hash_status.evidence_mismatches.is_empty());
+    assert!(result.missing_evidence.is_empty());
 }
 
 #[test]

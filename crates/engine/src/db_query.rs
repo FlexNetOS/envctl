@@ -69,7 +69,6 @@ pub enum QueryPreset {
     HooksCodex,
     WrappersBroken,
     MutableUnsafe,
-    SymbolsRustCli,
     PathsLegacy,
 }
 
@@ -80,7 +79,6 @@ impl QueryPreset {
         "hooks:codex",
         "wrappers:broken",
         "mutable:unsafe",
-        "symbols:rust-cli",
         "paths:legacy",
     ];
 }
@@ -96,7 +94,6 @@ impl FromStr for QueryPreset {
             "hooks:codex" | "hooks-codex" => Ok(Self::HooksCodex),
             "wrappers:broken" | "wrappers-broken" => Ok(Self::WrappersBroken),
             "mutable:unsafe" | "mutable-unsafe" => Ok(Self::MutableUnsafe),
-            "symbols:rust-cli" | "symbols-rust-cli" => Ok(Self::SymbolsRustCli),
             "paths:legacy" | "paths-legacy" => Ok(Self::PathsLegacy),
             other => Err(DbError::Query(format!(
                 "unknown preset: {other}; expected one of {}",
@@ -231,13 +228,6 @@ fn resolve_preset(preset: QueryPreset) -> (QueryTable, Vec<QueryFilter>) {
             vec![Eq {
                 field: "mutable_policy".into(),
                 value: "never".into(),
-            }],
-        ),
-        QueryPreset::SymbolsRustCli => (
-            QueryTable::Files,
-            vec![Eq {
-                field: "file_kind".into(),
-                value: "rust".into(),
             }],
         ),
         QueryPreset::PathsLegacy => (
@@ -392,11 +382,26 @@ mod tests {
     use crate::db_index::{FileIndex, ScanScope};
     use crate::db_symbols::SymbolIndex;
     use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     fn build_indexes() -> (FileIndex, SymbolIndex, std::path::PathBuf) {
-        let root = std::env::temp_dir().join(format!("envctl-db-query-{}", std::process::id()));
+        static NEXT_TEST_ROOT: AtomicU64 = AtomicU64::new(0);
+        let test_root = format!(
+            "envctl-db-query-{}-{}",
+            std::process::id(),
+            NEXT_TEST_ROOT.fetch_add(1, Ordering::Relaxed)
+        );
+        let mut root = std::env::temp_dir().join(&test_root);
         let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(&root).unwrap();
+        if let Err(err) = fs::create_dir_all(&root) {
+            root = std::env::current_dir()
+                .unwrap_or_else(|_| std::path::PathBuf::from("."))
+                .join("target")
+                .join("tmp")
+                .join(&test_root);
+            fs::create_dir_all(&root)
+                .unwrap_or_else(|_| panic!("failed to create test root: {err}"));
+        }
         fs::write(root.join("cli.rs"), b"const R: &str = \"x\";\n").unwrap();
         fs::write(
             root.join("wrapper.sh"),
@@ -416,18 +421,6 @@ mod tests {
     #[test]
     fn preset_and_filter_queries_are_deterministic_with_explain() {
         let (files, symbols, root) = build_indexes();
-
-        // Preset: symbols:rust-cli -> files where file_kind == rust.
-        let spec = QuerySpec {
-            table: None,
-            filters: vec![],
-            preset: Some(QueryPreset::SymbolsRustCli),
-            target_profile: None,
-            explain: true,
-        };
-        let res = evaluate(&spec, &files, &symbols).unwrap();
-        assert_eq!(res.row_count, 1);
-        assert!(res.explain.unwrap().contains("Files"));
 
         // Preset root:meta -> symbols normalized_name == META_ROOT.
         let spec = QuerySpec {

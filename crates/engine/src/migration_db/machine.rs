@@ -2,7 +2,7 @@
 //! an unlisted edge is an [`MigrationDbError::IllegalTransition`], and every
 //! legal transition is appended to the event ledger by the API layer.
 
-use super::model::{OpStatus, RunStatus};
+use super::model::{OpStatus, RollbackStatus, RunStatus};
 use super::{MigrationDbError, Result};
 
 /// created -> planning -> awaiting_approval -> running -> paused -> validating -> completed
@@ -72,6 +72,37 @@ pub fn check_op_transition(from: OpStatus, to: OpStatus) -> Result<()> {
     } else {
         Err(MigrationDbError::IllegalTransition {
             kind: "operation",
+            from: from.as_str().to_string(),
+            to: to.as_str().to_string(),
+        })
+    }
+}
+
+/// Rollback handles are deliberately a separate state machine: planning and
+/// verification are safe to repeat, but a handle can never be restarted after
+/// it reaches a terminal state.  R3+ handles begin in `awaiting_approval` and
+/// only move to `planned` once their operation has an approved decision.
+pub fn check_rollback_transition(from: RollbackStatus, to: RollbackStatus) -> Result<()> {
+    use RollbackStatus::*;
+    let ok = matches!(
+        (from, to),
+        (Planned, Running)
+            | (Planned, Cancelled)
+            | (AwaitingApproval, Planned)
+            | (AwaitingApproval, Blocked)
+            | (AwaitingApproval, Cancelled)
+            | (Running, Succeeded)
+            | (Running, Failed)
+            | (Running, Blocked)
+            | (Running, Cancelled)
+            | (Blocked, Planned)
+            | (Blocked, Cancelled)
+    );
+    if ok {
+        Ok(())
+    } else {
+        Err(MigrationDbError::IllegalTransition {
+            kind: "rollback",
             from: from.as_str().to_string(),
             to: to.as_str().to_string(),
         })

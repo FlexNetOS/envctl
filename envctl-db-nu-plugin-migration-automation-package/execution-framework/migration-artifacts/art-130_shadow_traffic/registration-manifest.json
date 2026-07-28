@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-130_SHADOW_TRAFFIC",
+  "registration_status": "registered_with_capture_gap",
+  "registry_dependency": {
+    "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+    "status": "passed",
+    "evidence": "generated/envctl_artifact_registry_report.json"
+  },
+  "protocol_dependency": {
+    "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+    "status": "passed",
+    "evidence": "generated/shared_protocol_manifest.json"
+  },
+  "contract_row_id": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+  "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+  "registered_paths": [
+    "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.md",
+    "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+  ],
+  "content_hashes": {
+    "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.md": "sha256:5f59c1712e26cdf19dc18428b94f4e5e816cfd82adf6d9b33567052e07fc1894",
+    "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json": "sha256:37dcea65156cb2e12ebde6efd13dffbf3926e565ecd3c03e65be1e373f29d4bc"
+  },
+  "runtime_parity_certified": false,
+  "promotion_gate": "blocked_pending_capture_and_comparison_evidence"
+}

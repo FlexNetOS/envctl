@@ -42,15 +42,17 @@ macro_rules! envctl_examples {
 }
 
 use envctl_engine::catalog as catalog_engine;
+use envctl_engine::migration_db::{
+    MigrationDb, ReplayRequest, ReplayRequestMode, ReplayResultStatus,
+};
 use envctl_engine::secrets::run_secretctl;
-use envctl_engine::migration_db::{MigrationDb, ReplayRequest, ReplayRequestMode, ReplayResultStatus};
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentAuditReport, AgentAuditSpec, AgentCleanSpec,
     AgentDoctorSpec, AgentInitSpec, AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec,
     AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy,
     BuildSystem, CatalogAnalyzeReport, CatalogDiffReport, CatalogFacetCount, CatalogImportReport,
     CatalogLockReport, CatalogRenderReport, CatalogScanSpec, CatalogSnapshot, CatalogSyncReport,
-    CatalogTableName, CatalogTableSummaryRow, DashboardSpec, DoctorReport, DoctorSpec,
+    CatalogTableName, CatalogTableSummaryRow, DashboardSpec, Db, DoctorReport, DoctorSpec,
     DriftSummary, Engine, EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus,
     ManifestLockStatus, MigrationAction, MigrationReport, MigrationRisk, MigrationScope,
     MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal,
@@ -63,7 +65,7 @@ use envctl_engine::{
     version,
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
-    about = "Meta/LifeOS agentic environment and release-target manager",
+    about = "Meta/LifeOS release-target manager",
     long_about = "A declarative, GPU-aware environment and release-target manager for the Meta control plane and LifeOS product runtime, written in Rust.\n\nenvctl keeps the observed $META_ROOT control-plane layout and the declared $LIFE_OS_ROOT release target simultaneously addressable; the accepted LIFEOS_ROOT alias normalizes to LIFE_OS_ROOT. It brings tools, dependencies, providers, vendors, CLIs, and config to declared state under profile-owned roots, without system-depth or user-global installs. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. TOML component lifecycle hooks wrap proven scripts for detect, install, fix, reset, and wiring. One shared engine drives both the CLI and GUI. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail closed unless safety is proven and the explicit act flag (--apply / --build / --confirm) is supplied. Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
@@ -273,13 +275,13 @@ enum Cmd {
         long_about = "Agent-first code-graph surface (GH#414). Scans a repo root into a file + symbol index in the engine, then serves deterministic queries, the multi-root model (META_ROOT + LIFE_OS_ROOT held simultaneously), and a fail-closed root-alias refactor plan. All logic lives in envctl-engine (DbSnapshot); the CLI and GUI call the identical entry points. Mutating surfaces only ever emit plans here — apply requires confirm + approval.",
         after_help = envctl_examples!(
             "envctl db roots --json",
-            "envctl db query --preset root-meta --json",
+            "envctl db query --preset root:meta --json",
             "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --json",
         )
     )]
     Db {
         /// Repository root to index. Defaults to the current directory.
-        #[arg(long = "repo-root", value_name = "DIR")]
+        #[arg(long = "repo-root", value_name = "DIR", global = true)]
         repo_root: Option<PathBuf>,
         #[command(subcommand)]
         cmd: DbCmd,
@@ -656,7 +658,10 @@ enum ReplayModeCmd {
         target_descriptor_id: Option<String>,
         #[arg(long)]
         reason: Option<String>,
-        #[arg(long, default_value_t = false)]
+        /// Re-hash evidence and artifacts from disk. Enabled by default because
+        /// replay reports are only reproducible when their recorded bytes are
+        /// checked against the ledgered hashes.
+        #[arg(long, default_value_t = true)]
         verify_files: bool,
     },
     /// Replay apply-mode validation for deterministic re-run gates.
@@ -677,7 +682,10 @@ enum ReplayModeCmd {
         target_descriptor_id: Option<String>,
         #[arg(long)]
         reason: Option<String>,
-        #[arg(long, default_value_t = false)]
+        /// Re-hash evidence and artifacts from disk. Enabled by default because
+        /// replay reports are only reproducible when their recorded bytes are
+        /// checked against the ledgered hashes.
+        #[arg(long, default_value_t = true)]
         verify_files: bool,
     },
 }
@@ -809,13 +817,42 @@ struct CatalogRootArgs {
 
 /// GH#414 code-graph db subcommands. Read/plan only in the CLI; every variant
 /// routes through the shared `envctl_engine::DbSnapshot` / `db_roots` entry points.
+#[derive(Args, Clone, Debug)]
+struct DbRootAliasRefactorArgs {
+    /// Source root var, e.g. META_ROOT.
+    #[arg(long)]
+    from: String,
+    /// Target root var, e.g. LIFE_OS_ROOT.
+    #[arg(long)]
+    to: String,
+    /// Emit the plan and per-file unified diffs without writing (the default mode).
+    #[arg(long, conflicts_with_all = ["render_out", "apply"])]
+    plan: bool,
+    /// Render the rewritten files into this NEW tree (originals untouched).
+    #[arg(long = "render-out", value_name = "DIR", conflicts_with = "apply")]
+    render_out: Option<String>,
+    /// Mutate files IN PLACE. Requires --confirm and --approve (R3 gate).
+    #[arg(long)]
+    apply: bool,
+    /// Acknowledge the in-place rewrite (half of the R3 gate).
+    #[arg(long)]
+    confirm: bool,
+    /// Human approver id — the other half of the R3 gate (e.g. --approve drdave).
+    #[arg(long, value_name = "WHO")]
+    approve: Option<String>,
+    /// Optional note recorded on the approval.
+    #[arg(long, value_name = "TEXT")]
+    note: Option<String>,
+}
+
 #[derive(Subcommand)]
 enum DbCmd {
     /// Print the multi-root model (observed META_ROOT + release-target LIFE_OS_ROOT).
     #[command(
-        long_about = "Print the multi-root target model: envctl keeps operating the observed current root (META_ROOT) while holding a release-target root (LIFE_OS_ROOT) at the same time. The LIFEOS_ROOT spelling is normalized to LIFE_OS_ROOT. Agent-first: use --json for the stable machine contract.",
+        long_about = "Print the multi-root target model: envctl keeps operating the observed current root (META_ROOT) while holding both the declared LifeOS root and release-target root (LIFE_OS_ROOT) simultaneously. The LIFEOS_ROOT spelling is normalized to LIFE_OS_ROOT. Agent-first: use --json for the stable machine contract.",
         after_help = envctl_examples!(
             "envctl db roots --json",
+            "envctl db roots --observed /home/u/meta --declared /home/u/lifeos-declared --release /home/u/lifeos-release --json",
             "envctl db roots --observed /home/u/meta --release /home/u/lifeos --json",
         )
     )]
@@ -823,6 +860,9 @@ enum DbCmd {
         /// Observed current root absolute path (optional).
         #[arg(long)]
         observed: Option<String>,
+        /// Declared LifeOS root absolute path (optional).
+        #[arg(long)]
+        declared: Option<String>,
         /// Release-target root absolute path (optional).
         #[arg(long)]
         release: Option<String>,
@@ -832,7 +872,7 @@ enum DbCmd {
     },
     /// Run a deterministic table/filter query or agent preset.
     #[command(
-        long_about = "Scan the repo root into a file + symbol index and query files, symbols, occurrences, roots, refs, or actions. Repeat --filter with the deliberately small grammar `field==value`, `field contains value`, `field in a,b`, or `path matches */legacy/*`. Alternatively use a stable agent preset: root:meta, root:lifeos, hooks:codex, wrappers:broken, mutable:unsafe, symbols:rust-cli, paths:legacy. A preset may be narrowed with additional filters. Add --explain to report the resolved table and filters. Use --json for machine output.",
+        long_about = "Scan the repo root into a file + symbol index and query files, symbols, occurrences, roots, refs, or actions. Repeat --filter with the deliberately small grammar `field==value`, `field contains value`, `field in a,b`, or `path matches */legacy/*`. Alternatively use a stable agent preset: root:meta, root:lifeos, hooks:codex, wrappers:broken, mutable:unsafe, paths:legacy. A preset may be narrowed with additional filters. Add --explain to report the resolved table and filters. Use --json for machine output.",
         after_help = envctl_examples!(
             "envctl db query --preset paths:legacy --json --explain",
             "envctl db query --table symbols --filter 'kind in env_var,rust_item' --json",
@@ -858,40 +898,35 @@ enum DbCmd {
     },
     /// Root-alias refactor: PLAN by default, render to a new tree, or gated in-place apply.
     #[command(
-        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. Three modes, fail-closed by default:\n  --plan         emit per-file unified diffs; refuse protected/.env; never touch the filesystem (also the default when no mode is supplied).\n  --render-out   write the rewritten files into a NEW tree; originals are never modified.\n  --apply        mutate files IN PLACE. Gated (R3): requires --confirm AND --approve <who>. Without both, apply refuses and nothing is written. No .envctl-bak is kept — run on a clean, committed tree so git is your backstop.\nAll logic lives in the engine (DbSnapshot); the CLI and GUI drive identical code. Use --json for the machine contract.",
+        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. Three modes, fail-closed by default:\n  --plan         emit per-file unified diffs; refuse protected/.env; never touch the filesystem (also the default when no mode is supplied).\n  --render-out   write the rewritten files into a NEW tree; originals are never modified.\n  --apply        mutate files IN PLACE. Gated (R3): requires --confirm AND --approve <who>. Without both, apply refuses and nothing is written. Existing files are backed up to <file>.bak before atomic replacement.\nAll logic lives in the engine (DbSnapshot); the CLI and GUI drive identical code. Use --json for the machine contract.",
         after_help = envctl_examples!(
             "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --plan --json",
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --plan --json",
             "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --render-out /tmp/rendered",
             "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --apply --confirm --approve drdave --note 'REQ-055 migration'",
         )
     )]
     Refactor {
-        /// Source root var, e.g. META_ROOT.
-        #[arg(long)]
-        from: String,
-        /// Target root var, e.g. LIFE_OS_ROOT.
-        #[arg(long)]
-        to: String,
-        /// Emit the plan and per-file unified diffs without writing (the default mode).
-        #[arg(long, conflicts_with_all = ["render_out", "apply"])]
-        plan: bool,
-        /// Render the rewritten files into this NEW tree (originals untouched).
-        #[arg(long = "render-out", value_name = "DIR", conflicts_with = "apply")]
-        render_out: Option<String>,
-        /// Mutate files IN PLACE. Requires --confirm and --approve (R3 gate).
-        #[arg(long)]
-        apply: bool,
-        /// Acknowledge the in-place rewrite (half of the R3 gate).
-        #[arg(long)]
-        confirm: bool,
-        /// Human approver id — the other half of the R3 gate (e.g. --approve drdave).
-        #[arg(long, value_name = "WHO")]
-        approve: Option<String>,
-        /// Optional note recorded on the approval.
-        #[arg(long, value_name = "TEXT")]
-        note: Option<String>,
+        #[command(flatten)]
+        args: DbRootAliasRefactorArgs,
+    },
+    /// Compatibility command that reuses the root-alias refactor workflow.
+    ///
+    /// `envctl db map-root root-alias ...` is equivalent to `envctl db refactor ...`.
+    #[command(
+        long_about = "Compatibility command that reuses the root-alias refactor workflow.\n`envctl db map-root root-alias ...` is equivalent to `envctl db refactor ...` for this task.",
+        after_help = envctl_examples!(
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --plan --json",
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --render-out /tmp/rendered",
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --apply --confirm --approve drdave --note 'REQ-055 migration'",
+        )
+    )]
+    MapRoot {
+        #[command(subcommand)]
+        cmd: DbMapRootCmd,
     },
     /// Scan the repo root into a PERSISTED file index (`.envctl/db-index.json`).
+    /// Scan in memory only; do not write `.envctl/db-index.json`.
     #[command(
         long_about = "Scan the repo root into a file index and persist it to `<root>/.envctl/db-index.json` (NFR03: the index backend is durable, not a rescan-per-invocation). The printed rows are read back from disk, so `--json` reflects the persisted contract. The `.envctl` state dir is never swept back into the index. Use `--no-persist` for an in-memory-only scan.",
         after_help = envctl_examples!(
@@ -938,20 +973,28 @@ enum DbCmd {
     #[command(
         long_about = "Plan a fail-closed deploy of a staged artifact tree into a target layout root. Each step is classified Ready / Queued (target appears to be executing — never disturbed) / Refused (protected/Never target). `--apply` promotes only Ready steps, rechecks liveness immediately before each promotion, and is gated (R3): it requires --confirm AND --approve <who>; each promotion backs up an existing target to `<target>.bak` and writes atomically (temp-fsync-rename-reread-hash). Use --json for the machine contract.",
         after_help = envctl_examples!(
-            "envctl db deploy --kind hooks --target /path/to/root --stage /tmp/rendered --json",
-            "envctl db deploy --kind hooks --target /path/to/root --stage /tmp/rendered --apply --confirm --approve drdave",
+            "envctl db deploy hooks --target /path/to/root --stage /tmp/rendered --plan --json",
+            "envctl db deploy hooks --target /path/to/root --stage /tmp/rendered --apply --confirm --approve drdave",
         )
     )]
     Deploy {
-        /// What is being deployed (e.g. hooks, wrappers).
-        #[arg(long, default_value = "hooks")]
-        kind: String,
+        /// What is being deployed (e.g. hooks, wrappers). The positional form
+        /// supports `envctl db deploy hooks ...`; `--kind` remains accepted for
+        /// existing automation.
+        #[arg(value_name = "KIND", conflicts_with = "kind")]
+        deploy_kind: Option<String>,
+        /// Compatibility spelling for the deployment kind.
+        #[arg(long)]
+        kind: Option<String>,
         /// Target layout root to promote into.
         #[arg(long)]
         target: String,
         /// Directory of staged artifacts to promote (e.g. a `refactor --render-out` tree).
         #[arg(long = "stage", value_name = "DIR")]
         stage: Option<String>,
+        /// Emit the read-only plan explicitly (the default without `--apply`).
+        #[arg(long, conflicts_with = "apply")]
+        plan: bool,
         /// Promote Ready steps IN PLACE. Requires --confirm and --approve (R3 gate).
         #[arg(long)]
         apply: bool,
@@ -971,7 +1014,7 @@ enum DbCmd {
         after_help = envctl_examples!(
             "envctl db watch --json",
             "envctl db watch --once --json",
-            "envctl db --repo-root /path/to/repo watch --json",
+            "envctl db watch --repo-root /path/to/repo --json",
         )
     )]
     Watch {
@@ -1008,14 +1051,32 @@ enum DbCmd {
     },
 }
 
+#[derive(Subcommand)]
+enum DbMapRootCmd {
+    /// Legacy root-alias form for refactor operations.
+    #[command(
+        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope.\nThis is the `map-root` entrypoint form of `db refactor`.\n`--plan` is the default and fail-closed.\n`--apply` requires `--confirm` plus `--approve`.",
+        after_help = envctl_examples!(
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --plan --json",
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --render-out /tmp/rendered",
+            "envctl db map-root root-alias --from META_ROOT --to LIFE_OS_ROOT --apply --confirm --approve drdave --note 'REQ-055 migration'",
+        )
+    )]
+    RootAlias {
+        #[command(flatten)]
+        args: DbRootAliasRefactorArgs,
+    },
+}
+
 /// `db widget <which>` — the compact agent-UI surfaces.
 #[derive(Subcommand)]
 enum DbWidgetCmd {
     /// Multi-root model + per-root reference counts.
     #[command(
-        long_about = "The roots widget: the multi-root model (observed META_ROOT + release-target LIFE_OS_ROOT) alongside how often each root is referenced across the indexed scope (occurrence + file tallies). Machine-shaped for an agent UI.",
+        long_about = "The roots widget: the multi-root model (observed META_ROOT + declared/release-target LIFE_OS_ROOT) alongside how often each root is referenced across the indexed scope (occurrence + file tallies). Machine-shaped for an agent UI.",
         after_help = envctl_examples!(
             "envctl db widget roots --json",
+            "envctl db --repo-root /path/to/repo widget roots --declared /o/lifeos-declared --release /o/lifeos-release --json",
             "envctl db --repo-root /path/to/repo widget roots --observed /o --release /r --json",
         )
     )]
@@ -1023,6 +1084,9 @@ enum DbWidgetCmd {
         /// Observed current root absolute path (optional).
         #[arg(long)]
         observed: Option<String>,
+        /// Declared LifeOS root absolute path (optional).
+        #[arg(long)]
+        declared: Option<String>,
         /// Release-target root absolute path (optional).
         #[arg(long)]
         release: Option<String>,
@@ -2473,16 +2537,16 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
 }
 
 /// GH#414 db command — drives the SHARED engine entry points
-/// ([`envctl_engine::DbSnapshot`] / [`envctl_engine::db_roots`]) so the CLI owns
-/// no db logic of its own (REQ-059). Agent-first: prints JSON under `--json`,
+/// ([`envctl_engine::DbSnapshot`] / [`envctl_engine::Db`]) so the CLI owns no db
+/// logic of its own (REQ-059). Agent-first: prints JSON under `--json`,
 /// a compact human summary otherwise. Needs no manifest/Engine — pure repo scope.
 fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<()> {
     use envctl_engine::db_deploy::{self, DeploySpec};
     use envctl_engine::db_query::{QueryPreset, QuerySpec};
-    use envctl_engine::db_refactor::{Approval, RootAliasSpec};
+    use envctl_engine::db_refactor::Approval;
     use envctl_engine::{
-        db_components_detect, db_impact, db_roots, db_watch_poll, hooks_widget, refs_widget,
-        roots_widget, DbIndexStore, DbSnapshot, FileIndex, ScanScope,
+        db_components_detect, db_impact, db_watch_poll, hooks_widget, refs_widget, roots_widget,
+        DbIndexStore, DbSnapshot, FileIndex, ScanScope,
     };
 
     let root = repo_root
@@ -2492,10 +2556,13 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
     match cmd {
         DbCmd::Roots {
             observed,
+            declared,
             release,
             profile,
         } => {
-            let rows = db_roots(observed, release, &profile);
+            let rows = Db::from_profiles_with_declared(observed, declared, release, &profile)
+                .roots()
+                .to_vec();
             if json {
                 println!("{}", serde_json::to_string_pretty(&rows)?);
             } else {
@@ -2552,89 +2619,10 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 }
             }
         }
-        DbCmd::Refactor {
-            from,
-            to,
-            plan: _,
-            render_out,
-            apply,
-            confirm,
-            approve,
-            note,
-        } => {
-            let snap = DbSnapshot::open(ScanScope {
-                root,
-                ..Default::default()
-            })?;
-            let spec = RootAliasSpec {
-                from,
-                to,
-                target_profile: None,
-                scope: None,
-                render_out: render_out.clone(),
-            };
-            let plan = snap.refactor_plan(&spec)?;
-
-            // Optional: render the rewritten files into a NEW tree (originals safe).
-            let rendered = if render_out.is_some() {
-                Some(snap.refactor_render(&plan, &spec)?)
-            } else {
-                None
-            };
-
-            // Optional: mutate IN PLACE. Fail-closed — the engine refuses unless
-            // confirm && an approved Approval are both supplied. `--approve <who>`
-            // is the human approval; absence => None => refusal.
-            let mutated = if apply {
-                let approval = approve.clone().map(|who| Approval {
-                    approver: who,
-                    approved: true,
-                    note: note.clone(),
-                });
-                Some(snap.refactor_apply(&plan, &spec, confirm, approval.as_ref())?)
-            } else {
-                None
-            };
-
-            if json {
-                let out = serde_json::json!({
-                    "plan": plan,
-                    "rendered": rendered,
-                    "mutated": mutated,
-                });
-                println!("{}", serde_json::to_string_pretty(&out)?);
-            } else {
-                println!(
-                    "mode={:?} files_touched={} occurrences={} refused={} approved={}",
-                    plan.mode,
-                    plan.files_touched,
-                    plan.occurrences_total,
-                    plan.refused,
-                    plan.approved
-                );
-                for change in plan.changes.iter().filter(|change| change.safe) {
-                    print!("{}", change.unified_diff);
-                }
-                for change in plan.changes.iter().filter(|change| !change.safe) {
-                    println!(
-                        "REFUSED {}: {}",
-                        change.absolute_path, change.refused_reason
-                    );
-                }
-                if let Some(paths) = &rendered {
-                    println!("rendered {} file(s) to new tree:", paths.len());
-                    for p in paths {
-                        println!("  {p}");
-                    }
-                }
-                if let Some(paths) = &mutated {
-                    println!("APPLIED in place to {} file(s):", paths.len());
-                    for p in paths {
-                        println!("  {p}");
-                    }
-                }
-            }
-        }
+        DbCmd::Refactor { args } => run_db_root_alias_refactor(&root, json, args)?,
+        DbCmd::MapRoot {
+            cmd: DbMapRootCmd::RootAlias { args },
+        } => run_db_root_alias_refactor(&root, json, args)?,
         DbCmd::Scan { no_persist } => {
             let scope = ScanScope {
                 root: root.clone(),
@@ -2733,9 +2721,11 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
             }
         }
         DbCmd::Deploy {
+            deploy_kind,
             kind,
             target,
             stage,
+            plan: _,
             apply,
             confirm,
             approve,
@@ -2747,7 +2737,7 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 ..Default::default()
             })?;
             let spec = DeploySpec {
-                kind,
+                kind: kind.or(deploy_kind).unwrap_or_else(|| "hooks".to_string()),
                 target,
                 stage_dir: stage,
             };
@@ -2817,12 +2807,15 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
             let value = match which {
                 DbWidgetCmd::Roots {
                     observed,
+                    declared,
                     release,
                     profile,
                 } => {
                     let s = snap()?;
                     serde_json::to_value(roots_widget(
-                        db_roots(observed, release, &profile),
+                        Db::from_profiles_with_declared(observed, declared, release, &profile)
+                            .roots()
+                            .to_vec(),
                         s.symbols(),
                     ))?
                 }
@@ -2856,6 +2849,92 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 }
             }
         },
+    }
+    Ok(())
+}
+
+fn run_db_root_alias_refactor(
+    root: &str,
+    json: bool,
+    args: DbRootAliasRefactorArgs,
+) -> anyhow::Result<()> {
+    use envctl_engine::db_refactor::{Approval, RootAliasSpec};
+    use envctl_engine::{DbSnapshot, ScanScope};
+
+    let DbRootAliasRefactorArgs {
+        from,
+        to,
+        plan: _,
+        render_out,
+        apply,
+        confirm,
+        approve,
+        note,
+    } = args;
+
+    let snap = DbSnapshot::open(ScanScope {
+        root: root.to_string(),
+        ..Default::default()
+    })?;
+    let spec = RootAliasSpec {
+        from,
+        to,
+        target_profile: None,
+        scope: None,
+        render_out: render_out.clone(),
+    };
+    let plan = snap.refactor_plan(&spec)?;
+
+    let rendered = if render_out.is_some() {
+        Some(snap.refactor_render(&plan, &spec)?)
+    } else {
+        None
+    };
+
+    let mutated = if apply {
+        let approval = approve.clone().map(|who| Approval {
+            approver: who,
+            approved: true,
+            note: note.clone(),
+        });
+        Some(snap.refactor_apply(&plan, &spec, confirm, approval.as_ref())?)
+    } else {
+        None
+    };
+
+    if json {
+        let out = serde_json::json!({
+            "plan": plan,
+            "rendered": rendered,
+            "mutated": mutated,
+        });
+        println!("{}", serde_json::to_string_pretty(&out)?);
+    } else {
+        println!(
+            "mode={:?} files_touched={} occurrences={} refused={} approved={}",
+            plan.mode, plan.files_touched, plan.occurrences_total, plan.refused, plan.approved
+        );
+        for change in plan.changes.iter().filter(|change| change.safe) {
+            print!("{}", change.unified_diff);
+        }
+        for change in plan.changes.iter().filter(|change| !change.safe) {
+            println!(
+                "REFUSED {}: {}",
+                change.absolute_path, change.refused_reason
+            );
+        }
+        if let Some(paths) = &rendered {
+            println!("rendered {} file(s) to new tree:", paths.len());
+            for p in paths {
+                println!("  {p}");
+            }
+        }
+        if let Some(paths) = &mutated {
+            println!("APPLIED in place to {} file(s):", paths.len());
+            for p in paths {
+                println!("  {p}");
+            }
+        }
     }
     Ok(())
 }
@@ -5818,9 +5897,70 @@ fn print_meta_boundary(r: &EnvReport) {
 mod frontend_gaps_tests {
     //! TASK-0019: CLI parse/render coverage for the kasetto front-end gap port — global options,
     //! completions, the `self` tree, `--frozen` aliases, and `agent doctor`.
-    use super::{Cli, Cmd, ColorMode, SelfAction};
+    use super::{Cli, Cmd, ColorMode, DbCmd, SelfAction};
     use clap::{CommandFactory, Parser};
     use clap_complete::{generate, Shell};
+    use std::path::PathBuf;
+
+    #[test]
+    fn db_watch_accepts_repo_root_after_subcommand() {
+        let cli = Cli::try_parse_from([
+            "envctl",
+            "db",
+            "watch",
+            "--repo-root",
+            "/tmp/repo",
+            "--once",
+        ])
+        .expect("parse db watch repo root");
+
+        match cli.cmd {
+            Cmd::Db {
+                repo_root: Some(root),
+                cmd: DbCmd::Watch { once, .. },
+            } => {
+                assert_eq!(root, PathBuf::from("/tmp/repo"));
+                assert!(once);
+            }
+            _ => panic!("expected db watch with repo root"),
+        }
+    }
+
+    #[test]
+    fn db_deploy_accepts_requested_positional_kind_and_explicit_plan() {
+        let cli = Cli::try_parse_from([
+            "envctl",
+            "db",
+            "deploy",
+            "hooks",
+            "--target",
+            "/tmp/lifeos",
+            "--plan",
+        ])
+        .expect("parse positional deploy kind and explicit plan");
+
+        match cli.cmd {
+            Cmd::Db {
+                cmd:
+                    DbCmd::Deploy {
+                        deploy_kind,
+                        kind,
+                        target,
+                        plan,
+                        apply,
+                        ..
+                    },
+                ..
+            } => {
+                assert_eq!(deploy_kind.as_deref(), Some("hooks"));
+                assert!(kind.is_none());
+                assert_eq!(target, "/tmp/lifeos");
+                assert!(plan);
+                assert!(!apply);
+            }
+            _ => panic!("expected db deploy plan"),
+        }
+    }
 
     // --- Item 2: completions <shell> generates non-empty scripts for each shell, exit 0 ---
     #[test]

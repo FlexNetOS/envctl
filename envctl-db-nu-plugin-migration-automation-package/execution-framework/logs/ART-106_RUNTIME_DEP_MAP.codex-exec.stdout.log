@@ -7724,7 +7724,7 @@ exec
                     "names": [
                         "validateToken"
                     ],
-                    "snippet": "- `validateToken(token: <redacted>): boolean` (function)"
+                    "snippet": "- `validateToken(<REDACTED:SECRET> boolean` (function)"
                 },
                 {
                     "path": ".kb/skills/understand/SKILL.md",
@@ -7778,7 +7778,7 @@ exec
                     "names": [
                         "GITHUB_TOKEN"
                     ],
-                    "snippet": "github-token: <redacted> secrets.GITHUB_TOKEN }}"
+                    "snippet": "github-<REDACTED:SECRET> secrets.GITHUB_TOKEN }}"
                 },
                 {
                     "path": ".toolchains/.bun/install/cache/.tmp/.3afeaf5fc7f75fd7-00000010.json-schema-traverse/.github/workflows/publish.yml",
@@ -7788,7 +7788,7 @@ exec
                         "NODE_AUTH_TOKEN",
                         "NPM_TOKEN"
                     ],
-                    "snippet": "NODE_AUTH_TOKEN: <redacted> secrets.NPM_TOKEN }}"
+                    "snippet": "NODE_AUTH_<REDACTED:SECRET> secrets.NPM_TOKEN }}"
                 },
                 {
                     "path": ".toolchains/.bun/install/cache/.tmp/.3afeaf5fc7f75fd7-00000010.json-schema-traverse/.github/workflows/publish.yml",
@@ -7798,7 +7798,7 @@ exec
                         "NODE_AUTH_TOKEN",
                         "NPM_TOKEN"
                     ],
-                    "snippet": "NODE_AUTH_TOKEN: <redacted> secrets.NPM_TOKEN }}"
+                    "snippet": "NODE_AUTH_<REDACTED:SECRET> secrets.NPM_TOKEN }}"
                 },
                 {
                     "path": ".toolchains/.bun/install/cache/.tmp/.3cffefffdf7b7d3e-00000019.ajv-formats/README.md",
@@ -7816,7 +7816,7 @@ exec
                     "names": [
                         "IETFToken"
                     ],
-                    "snippet": "IETFToken = \"ietf-token\","
+                    "snippet": "IETF<REDACTED:SECRET>
                 },
                 {
                     "path": ".toolchains/.bun/install/cache/.tmp/.3fbfbf1ad278bfbd-00000026.json-schema-typed/draft_07.d.ts",
@@ -7825,7 +7825,7 @@ exec
                     "names": [
                         "XToken"
                     ],
-                    "snippet": "XToken = \"x-token\""
+                    "snippet": "X<REDACTED:SECRET>
                 },
                 {
                     "path": ".toolchains/.bun/install/cache/.tmp/.3fbfbf1ad278bfbd-00000026.json-schema-typed/draft_07.js",
@@ -7852,7 +7852,7 @@ exec
                     "names": [
                         "IETFToken"
                     ],
-                    "snippet": "IETFToken = \"ietf-token\","
+                    "snippet": "IETF<REDACTED:SECRET>
                 },
                 {
                     "path": ".toolchains/.bun/install/cache/.tmp/.3fbfbf1ad278bfbd-00000026.json-schema-typed/draft_2019_09.d.ts",
@@ -7861,7 +7861,7 @@ exec
                     "names": [
                         "XToken"
                     ],
-                    "snippet": "XToken = \"x-token\""
+                    "snippet": "X<REDACTED:SECRET>
                 }
             ]
         },

@@ -2,7 +2,7 @@
 
 - Task: `ART-124_TEST_COVERAGE`
 - Target: `flexnetos-vs-lifeos`
-- Generated: `2026-07-04T23:29:11+00:00`
+- Generated: `2026-07-28T11:52:06+00:00`
 - VER-300 entry status: `ready_with_open_runtime_gates`
 - Covered classes: `6` / `6`
 
@@ -13,9 +13,9 @@
 | `REQ-024_ENVCTL_ARTIFACT_REGISTRY` | `completed` |
 | `REQ-040_SHARED_PROTOCOL_SCHEMAS` | `completed` |
 | `REQ-025_ENVCTL_VALIDATION_EVIDENCE` | `completed` |
-| `REQ-033_PLUGIN_HUMAN_APPROVAL` | `pending` |
-| `REQ-041_TWO_REPO_INTEGRATION` | `pending` |
-| `REQ-045_RUN_REPLAY` | `pending` |
+| `REQ-033_PLUGIN_HUMAN_APPROVAL` | `completed` |
+| `REQ-041_TWO_REPO_INTEGRATION` | `completed` |
+| `REQ-045_RUN_REPLAY` | `completed` |
 
 ## Coverage Rows
 
@@ -37,7 +37,7 @@
 - exercise validation evidence rows for reconciliation, parity, test results, and proof evidence
 
 Open gaps:
-- Replay and rollback unit checks remain pending until REQ-026, REQ-027, and REQ-045 complete.
+- Replay and rollback unit checks require runtime execution evidence; current dependency states are REQ-026=completed, REQ-027=completed, and REQ-045=completed.
 
 ### integration
 - create a run in envctl and read it through the plugin-shaped shared protocol records
@@ -46,7 +46,7 @@ Open gaps:
 - verify approval and replay status are represented as structured records when backing gates exist
 
 Open gaps:
-- REQ-041_TWO_REPO_INTEGRATION is pending, so this matrix does not certify a live envctl-to-nu_plugin run.
+- A live envctl-to-nu_plugin run remains outside this artifact's fixture evidence; REQ-041_TWO_REPO_INTEGRATION is completed.
 
 ### regression
 - re-run generation for completed artifact tasks and verify path/hash stability or intentional proof updates
@@ -55,7 +55,7 @@ Open gaps:
 - detect stale or missing canonical contract paths in migration-artifacts
 
 Open gaps:
-- Full replay identity remains pending until REQ-045_RUN_REPLAY is complete.
+- Full replay identity still requires a replay execution record for this matrix; REQ-045_RUN_REPLAY is completed.
 
 ### performance
 - time migration application and registry insertion for representative artifact batches
@@ -73,7 +73,7 @@ Open gaps:
 - ensure generated artifacts and evidence rows carry SHA-256 hashes
 
 Open gaps:
-- REQ-033_PLUGIN_HUMAN_APPROVAL and REQ-045_RUN_REPLAY are pending, so end-to-end approval/replay security is not certified here.
+- End-to-end approval/replay security certification requires execution evidence for this matrix; REQ-033_PLUGIN_HUMAN_APPROVAL is completed and REQ-045_RUN_REPLAY is completed.
 
 ### UAT
 - walk the operator session template using fixture target and recipe records
@@ -82,7 +82,7 @@ Open gaps:
 - capture human signoff criteria and unresolved blockers before release handoff
 
 Open gaps:
-- Human approval support is pending; replay support is pending.
+- Human approval support is completed; replay support is completed.
 
 ## Evidence Inputs
 
@@ -90,11 +90,11 @@ Open gaps:
 | --- | --- |
 | `examples/target-descriptors/flexnetos-vs-lifeos.yaml` | `71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190` |
 | `execution-framework/generated/package_scan.json` | `0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487` |
-| `execution-framework/generated/envctl_migration_db_model.json` | `7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef` |
-| `execution-framework/generated/envctl_artifact_registry_report.json` | `b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c` |
-| `execution-framework/generated/envctl_validation_evidence_report.json` | `0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf` |
+| `execution-framework/generated/envctl_migration_db_model.json` | `494ba4e90d62c06522875f0d257c1914fd09141346872572114c446e17b13eb6` |
+| `execution-framework/generated/envctl_artifact_registry_report.json` | `fdf98b2bc184a8021726591983f603b1929497ba66af13eeb97f68345d8a1351` |
+| `execution-framework/generated/envctl_validation_evidence_report.json` | `f28f76c36e46718a8593e22a0351da1599ce9ca41ccc0505c53027159841d67f` |
 | `execution-framework/generated/shared_protocol_validation_report.json` | `0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0` |
-| `execution-framework/generated/status_from_proofs.json` | `72a97f935a3e589a84abebd22ae2cd78c9947611d5c8d6316a343c4667167ea5` |
+| `execution-framework/generated/status_from_proofs.json` | `a3cac733b0fd6064f55126ca2db938b0550215f08545f6c87de7fa658fd9685c` |
 | `execution-framework/generated/contract_manifest.json` | `3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270` |
 
 ## Verification Entrypoints

@@ -4,7 +4,10 @@ import copy
 import json
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
+try:
+    from jsonschema import Draft202012Validator
+except ModuleNotFoundError:  # Keep the task packet executable with stdlib-only Python.
+    Draft202012Validator = None  # type: ignore[assignment,misc]
 
 from _common import append_proof, file_checksums, now, package_root, root, write_json
 
@@ -41,6 +44,85 @@ REQUIRED_RECORDS = [
     "ReplayResult",
     "ProofRecord",
 ]
+
+
+class _ValidationError:
+    def __init__(self, message: str) -> None:
+        self.message = message
+        self.path: tuple[str, ...] = ()
+
+
+class StdlibDraft202012Validator:
+    """Small local fallback for the JSON Schema keywords used by these contracts."""
+
+    def __init__(self, schema: dict) -> None:
+        self.schema = schema
+
+    @staticmethod
+    def check_schema(schema: dict) -> None:
+        if not isinstance(schema, dict):
+            raise ValueError("schema must be an object")
+
+    def _resolve(self, reference: str) -> dict:
+        node: object = self.schema
+        for token in reference.removeprefix("#/").split("/"):
+            node = node[token.replace("~1", "/").replace("~0", "~")]  # type: ignore[index]
+        if not isinstance(node, dict):
+            raise ValueError(f"schema reference does not resolve to an object: {reference}")
+        return node
+
+    def _validate(self, value: object, schema: dict, path: str) -> None:
+        if "$ref" in schema:
+            self._validate(value, self._resolve(schema["$ref"]), path)
+            return
+        for keyword in ("allOf", "anyOf", "oneOf"):
+            if keyword not in schema:
+                continue
+            choices = schema.get(keyword, [])
+            matches = 0
+            for choice in choices:
+                try:
+                    self._validate(value, choice, path)
+                    matches += 1
+                except ValueError:
+                    pass
+            if (keyword == "allOf" and matches != len(choices)) or (keyword == "anyOf" and not matches) or (keyword == "oneOf" and matches != 1):
+                raise ValueError(f"{path}: does not satisfy {keyword}")
+        expected = schema.get("type")
+        type_map = {"object": dict, "array": list, "string": str, "integer": int, "number": (int, float), "boolean": bool, "null": type(None)}
+        if expected is not None:
+            choices = expected if isinstance(expected, list) else [expected]
+            if not any(isinstance(value, type_map[item]) and not (item in {"integer", "number"} and isinstance(value, bool)) for item in choices):
+                raise ValueError(f"{path}: expected type {choices}")
+        if "enum" in schema and value not in schema["enum"]:
+            raise ValueError(f"{path}: value is not in enum")
+        if isinstance(value, str):
+            if len(value) < schema.get("minLength", 0):
+                raise ValueError(f"{path}: string is shorter than minLength")
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and value < schema.get("minimum", value):
+            raise ValueError(f"{path}: value is below minimum")
+        if isinstance(value, list):
+            if len(value) < schema.get("minItems", 0):
+                raise ValueError(f"{path}: array is shorter than minItems")
+            for index, item in enumerate(value):
+                if "items" in schema:
+                    self._validate(item, schema["items"], f"{path}[{index}]")
+        if isinstance(value, dict):
+            for key in schema.get("required", []):
+                if key not in value:
+                    raise ValueError(f"{path}: missing required property {key!r}")
+            properties = schema.get("properties", {})
+            for key, item in value.items():
+                if key in properties:
+                    self._validate(item, properties[key], f"{path}.{key}")
+                elif schema.get("additionalProperties") is False:
+                    raise ValueError(f"{path}: unexpected property {key!r}")
+
+    def iter_errors(self, value: object):
+        try:
+            self._validate(value, self.schema, "$")
+        except ValueError as exc:
+            yield _ValidationError(str(exc))
 
 
 def read_json(base: Path, relpath: str) -> dict:
@@ -426,6 +508,7 @@ def sample_records() -> dict:
 
 def validate_shared_protocol(schema: dict, manifest: dict) -> dict:
     errors = []
+    validator_class = Draft202012Validator or StdlibDraft202012Validator
     defs = schema.get("$defs", {})
     for record in REQUIRED_RECORDS:
         if record not in defs:
@@ -435,11 +518,11 @@ def validate_shared_protocol(schema: dict, manifest: dict) -> dict:
         if record not in manifest_records:
             errors.append(f"manifest missing {record}")
 
-    Draft202012Validator.check_schema(schema)
+    validator_class.check_schema(schema)
     samples = sample_records()
     sample_results = {}
     for name in REQUIRED_RECORDS:
-        validator = Draft202012Validator({"$ref": f"#/$defs/{name}", "$defs": defs})
+        validator = validator_class({"$ref": f"#/$defs/{name}", "$defs": defs})
         record_errors = sorted(validator.iter_errors(samples[name]), key=lambda err: err.path)
         if record_errors:
             errors.extend(f"{name}: {err.message}" for err in record_errors)

@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task_id": "ART-127_BLAST_RADIUS",
   "title": "Blast-radius map",
-  "generated_at": "2026-07-04T23:19:11+00:00",
+  "generated_at": "2026-07-28T11:53:33+00:00",
   "contract_row": {
     "contract_row_id": "artifact:01-current-state-blast-radius-map-md",
     "artifact_id": "01-current-state-blast-radius-map-md",

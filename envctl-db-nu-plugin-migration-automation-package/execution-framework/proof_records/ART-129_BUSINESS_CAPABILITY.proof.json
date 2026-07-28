@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-129_BUSINESS_CAPABILITY",
   "status": "completed",
-  "started_at": "2026-07-04T23:19:56+00:00",
-  "completed_at": "2026-07-04T23:19:56+00:00",
+  "started_at": "2026-07-28T12:02:46+00:00",
+  "completed_at": "2026-07-28T12:02:46+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-30",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art_129_business_capability.py",
     "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
@@ -26,7 +26,7 @@
     "schema_version": "1.0",
     "task_id": "ART-129_BUSINESS_CAPABILITY",
     "status": "passed",
-    "generated_at": "2026-07-04T23:19:56+00:00",
+    "generated_at": "2026-07-28T12:02:46+00:00",
     "artifact_paths": {
       "markdown": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
       "json": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json"
@@ -37,7 +37,7 @@
         "artifact_id": "art129-business-capability-map-md",
         "run_id": "run-art129-business-capability",
         "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
-        "content_hash": "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+        "content_hash": "sha256:6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811",
         "producer_operation_id": "op-art129-generate-business-capability",
         "contract_id": "contract-art129-full-migration-artifacts",
         "evidence_ids": [
@@ -65,7 +65,7 @@
         "artifact_id": "art129-business-capability-map-json",
         "run_id": "run-art129-business-capability",
         "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
-        "content_hash": "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+        "content_hash": "sha256:949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2",
         "producer_operation_id": "op-art129-generate-business-capability",
         "contract_id": "contract-art129-full-migration-artifacts",
         "evidence_ids": [
@@ -98,7 +98,7 @@
         "artifact_type": "business_capability_map_markdown",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
-        "content_hash": "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+        "content_hash": "sha256:6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811",
         "generated_by_operation_id": "op-art129-generate-business-capability",
         "evidence": {
           "contract_id": "contract-art129-full-migration-artifacts",
@@ -173,7 +173,7 @@
         "artifact_type": "business_capability_map_json",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
-        "content_hash": "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+        "content_hash": "sha256:949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2",
         "generated_by_operation_id": "op-art129-generate-business-capability",
         "evidence": {
           "contract_id": "contract-art129-full-migration-artifacts",
@@ -255,13 +255,13 @@
           "art129-business-capability-map-json",
           "complete",
           "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
-          "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad"
+          "sha256:949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2"
         ],
         [
           "art129-business-capability-map-md",
           "complete",
           "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
-          "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e"
+          "sha256:6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811"
         ]
       ]
     },
@@ -283,12 +283,13 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art_129_business_capability.py": "45c1d0ca367d0d5bb60cf92faf091edc90ce9e7b88369e74496a2415ef3cba28",
-    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md": "1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
-    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json": "5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
-    "execution-framework/generated/art_129_business_capability_registry_report.json": "ed0231974a034ad7172989973287b134b8cf4370d93eacdf272924384c48db90",
-    "execution-framework/state/ART-129_BUSINESS_CAPABILITY.heartbeat.json": "ea24defef92411dbfa6fbeb7c30dfd719e93cf1afb182caf09171bf3c7940c12",
-    "execution-framework/logs/ART-129_BUSINESS_CAPABILITY.log": "ed0231974a034ad7172989973287b134b8cf4370d93eacdf272924384c48db90",
-    "execution-framework/proof_records/proof_ledger.jsonl": "d3190453b1fa65e8ebe875e99cc2abf7043770e2b40bcfa4728f204fa42b19e4"
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md": "6d18e65cbab64220b4f4f40585e04ac625d82f40c5239cb47b1e0404f40f9811",
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json": "949515c69685ad5b25543eddbe6620dae61314f5e8f7ab2262664dfc119392d2",
+    "execution-framework/generated/art_129_business_capability_registry_report.json": "e4729d329f43ebc31a106ef4ebaa4bae55ae4fc168d3d7e783df8c3496499b7b",
+    "execution-framework/state/ART-129_BUSINESS_CAPABILITY.heartbeat.json": "6e9ed023960c728f4c33915e29e9f936a52aa4b581e720ead8e50185bd0bea9e",
+    "execution-framework/logs/ART-129_BUSINESS_CAPABILITY.log": "e4729d329f43ebc31a106ef4ebaa4bae55ae4fc168d3d7e783df8c3496499b7b",
+    "execution-framework/proof_records/ART-129_BUSINESS_CAPABILITY.proof.json": "7cf035ce6288b9772697d0ecb5582866e23f58ce3ff4cb77c166cc7de37c1095",
+    "execution-framework/proof_records/proof_ledger.jsonl": "2ca623b1c2a9cd21c8139d2fb148a32b3a7af79cd39b1ee44c76a4b17495ba8e"
   },
   "logs_uri": "logs/ART-129_BUSINESS_CAPABILITY.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

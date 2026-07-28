@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-105_PACKAGE_LIB_GRAPH",
-  "generated_at": "2026-07-04T23:20:41+00:00",
+  "generated_at": "2026-07-28T11:10:39+00:00",
   "source_inputs": {
-    "package_manifest_file_count": 281,
+    "package_manifest_file_count": 733,
     "source_manifest_file_count": 38,
     "package_scan_folders": [
       "codex",
@@ -65,7 +65,7 @@
   "summary": {
     "node_count": 8,
     "edge_count": 6,
-    "python_file_count": 49,
+    "python_file_count": 85,
     "third_party_python_import_count": 2,
     "shell_script_count": 6,
     "issue_count": 4,
@@ -232,6 +232,37 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/agent_approval_gate.py",
+        "stdlib_imports": [
+          "__future__",
+          "argparse",
+          "json",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/agent_control_api.py",
+        "stdlib_imports": [
+          "__future__",
+          "argparse",
+          "dataclasses",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "envctl_run_ledger",
+          "operation_state_machine"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/artifact_registry.py",
         "stdlib_imports": [
           "__future__",
@@ -320,6 +351,105 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/generate_art106_runtime_dep_map.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "datetime",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art108_db_schema_map.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art109_data_lineage.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art110_api_catalog.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art111_event_map.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "fnmatch",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/generate_art112_code_ownership.py",
         "stdlib_imports": [
           "__future__",
@@ -378,6 +508,115 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/generate_art118_observability.py",
+        "stdlib_imports": [
+          "__future__",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art120_wave_plan.py",
+        "stdlib_imports": [
+          "__future__",
+          "csv",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art121_cutover.py",
+        "stdlib_imports": [
+          "__future__",
+          "csv",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art122_rollback.py",
+        "stdlib_imports": [
+          "__future__",
+          "csv",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art123_validation_reconciliation.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "validation_evidence",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art124_test_coverage.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/generate_art125_risk_register.py",
         "stdlib_imports": [
           "__future__",
@@ -412,6 +651,123 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/generate_art131_golden_dataset.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art132_parity_dashboard.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art133_deprecation_map.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art134_exception_inventory.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art135_raci.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art136_tech_debt_ledger.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art_107_data_flow_graph.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/generate_art_117_iam_matrix.py",
         "stdlib_imports": [
           "__future__",
@@ -419,6 +775,22 @@
           "json",
           "pathlib",
           "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art_119_business_process.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
           "sqlite3",
           "typing"
         ],
@@ -520,6 +892,24 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/generate_flexnetos_lifeos_comparison.py",
+        "stdlib_imports": [
+          "__future__",
+          "argparse",
+          "collections",
+          "csv",
+          "datetime",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "subprocess",
+          "typing"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/generate_package_lib_graph.py",
         "stdlib_imports": [
           "__future__",
@@ -565,6 +955,7 @@
           "collections",
           "json",
           "pathlib",
+          "subprocess",
           "sys"
         ],
         "local_imports": [
@@ -650,6 +1041,37 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/replay_engine.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "envctl_run_ledger"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/rollback_checkpoints.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "envctl_run_ledger"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/scan_package.py",
         "stdlib_imports": [
           "__future__",
@@ -685,6 +1107,21 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/validate_agent_approval_gate.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "subprocess",
+          "sys"
+        ],
+        "local_imports": [
+          "_common",
+          "goal_loop"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/validate_task_graph.py",
         "stdlib_imports": [
           "__future__",
@@ -710,6 +1147,25 @@
           "typing"
         ],
         "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_agent_control_api.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "tempfile",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "agent_control_api",
+          "envctl_run_ledger"
+        ],
         "third_party_imports": []
       },
       {
@@ -766,9 +1222,21 @@
         "local_imports": [
           "_common"
         ],
-        "third_party_imports": [
-          "jsonschema"
-        ]
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_flexnetos_adapter_recipe.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "re",
+          "typing"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
       },
       {
         "path": "execution-framework/scripts/verify_flexnetos_target_descriptor.py",
@@ -838,6 +1306,51 @@
         "third_party_imports": []
       },
       {
+        "path": "execution-framework/scripts/verify_replay_engine.py",
+        "stdlib_imports": [
+          "__future__",
+          "argparse",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "envctl_run_ledger",
+          "replay_engine",
+          "rollback_checkpoints"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_rollback_checkpoints.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "sqlite3"
+        ],
+        "local_imports": [
+          "_common",
+          "envctl_run_ledger",
+          "rollback_checkpoints",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_run_replay.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
         "path": "execution-framework/scripts/verify_security_redaction.py",
         "stdlib_imports": [
           "__future__",
@@ -885,6 +1398,24 @@
         ]
       },
       {
+        "path": "execution-framework/scripts/verify_two_repo_integration.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "agent_control_api",
+          "envctl_run_ledger"
+        ],
+        "third_party_imports": [
+          "jsonschema"
+        ]
+      },
+      {
         "path": "execution-framework/scripts/verify_validation_evidence.py",
         "stdlib_imports": [
           "__future__",
@@ -895,6 +1426,83 @@
           "_common",
           "validation_evidence",
           "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_ver300_unit_validation.py",
+        "stdlib_imports": [
+          "__future__",
+          "fnmatch",
+          "pathlib",
+          "re",
+          "typing"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_ver301_sql_schema_test.py",
+        "stdlib_imports": [
+          "__future__",
+          "fnmatch",
+          "json",
+          "pathlib",
+          "re",
+          "subprocess",
+          "sys",
+          "typing"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_ver302_packet_schema_validation.py",
+        "stdlib_imports": [
+          "__future__",
+          "fnmatch",
+          "json",
+          "pathlib",
+          "re",
+          "sys",
+          "typing"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": [
+          "jsonschema"
+        ]
+      },
+      {
+        "path": "execution-framework/scripts/verify_ver303_goal_loop_compute.py",
+        "stdlib_imports": [
+          "__future__",
+          "copy",
+          "pathlib",
+          "re",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "goal_loop"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_ver304_final_completeness.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "subprocess",
+          "sys"
+        ],
+        "local_imports": [
+          "_common"
         ],
         "third_party_imports": []
       },

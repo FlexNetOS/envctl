@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-108_DB_SCHEMA_MAP",
   "status": "completed",
-  "started_at": "2026-07-04T23:28:33+00:00",
-  "completed_at": "2026-07-04T23:28:33+00:00",
+  "started_at": "2026-07-28T11:20:31+00:00",
+  "completed_at": "2026-07-28T11:20:31+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-09",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art108_db_schema_map.py",
     "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
@@ -27,7 +27,7 @@
   "verification_output": {
     "schema_version": "1.0",
     "task_id": "ART-108_DB_SCHEMA_MAP",
-    "generated_at": "2026-07-04T23:28:33+00:00",
+    "generated_at": "2026-07-28T11:20:31+00:00",
     "status": "passed",
     "run_id": "run-art108-db-schema-map",
     "operation_id": "op-art108-generate-db-schema-map",
@@ -38,7 +38,7 @@
         "artifact_id": "art-108-db-schema-map-json",
         "run_id": "run-art108-db-schema-map",
         "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
-        "content_hash": "sha256:497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
+        "content_hash": "sha256:c44abdac2f4039c47a3696f9ce09bbc9e52d27c0fda95c4737ea55708d9d35e9",
         "producer_operation_id": "op-art108-generate-db-schema-map",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -72,7 +72,7 @@
         "artifact_id": "art-108-db-schema-map-md",
         "run_id": "run-art108-db-schema-map",
         "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
-        "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+        "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
         "producer_operation_id": "op-art108-generate-db-schema-map",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -106,7 +106,7 @@
         "artifact_id": "04-data-migration-schema-map-md",
         "run_id": "run-art108-db-schema-map",
         "path": "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
-        "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+        "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
         "producer_operation_id": "op-art108-generate-db-schema-map",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -139,7 +139,7 @@
         "artifact_id": "04-data-migration-database-schema-map-md",
         "run_id": "run-art108-db-schema-map",
         "path": "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
-        "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+        "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
         "producer_operation_id": "op-art108-generate-db-schema-map",
         "contract_id": "contract-full-migration-artifact-contract-1.0.0",
         "evidence_ids": [
@@ -177,7 +177,7 @@
         "artifact_type": "database_schema_map",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
-        "content_hash": "sha256:497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
+        "content_hash": "sha256:c44abdac2f4039c47a3696f9ce09bbc9e52d27c0fda95c4737ea55708d9d35e9",
         "generated_by_operation_id": "op-art108-generate-db-schema-map",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -267,7 +267,7 @@
         "artifact_type": "migration_artifact",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
-        "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+        "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
         "generated_by_operation_id": "op-art108-generate-db-schema-map",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -357,7 +357,7 @@
         "artifact_type": "migration_artifact",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
-        "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+        "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
         "generated_by_operation_id": "op-art108-generate-db-schema-map",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -442,7 +442,7 @@
         "artifact_type": "migration_artifact",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
-        "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+        "content_hash": "sha256:b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
         "generated_by_operation_id": "op-art108-generate-db-schema-map",
         "evidence": {
           "contract_id": "contract-full-migration-artifact-contract-1.0.0",
@@ -552,14 +552,15 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art108_db_schema_map.py": "50d42dbf5f85334cdcc91c06ca5536aeae2ed2f4c36f16c0614e6cc4b0337c3f",
-    "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json": "497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
-    "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md": "ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
-    "execution-framework/migration-artifacts/04-data-migration/schema-map.md": "ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
-    "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md": "ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
-    "execution-framework/generated/art108_db_schema_map_registry_report.json": "75e760e343772b11952a3185ffb7edcf6f3f38aa462f15ed43c758c4e0def4f0",
-    "execution-framework/state/ART-108_DB_SCHEMA_MAP.heartbeat.json": "10b9fd9d59ce822f104b7c752a88e56c25b4050e04edbf63579e9bc39652d470",
-    "execution-framework/logs/ART-108_DB_SCHEMA_MAP.log": "75e760e343772b11952a3185ffb7edcf6f3f38aa462f15ed43c758c4e0def4f0",
-    "execution-framework/proof_records/proof_ledger.jsonl": "0f44eacd729d2c0d2025790675f8efd1cc2a3f75ffe95a62b4c1a1b5f86e4adf"
+    "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json": "c44abdac2f4039c47a3696f9ce09bbc9e52d27c0fda95c4737ea55708d9d35e9",
+    "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md": "b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
+    "execution-framework/migration-artifacts/04-data-migration/schema-map.md": "b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
+    "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md": "b371c649c0cc63b1834cdc6eb1e95d00a01337ac233f1c83e1a34c55999b2a30",
+    "execution-framework/generated/art108_db_schema_map_registry_report.json": "8016491b2b30049f215315560c45246d6224738e586aef724bbcea6fccf2a695",
+    "execution-framework/state/ART-108_DB_SCHEMA_MAP.heartbeat.json": "ad846e7795676908fb81da8377c1711bd1ef51395ae469bcb4421306ef86345d",
+    "execution-framework/logs/ART-108_DB_SCHEMA_MAP.log": "8016491b2b30049f215315560c45246d6224738e586aef724bbcea6fccf2a695",
+    "execution-framework/proof_records/ART-108_DB_SCHEMA_MAP.proof.json": "c0680daad804d30edff798f0f54f271d8a9af0dc45505254aad570b5d41447f1",
+    "execution-framework/proof_records/proof_ledger.jsonl": "035d79171d76cdb15722097f456db91dc5970e0c81e9058b25b4245c14b7fa3a"
   },
   "logs_uri": "logs/ART-108_DB_SCHEMA_MAP.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

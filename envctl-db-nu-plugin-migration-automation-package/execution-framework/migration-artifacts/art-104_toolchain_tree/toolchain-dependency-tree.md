@@ -1,17 +1,17 @@
 # ART-104 Toolchain dependency tree
 
-Generated at: `2026-07-04T23:22:31+00:00`
+Generated at: `2026-07-28T11:09:04+00:00`
 Status: `complete`
 Target root: `/home/flexnetos/FlexNetOS`
 
 ## Summary
 
 - Coverage: Tree is generated from target descriptor, package scan, envctl registry evidence, selected manifests, and capped filesystem discovery; node-level statuses identify weaker evidence surfaces.
-- Manifest signals scanned: `1229` from `20001` visited files.
-- Languages detected: `{"javascript-typescript": 176, "python": 42, "rust": 608}`.
-- Package manager signals: `{"bun": 6, "cargo": 608, "container": 59, "nix": 3, "npm": 5, "pep517": 4, "pip": 38}`.
-- Lockfile signals: `{"bun": 4, "nix": 3, "npm": 4}`.
-- Envctl toolchain components captured: `12`.
+- Manifest signals scanned: `286` from `10216` visited files.
+- Languages detected: `{"javascript-typescript": 2, "rust": 154}`.
+- Package manager signals: `{"cargo": 154, "container": 4, "nix": 4, "npm": 2}`.
+- Lockfile signals: `{"nix": 4, "npm": 2}`.
+- Envctl toolchain components captured: `0`.
 
 ## Dependency Tree
 
@@ -67,18 +67,12 @@ FlexNetOS toolchain
 
 | command | status | kind | probe |
 |---|---|---|---|
-| `envctl` | present | symlink | envctl 0.1.0 |
-| `meta` | present | file | meta 0.2.22 |
-| `git-kb` | present | symlink | git-kb 0.2.12 |
-| `bun` | present | file | 1.3.14 |
-| `bunx` | present | file | 1.3.14 |
-| `kache-rustc-wrapper` | present | file | kache 0.8.0 |
 
 ## CI/CD and Deploy Signals
 
-- GitHub Actions workflow evidence: `src/cuda-oxide/.github/workflows/book.yml`, `src/cuda-oxide/.github/workflows/cargo-deny.yml`, `src/cuda-oxide/.github/workflows/ci.yml`, `src/cuda-oxide/.github/workflows/clippy.yml`, `src/cuda-oxide/.github/workflows/cuda-bindings-guard.yml`, `src/cuda-oxide/.github/workflows/differential-drive.yml`, `src/cuda-oxide/.github/workflows/docs.yml`, `src/cuda-oxide/.github/workflows/examples-compile.yml`.
-- Container evidence: `src/cuda-oxide/.devcontainer/Dockerfile`, `src/hermes-agent/Dockerfile`, `src/hermes-agent/docker-compose.windows.yml`, `src/hermes-agent/docker-compose.yml`, `src/meta-ruvector/.devcontainer/Dockerfile`, `src/meta-ruvector/benchmarks/Dockerfile`, `src/meta-ruvector/crates/mcp-brain-server/Dockerfile`, `src/meta-ruvector/crates/mcp-brain-server/Dockerfile.minimal`.
-- Build task evidence: `src/cuda-oxide/Justfile`, `src/cuda-oxide/cuda-oxide-book/Makefile`, `src/meta-ruvector/crates/ruvector-postgres/Makefile`, `src/meta-ruvector/crates/ruvix/aarch64-boot/Makefile`, `src/meta-ruvector/crates/rvm/Makefile`, `src/meta-ruvector/examples/ruvLLM/esp32-flash/Makefile`, `src/meta-ruvector/examples/scipix/Makefile`, `src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/inferrs/Makefile`.
+- GitHub Actions workflow evidence: `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/check-dist.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/codeql-analysis.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/licensed.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/publish-immutable-actions.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/test.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/update-main-version.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/_actions/actions/checkout/v6/.github/workflows/update-test-ubuntu-git.yml`, `src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/.github/workflows/ci.yml`.
+- Container evidence: `src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/third_party/ruvector-postgres-2.0.5/Dockerfile`, `src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/third_party/ruvector-postgres-2.0.5/Dockerfile.prebuilt`, `src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/third_party/ruvector-postgres-2.0.5/Dockerfile`, `src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/third_party/ruvector-postgres-2.0.5/Dockerfile.prebuilt`.
+- Build task evidence: `src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/third_party/ruvector-postgres-2.0.5/Makefile`, `src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/third_party/tokenizers-0.20.4/Makefile`, `src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/third_party/ruvector-postgres-2.0.5/Makefile`, `src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/third_party/tokenizers-0.20.4/Makefile`.
 
 ## Compatibility Risks
 

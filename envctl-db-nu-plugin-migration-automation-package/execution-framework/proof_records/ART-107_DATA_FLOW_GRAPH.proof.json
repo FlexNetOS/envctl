@@ -2,12 +2,12 @@
   "proof_schema_version": "1.0",
   "task_id": "ART-107_DATA_FLOW_GRAPH",
   "status": "completed",
-  "started_at": "2026-07-04T23:28:55+00:00",
-  "completed_at": "2026-07-04T23:28:55+00:00",
+  "started_at": "2026-07-28T11:17:57+00:00",
+  "completed_at": "2026-07-28T11:17:57+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-artifact-08",
   "model_tag": "gpt-5.3-spark",
-  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "repo_path": "/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package",
   "files_changed": [
     "execution-framework/scripts/generate_art_107_data_flow_graph.py",
     "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
@@ -26,7 +26,7 @@
     "schema_version": "1.0",
     "task_id": "ART-107_DATA_FLOW_GRAPH",
     "status": "passed",
-    "generated_at": "2026-07-04T23:28:55+00:00",
+    "generated_at": "2026-07-28T11:17:57+00:00",
     "artifact_paths": {
       "markdown": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
       "json": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json"
@@ -37,7 +37,7 @@
         "artifact_id": "art107-data-flow-graph-md",
         "run_id": "run-art107-data-flow-graph",
         "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
-        "content_hash": "sha256:39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e",
+        "content_hash": "sha256:c11d2f74d52e01cb3def7fd85eb943f9492ccf67ac957f836b15b75450ad659c",
         "producer_operation_id": "op-art107-generate-data-flow-graph",
         "contract_id": "contract-art107-full-migration-artifacts",
         "evidence_ids": [
@@ -70,7 +70,7 @@
         "artifact_id": "art107-data-flow-graph-json",
         "run_id": "run-art107-data-flow-graph",
         "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
-        "content_hash": "sha256:2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828",
+        "content_hash": "sha256:bc8f777547345fb922e393a47a65346c83a62facacf4077da4f1ed29c17e1b24",
         "producer_operation_id": "op-art107-generate-data-flow-graph",
         "contract_id": "contract-art107-full-migration-artifacts",
         "evidence_ids": [
@@ -108,7 +108,7 @@
         "artifact_type": "data_flow_graph_markdown",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
-        "content_hash": "sha256:39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e",
+        "content_hash": "sha256:c11d2f74d52e01cb3def7fd85eb943f9492ccf67ac957f836b15b75450ad659c",
         "generated_by_operation_id": "op-art107-generate-data-flow-graph",
         "evidence": {
           "contract_id": "contract-art107-full-migration-artifacts",
@@ -205,7 +205,7 @@
         "artifact_type": "data_flow_graph_json",
         "status": "complete",
         "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
-        "content_hash": "sha256:2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828",
+        "content_hash": "sha256:bc8f777547345fb922e393a47a65346c83a62facacf4077da4f1ed29c17e1b24",
         "generated_by_operation_id": "op-art107-generate-data-flow-graph",
         "evidence": {
           "contract_id": "contract-art107-full-migration-artifacts",
@@ -320,13 +320,13 @@
           "art107-data-flow-graph-json",
           "complete",
           "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
-          "sha256:2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828"
+          "sha256:bc8f777547345fb922e393a47a65346c83a62facacf4077da4f1ed29c17e1b24"
         ],
         [
           "art107-data-flow-graph-md",
           "complete",
           "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
-          "sha256:39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e"
+          "sha256:c11d2f74d52e01cb3def7fd85eb943f9492ccf67ac957f836b15b75450ad659c"
         ]
       ]
     },
@@ -349,13 +349,13 @@
   },
   "checksums": {
     "execution-framework/scripts/generate_art_107_data_flow_graph.py": "010fb696a041c52d77f897f9379d680df81a4f980598f2dbf3d08c7230edb5cc",
-    "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md": "39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e",
-    "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json": "2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828",
-    "execution-framework/generated/art_107_data_flow_graph_registry_report.json": "b6ce780c58279c9dd59b4d9b4d28218636a7c70ad3209ad345dc1c20e7d54eed",
-    "execution-framework/state/ART-107_DATA_FLOW_GRAPH.heartbeat.json": "d32e7d6d84c404a6cb08165727a56e0d0b65283b46745c14735f799b1e71770b",
-    "execution-framework/logs/ART-107_DATA_FLOW_GRAPH.log": "b6ce780c58279c9dd59b4d9b4d28218636a7c70ad3209ad345dc1c20e7d54eed",
-    "execution-framework/proof_records/ART-107_DATA_FLOW_GRAPH.proof.json": "916d71609b7bc7cb9bc9a6fef760285485da6eaa8290c89a972f16313281ed7d",
-    "execution-framework/proof_records/proof_ledger.jsonl": "94475d8199de814f077ff5585a603ea6bb1ad2ff4f4318e03fb3f956d519d363"
+    "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md": "c11d2f74d52e01cb3def7fd85eb943f9492ccf67ac957f836b15b75450ad659c",
+    "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json": "bc8f777547345fb922e393a47a65346c83a62facacf4077da4f1ed29c17e1b24",
+    "execution-framework/generated/art_107_data_flow_graph_registry_report.json": "f66a4a35b0781a4b97040cf4cb461fd10c28396730c1c6dd11d9856e8065d66e",
+    "execution-framework/state/ART-107_DATA_FLOW_GRAPH.heartbeat.json": "b62f4c86bdffe13627e6e592e38e6910f56953620aef26c801a5d1a0eeed711d",
+    "execution-framework/logs/ART-107_DATA_FLOW_GRAPH.log": "f66a4a35b0781a4b97040cf4cb461fd10c28396730c1c6dd11d9856e8065d66e",
+    "execution-framework/proof_records/ART-107_DATA_FLOW_GRAPH.proof.json": "0b4f337491bcc564295e2fc012db70dd0226852e85205df2591820c94dae311e",
+    "execution-framework/proof_records/proof_ledger.jsonl": "b050d3d3c8883565d65a7b16b02bbb4ecfa1f910ade4b29bdb6f7f45dd573ad9"
   },
   "logs_uri": "logs/ART-107_DATA_FLOW_GRAPH.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

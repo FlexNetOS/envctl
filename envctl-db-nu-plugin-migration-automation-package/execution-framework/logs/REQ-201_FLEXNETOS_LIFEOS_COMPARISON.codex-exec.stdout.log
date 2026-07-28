@@ -1257,7 +1257,7 @@ This is a static debugging map for the target filesystem. It records entry point
 | `.kb/skills/kb-create/SKILL.md` | 84 | `sql-change` | Create a concise, descriptive title from the user's description. Use title case. Keep it under 80 characters. |
 | `.kb/skills/kb-create/SKILL.md` | 210 | `workflow` | - If this task blocks or is blocked by another, mention it in the body with `[[wikilinks]]` |
 | `.kb/skills/explore/SKILL.md` | 58 | `js-function` | export async function login(credentials: Credentials): Promise<Token> |
-| `.kb/skills/explore/SKILL.md` | 64 | `js-function` | export function validate(token: Token): boolean |
+| `.kb/skills/explore/SKILL.md` | 64 | `js-function` | export function validate(<REDACTED:SECRET> boolean |
 | `.kb/skills/kb-commit/SKILL.md` | 23 | `workflow` | If the diff shows changes to fields that are graph-derived (`blocks`, `children`, `references`), warn: |
 | `.kb/skills/kb-commit/SKILL.md` | 24 | `workflow` | > "The field `blocks` is graph-derived — it's computed from other documents' `blocked_by` fields. Committing it may cause unexpected behavior. Consider removing it from the frontmatter." |
 | `src/teri/FEATURE-PARITY.md` | 254 | `workflow` | unit tests (debounce / one-job / budget-cap / persist-reload continuity / per-domain isolation / |
@@ -1776,7 +1776,7 @@ exec
 /.../gates/runner-routing.sh:54:"runs-on: [self-hosted, linux, x64, local, flexnetos]" in sync,
 /.../gates/runner-routing.sh:55:"sync-master must stay on the FlexNetOS org self-hosted runner",
 /.../ci/setup-meta-deps.sh:6:# FlexNetOS/envctl is therefore not a valid build topology. This script recre...
-/.../ci/setup-meta-deps.sh:18:printf 'https://x-access-token:%s@github.com/FlexNetOS/%s.git\n' "$token" "$r...
+/.../ci/setup-meta-deps.sh:18:printf 'https://x-access-<REDACTED:SECRET> "$token" "$r...
 /.../ci/setup-meta-deps.sh:20:printf 'https://github.com/FlexNetOS/%s.git\n' "$repo"
 /.../ci/setup-meta-deps.sh:53:repository = "https://github.com/FlexNetOS/meta"
 /.../src/main.rs:356:long_about = "Register a git repo into the meta workspace. --mode (default au...
@@ -41236,7 +41236,7 @@ exec
                     "path": ".kb/skills/explore/SKILL.md",
                     "line": 64,
                     "signal": "js-function",
-                    "snippet": "export function validate(token: Token): boolean"
+                    "snippet": "export function validate(<REDACTED:SECRET> boolean"
                 },
                 {
                     "path": ".kb/skills/kb-commit/SKILL.md",
@@ -42022,7 +42022,7 @@ exec
                     "path": "src/teri/src/config.rs",
                     "line": 244,
                     "signal": "rust-item",
-                    "snippet": "fn build(api_key: Option<&str>) -> Self {"
+                    "snippet": "fn build(<REDACTED:SECRET> -> Self {"
                 },
                 {
                     "path": "src/teri/src/config.rs",

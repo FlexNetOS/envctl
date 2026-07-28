@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "task_id": "ART-117_IAM_MATRIX",
-  "generated_at": "2026-07-04T23:19:57+00:00",
+  "generated_at": "2026-07-28T11:37:46+00:00",
   "status": "complete",
   "target": {
     "target_id": "flexnetos-vs-lifeos",
@@ -191,11 +191,11 @@
     }
   ],
   "source_signal_summary": {
-    "approval_control": 34,
-    "external_identity_reference": 7,
+    "approval_control": 55,
+    "external_identity_reference": 8,
     "iam_reference": 2,
     "runtime_boundary": 2,
-    "secret_or_credential_reference": 75
+    "secret_or_credential_reference": 53
   },
   "source_signals": [
     {
@@ -207,7 +207,7 @@
     },
     {
       "source": "PACKAGE_MANIFEST.json",
-      "line": 506,
+      "line": 126,
       "keyword": "approval",
       "category": "approval_control",
       "redacted": true
@@ -221,7 +221,7 @@
     },
     {
       "source": "README.md",
-      "line": 23,
+      "line": 45,
       "keyword": "approval",
       "category": "approval_control",
       "redacted": true
@@ -339,6 +339,76 @@
       "redacted": true
     },
     {
+      "source": "execution-framework/README.md",
+      "line": 41,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-027_ENVCTL_REPLAY_ENGINE.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-028_ENVCTL_AGENT_CONTROL_API.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
+      "line": 3,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-041_TWO_REPO_INTEGRATION.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-045_RUN_REPLAY.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/AGENT_APPROVAL_GATE.md",
+      "line": 1,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
       "source": "execution-framework/docs/APPLIED_UPGRADES.md",
       "line": 161,
       "keyword": "approval",
@@ -353,8 +423,29 @@
       "redacted": true
     },
     {
+      "source": "execution-framework/docs/ENVCTL_AGENT_CONTROL_API.md",
+      "line": 5,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
       "source": "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
       "line": 26,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/ENVCTL_REPLAY_ENGINE.md",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/ENVCTL_ROLLBACK_CHECKPOINTS.md",
+      "line": 14,
       "keyword": "approval",
       "category": "approval_control",
       "redacted": true
@@ -371,6 +462,13 @@
       "line": 29,
       "keyword": "auth",
       "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/FLEXNETOS_ADAPTER_RECIPE.md",
+      "line": 25,
+      "keyword": "approval",
+      "category": "approval_control",
       "redacted": true
     },
     {
@@ -395,6 +493,20 @@
       "redacted": true
     },
     {
+      "source": "execution-framework/docs/NEXT_SESSION_PROMPT.md",
+      "line": 46,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/RUN_REPLAY.md",
+      "line": 9,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
       "source": "execution-framework/docs/SECURITY_REDACTION.md",
       "line": 13,
       "keyword": "approval",
@@ -409,6 +521,13 @@
       "redacted": true
     },
     {
+      "source": "execution-framework/docs/TWO_REPO_INTEGRATION.md",
+      "line": 10,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
       "source": "execution-framework/examples/nu/operator-session-template.nu",
       "line": 7,
       "keyword": "approval",
@@ -416,8 +535,71 @@
       "redacted": true
     },
     {
+      "source": "execution-framework/generated/REQ-033_PLUGIN_HUMAN_APPROVAL.contract.json",
+      "line": 3,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art106_runtime_dep_map_registry_report.json",
+      "line": 377,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art110_api_catalog_registry_report.json",
+      "line": 856,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art115_config_inventory_report.json",
+      "line": 12,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art118_observability_registry_report.json",
+      "line": 421,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art123_validation_reconciliation_report.json",
+      "line": 32,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art124_test_coverage_report.json",
+      "line": 16,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
       "source": "execution-framework/generated/art128_readiness_scorecard_report.json",
       "line": 27,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art134_exception_inventory_report.json",
+      "line": 10,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art135_raci_registry_report.json",
+      "line": 396,
       "keyword": "approval",
       "category": "approval_control",
       "redacted": true
@@ -444,6 +626,13 @@
       "redacted": true
     },
     {
+      "source": "execution-framework/generated/envctl_agent_control_report.json",
+      "line": 26,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
       "source": "execution-framework/generated/envctl_artifact_registry_report.json",
       "line": 112,
       "keyword": "secret",
@@ -453,6 +642,20 @@
     {
       "source": "execution-framework/generated/envctl_migration_db_model.json",
       "line": 37,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_replay_report.json",
+      "line": 67,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_rollback_checkpoints_report.json",
+      "line": 14,
       "keyword": "approval",
       "category": "approval_control",
       "redacted": true
@@ -833,209 +1036,6 @@
       "line": 36,
       "keyword": "secret",
       "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REL-401_HANDOFF.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
-      "line": 7,
-      "keyword": "approval",
-      "category": "approval_control",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
-      "line": 34,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
-      "line": 3,
-      "keyword": "approval",
-      "category": "approval_control",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json",
-      "line": 7,
-      "keyword": "approval",
-      "category": "approval_control",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
-      "line": 6,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-045_RUN_REPLAY.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/VER-300_UNIT_VALIDATION.json",
-      "line": 37,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
-      "line": 35,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json",
-      "line": 36,
-      "keyword": "secret",
-      "category": "secret_or_credential_reference",
-      "redacted": true
-    },
-    {
-      "source": "execution-framework/generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
-      "line": 7,
-      "keyword": "approval",
-      "category": "approval_control",
       "redacted": true
     }
   ],
