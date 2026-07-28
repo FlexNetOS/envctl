@@ -6,8 +6,8 @@
 
 use super::api::*;
 use super::model::*;
-use super::replay::ReplayMode;
-use super::MigrationDb;
+use super::replay::{ReplayMode, ReplayRequest};
+use super::{sha256_hex, MigrationDb};
 use serde_json::json;
 
 fn temp_db(tag: &str) -> MigrationDb {
@@ -392,6 +392,192 @@ fn run_lifecycle_and_replay_verify() {
     let bundle = db.export_run(&run.id).expect("bundle");
     assert_eq!(bundle.run.id, run.id);
     assert!(!bundle.events.is_empty());
+}
+
+#[test]
+fn replay_reconstructs_scoped_plan_and_rehashes_evidence() {
+    let db = temp_db("reproduce");
+    let run = seed_run(&db, "reproduce");
+    let root = std::env::temp_dir().join(format!(
+        "envctl-replay-root-{}-{}",
+        std::process::id(),
+        run.id
+    ));
+    std::fs::create_dir_all(&root).expect("create replay root");
+    let evidence_path = root.join("proof.json");
+    std::fs::write(&evidence_path, b"{\"verified\":true}\n").expect("write proof");
+    let evidence_hash = sha256_hex(&std::fs::read(&evidence_path).expect("read proof"));
+
+    let op = db
+        .add_operation(
+            OperationSpec {
+                run_id: run.id.clone(),
+                operation_type: "capture".into(),
+                phase: Some("import".into()),
+                risk: Risk::R1,
+                idempotency_key: None,
+                recipe_step_id: Some("import".into()),
+                command_redacted: Some("codedb capture <target>".into()),
+                input: Some(json!({"packet": "REQ-027"})),
+                parent_operation_id: None,
+            },
+            ActorType::Agent,
+            "test-agent",
+        )
+        .expect("add deterministic operation");
+    db.add_evidence(
+        &run.id,
+        Some(&op.id),
+        "proof.json",
+        "proof_record",
+        Some(&evidence_hash),
+        false,
+        Some(json!({"required_replay_input": true})),
+        ActorType::Agent,
+        "test-agent",
+    )
+    .expect("record evidence");
+    db.add_checkpoint(
+        &run.id,
+        Some(&op.id),
+        "artifact-boundary",
+        "proof.json",
+        Some(&evidence_hash),
+        None,
+        ActorType::Agent,
+        "test-agent",
+    )
+    .expect("record checkpoint");
+    db.run_set_status(
+        &run.id,
+        RunStatus::Planning,
+        ActorType::Agent,
+        "test-agent",
+        None,
+    )
+    .expect("planning");
+    db.run_set_status(
+        &run.id,
+        RunStatus::Running,
+        ActorType::Agent,
+        "test-agent",
+        None,
+    )
+    .expect("running");
+    db.run_set_status(
+        &run.id,
+        RunStatus::Validating,
+        ActorType::Agent,
+        "test-agent",
+        None,
+    )
+    .expect("validating");
+    db.complete_run(&run.id, ActorType::Agent, "test-agent")
+        .expect("complete");
+
+    let report = db
+        .reproduce(ReplayRequest {
+            replay_id: "replay-scoped".into(),
+            run_id: run.id.clone(),
+            mode: ReplayMode::DryRunPlan,
+            requested_by: "test-agent".into(),
+            operation_ids: vec![op.id.clone()],
+            target_descriptor_id: None,
+            reason: Some("acceptance test".into()),
+            replay_root: Some(root),
+        })
+        .expect("reproduce");
+    assert_eq!(report.status, "pass");
+    assert!(report.ok);
+    assert_eq!(report.operation_replay_plan.len(), 1);
+    assert_eq!(report.operation_replay_plan[0].checkpoint_refs.len(), 1);
+    assert_eq!(report.hash_checks[0].status, "match");
+    assert!(!report.replay_input_hash.is_empty());
+    assert!(report.errors.is_empty());
+
+    let missing = db.reproduce(ReplayRequest {
+        replay_id: "replay-unknown-op".into(),
+        run_id: run.id,
+        mode: ReplayMode::DryRunPlan,
+        requested_by: "test-agent".into(),
+        operation_ids: vec!["op-does-not-exist".into()],
+        target_descriptor_id: None,
+        reason: None,
+        replay_root: None,
+    });
+    assert!(missing.is_err(), "unknown operation ids fail closed");
+}
+
+#[test]
+fn apply_replay_blocks_open_approval_and_non_determinism() {
+    let db = temp_db("replay-apply-blocked");
+    let run = seed_run(&db, "replay-apply-blocked");
+    let op = db
+        .add_operation(
+            OperationSpec {
+                run_id: run.id.clone(),
+                operation_type: "manual_operator".into(),
+                phase: Some("cutover".into()),
+                risk: Risk::R4,
+                idempotency_key: None,
+                recipe_step_id: None,
+                command_redacted: Some("operator performs cutover".into()),
+                input: Some(json!({
+                    "non_deterministic": true,
+                    "replay_note": "requires an approved operator window"
+                })),
+                parent_operation_id: None,
+            },
+            ActorType::Agent,
+            "test-agent",
+        )
+        .expect("add manual operation");
+    db.op_request_start(&op.id, ActorType::Agent, "test-agent")
+        .expect("request approval");
+    db.run_set_status(
+        &run.id,
+        RunStatus::Planning,
+        ActorType::Agent,
+        "test-agent",
+        None,
+    )
+    .expect("planning");
+    db.run_set_status(
+        &run.id,
+        RunStatus::Running,
+        ActorType::Agent,
+        "test-agent",
+        None,
+    )
+    .expect("running");
+    db.run_set_status(
+        &run.id,
+        RunStatus::Validating,
+        ActorType::Agent,
+        "test-agent",
+        None,
+    )
+    .expect("validating");
+    db.complete_run(&run.id, ActorType::Agent, "test-agent")
+        .expect("complete fixture");
+
+    let report = db
+        .reproduce(ReplayRequest {
+            replay_id: "replay-apply".into(),
+            run_id: run.id,
+            mode: ReplayMode::Apply,
+            requested_by: "test-agent".into(),
+            operation_ids: vec![op.id],
+            target_descriptor_id: None,
+            reason: Some("prove fail-closed apply".into()),
+            replay_root: None,
+        })
+        .expect("apply report");
+    assert_eq!(report.status, "blocked");
+    assert!(!report.ok);
+    assert_eq!(report.required_approvals.len(), 1);
+    assert_eq!(report.non_deterministic_operations.len(), 1);
+    assert!(report.safe_next_action.contains("request human approval"));
 }
 
 #[test]

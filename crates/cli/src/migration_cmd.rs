@@ -7,11 +7,11 @@
 //! compact JSON with --json), real exit codes (any engine error exits non-zero).
 
 use anyhow::{anyhow, Context};
-use clap::Subcommand;
+use clap::{Args, Subcommand};
 use envctl_engine::migration_db::{
     self, ActorType, ApprovalDecision, ArtifactStatus, HumanMode, MigrationDb, OpStatus,
-    OperationSpec, ReplayMode, Risk, RunSpec, RunStatus, TargetSpec, TargetType, ValidationSpec,
-    ValidationStatus,
+    OperationSpec, ReplayMode, ReplayRequest, Risk, RunSpec, RunStatus, TargetSpec, TargetType,
+    ValidationSpec, ValidationStatus,
 };
 use std::path::PathBuf;
 
@@ -22,6 +22,51 @@ macro_rules! mig_examples {
     ($($line:literal),+ $(,)?) => {
         concat!("Examples:\n", $("  ", $line, "\n",)+)
     };
+}
+
+#[derive(Subcommand)]
+pub enum ReplayCmd {
+    /// Verify and reconstruct a replay plan without executing operations.
+    #[command(
+        name = "dry-run",
+        long_about = "Verify every selected replay input and reconstruct the operation/checkpoint plan without executing it. Re-hashes proof/evidence and artifact files beneath --replay-root, validates the event chain and catalog hashes, and reports approvals, non-determinism, missing evidence, blocked references, and the safe next action.",
+        after_help = mig_examples!(
+            "envctl replay dry-run --run-id run-000001 --replay-id replay-001 --requested-by operator"
+        )
+    )]
+    DryRun(ReplayArgs),
+    /// Prove a deterministic replay plan is eligible for the normal execution pipeline.
+    #[command(
+        long_about = "Prove that a reconstructed replay plan is eligible for submission to envctl's normal execution pipeline. Fails closed on any hash/path/state failure, open approval, or non-deterministic operation. Stored redacted command text is evidence and is never executed directly.",
+        after_help = mig_examples!(
+            "envctl replay apply --run-id run-000001 --replay-id replay-002 --requested-by operator"
+        )
+    )]
+    Apply(ReplayArgs),
+}
+
+#[derive(Args)]
+pub struct ReplayArgs {
+    /// Migration store path override.
+    #[arg(long)]
+    db: Option<PathBuf>,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long)]
+    replay_id: String,
+    #[arg(long)]
+    requested_by: String,
+    /// Limit replay to these operation ids.
+    #[arg(long, value_delimiter = ',')]
+    operation_ids: Vec<String>,
+    /// Assert that the run is bound to this descriptor row id.
+    #[arg(long)]
+    target_descriptor_id: Option<String>,
+    #[arg(long)]
+    reason: Option<String>,
+    /// Root allowed for evidence/artifact file re-hashing (defaults to cwd).
+    #[arg(long)]
+    replay_root: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -1291,4 +1336,36 @@ pub fn run_migration(
             )
         }
     }
+}
+
+pub fn run_replay(cmd: ReplayCmd, json: bool) -> anyhow::Result<()> {
+    let (mode, args) = match cmd {
+        ReplayCmd::DryRun(args) => (ReplayMode::DryRunPlan, args),
+        ReplayCmd::Apply(args) => (ReplayMode::Apply, args),
+    };
+    let path = args.db.unwrap_or_else(MigrationDb::default_path);
+    let db = MigrationDb::open(&path)?;
+    let report = db.reproduce(ReplayRequest {
+        replay_id: args.replay_id,
+        run_id: args.run_id,
+        mode,
+        requested_by: args.requested_by,
+        operation_ids: args.operation_ids,
+        target_descriptor_id: args.target_descriptor_id,
+        reason: args.reason,
+        replay_root: Some(
+            args.replay_root
+                .unwrap_or(std::env::current_dir().context("resolving replay root")?),
+        ),
+    })?;
+    let ok = report.ok;
+    emit(&report, json)?;
+    if !ok {
+        return Err(anyhow!(
+            "replay {}: {}",
+            report.status,
+            report.safe_next_action
+        ));
+    }
+    Ok(())
 }

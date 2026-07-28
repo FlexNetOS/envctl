@@ -356,6 +356,7 @@ fn build_command(hook: &Hook) -> Command {
     };
     let env = enforced_meta_env(hook_env);
     loop_build_command(&SpawnSpec {
+        clear_env: false,
         program: &program,
         args: &args,
         current_dir: None,

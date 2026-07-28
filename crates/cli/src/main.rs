@@ -549,6 +549,18 @@ enum Cmd {
         #[command(subcommand)]
         cmd: migration_cmd::MigrationCmd,
     },
+    /// Reconstruct and verify a migration from its immutable records.
+    #[command(
+        long_about = "Reconstruct a migration from its target descriptor, artifact contract, package manifest, recipe, operation inputs, proof/evidence and artifact hashes, tool versions, approvals, checkpoints, and hash-chained run state. dry-run emits a plan. apply only proves an eligible plan and fails closed on mismatches, blocked paths, open approvals, or non-deterministic operations; stored command text is never executed directly.",
+        after_help = envctl_examples!(
+            "envctl replay dry-run --run-id run-000001 --replay-id replay-001 --requested-by operator",
+            "envctl replay apply --run-id run-000001 --replay-id replay-002 --requested-by operator",
+        )
+    )]
+    Replay {
+        #[command(subcommand)]
+        cmd: migration_cmd::ReplayCmd,
+    },
     /// Manage agent assets (skills / MCP servers / commands) declaratively over the
     /// shared `Engine::agent_*` API. Mutating verbs (sync/add/remove/clean) are
     /// PREVIEW by default; pass `--apply` to write. `--json` (global) emits the typed
@@ -1922,7 +1934,11 @@ fn main() -> anyhow::Result<()> {
 
     let engine = if matches!(
         cli.cmd,
-        Cmd::Dashboard { .. } | Cmd::Env { .. } | Cmd::Migration { .. } | Cmd::Db { .. }
+        Cmd::Dashboard { .. }
+            | Cmd::Env { .. }
+            | Cmd::Migration { .. }
+            | Cmd::Replay { .. }
+            | Cmd::Db { .. }
     ) || matches!(
         cli.cmd,
         Cmd::Catalog {
@@ -2086,6 +2102,7 @@ fn main() -> anyhow::Result<()> {
         } => run_env(meta_file, toolchains, materialize, json),
         Cmd::Migrate { cmd } => run_migrate(&engine, cmd, json),
         Cmd::Migration { db, cmd } => migration_cmd::run_migration(db, cmd, json),
+        Cmd::Replay { cmd } => migration_cmd::run_replay(cmd, json),
         Cmd::Agent { cmd } => run_agent(engine, cmd, json),
         Cmd::Secret { cmd } => run_secret(cmd, json),
         Cmd::Completions { shell } => run_completions(shell),
@@ -3639,6 +3656,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Env { .. }
             | Cmd::Migrate { .. }
             | Cmd::Migration { .. }
+            | Cmd::Replay { .. }
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
