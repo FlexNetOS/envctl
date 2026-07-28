@@ -4343,7 +4343,9 @@ mod ca_tests {
             .any(|r| r.event_type == event_type && r.outcome == outcome)
     }
 
-    fn lock_no_panic<'a, T>(mutex: &'a Mutex<T>) -> std::sync::MutexGuard<'a, T> {
+    fn lock_no_panic<'a, T>(
+        mutex: &'a std::sync::Mutex<T>,
+    ) -> std::sync::MutexGuard<'a, T> {
         match mutex.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
