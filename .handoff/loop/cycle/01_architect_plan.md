@@ -1,60 +1,41 @@
-# Architecture Plan — OpenRouter Agent-Environment Convergence
+VERDICT: GO
 
-## Verdict
+# REQ-021 target registry
 
-GO. Existing OpenRouter provider profiles, policy, Rust probe, and internal
-catalog are reusable. The active/projected model catalog and installed runtime
-are incomplete, and the probe accepts responses too loosely.
+The canonical target descriptor is the authority. The current implementation only checks that
+the descriptor is a JSON object and accepts duplicated CLI fields that may contradict the hashed
+document.
 
-Authenticated generation is NO-GO until an operator-owned OpenRouter key is
-loaded without exposing it.
+## Required changes
 
-## Ownership
+- Add typed `TargetDescriptor`, `TargetSafety`, and named-version models matching the frozen schema.
+- Centralize parsing/validation in the engine and reuse it for registration and CLI preview.
+- Make registration derive persisted target fields and safety policy from the descriptor.
+- Accept canonical JSON, YAML, and YML descriptor files.
+- Preserve list/show, canonical descriptor hashes, run creation, replay, and approval behavior.
+- Update invalid legacy fixtures and cover malformed descriptors, nested policy, duplicates,
+  JSON/YAML hash parity, and CLI validate/add/list/show.
 
-- Meta enumerates the fleet and owns shared policy/evidence.
-- Each repo independently owns any committed `agent-env.yaml` and
-  `agent-env.lock`.
-- Repos without those files inherit the central Codex runtime; they are not
-  falsely reported as independently synced.
-- Envctl remains the per-repo lock/sync/audit engine.
-- Yazelix/Nix owns the Codex binary frontdoor; `codex-global-baseline`
-  projects tracked profiles and the catalog into the active home.
-- Nushell is the primary fleet/runtime command surface. Existing Bash lifecycle
-  hooks remain compatibility gates; no new Python/JS or shell control plane.
+## Impact
 
-## Minimal implementation
+MEDIUM. Direct consumers are CLI dispatch and migration DB tests. Transitive consumers include
+run creation/events, approval gating, replay verification, views, and run export. GitNexus had no
+matching indexed symbols and its CLI fallback could not load because `make` was unavailable, so
+call paths were confirmed from source.
 
-1. Add a visible `tencent/hy3:free` entry to the tracked active catalog and
-   keep its contract in parity with the harness catalog.
-2. Correct current official metadata: 262144-token context, high/low reasoning,
-   and the 2026-07-21 free-route expiry.
-3. Harden the Rust OpenRouter probe to require target-model discovery and a
-   parsed completed Responses result with non-empty output, while redacting all
-   credential-bearing data.
-4. Add failing-first Rust tests for absent target, API error/empty output, and a
-   valid completed response. Add tracked-catalog/profile contract coverage.
-5. Add a read-only Nushell fleet verifier that inventories Meta plus all
-   declared projects, previews/audits repos with independent agent-env state,
-   and classifies the remainder as central-runtime inheritance.
-6. Apply only through the existing envctl component owner, then prove active
-   mode-0600 projections, profile-owned Codex 0.144.0, and interactive
-   `/model` visibility.
-7. If a key is available, run a unique-marker HY3 generation through the
-   OpenRouter profile and persist only redacted proof.
+## Target repos
 
-## Impact and test gates
+One repo: envctl. Modules are linearly dependent: model -> API -> CLI/tests. Sequential path.
 
-- `openrouter_model_catalog_summary`: one direct production caller.
-- `openrouter_probe_value`: two direct callers (shim and supervised runner).
-- Whole `codex-harness/src/lib.rs`: HIGH file-level blast radius; edits stay
-  localized to OpenRouter symbols.
-- Runtime-contract and agent-audit engine code remain unchanged.
-- Run focused harness tests first, then harness workspace tests, envctl
-  agent-env tests, Codex baseline/runtime gates, no-C/meta-substrate gates,
-  format/clippy, lock checks, fleet preview/audit, installed-runtime proof, and
-  GitKB change detection.
+## Runtime surface
 
-## Archive
+`envctl migration target validate/add/list/show`, plus safe run-create/replay regression checks.
 
-Pre-edit snapshots are under
-`/tmp/envctl-openrouter-agent-env-20260714/`.
+## Verification
+
+- `cargo test -p envctl-engine migration_db --lib`
+- focused envctl CLI integration tests
+- `cargo check -p envctl-engine -p envctl`
+- `cargo clippy -p envctl-engine -p envctl -- -D warnings`
+- no-C and shape gates
+- runtime JSON/YAML validate and add/list/show smoke

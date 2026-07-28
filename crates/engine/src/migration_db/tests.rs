@@ -7,8 +7,9 @@
 use super::api::*;
 use super::model::*;
 use super::replay::ReplayMode;
-use super::MigrationDb;
+use super::{canonical_json, sha256_hex, MigrationDb};
 use serde_json::json;
+use std::collections::BTreeMap;
 
 fn temp_db(tag: &str) -> MigrationDb {
     let path = std::env::temp_dir().join(format!(
@@ -22,16 +23,39 @@ fn temp_db(tag: &str) -> MigrationDb {
     MigrationDb::open(&path).expect("open temp store")
 }
 
+fn target_descriptor(target_id: impl Into<String>, target_type: TargetType) -> TargetDescriptor {
+    TargetDescriptor {
+        schema_version: 1,
+        target_id: target_id.into(),
+        target_type,
+        primary_root: "/tmp".into(),
+        compare_root: None,
+        output_root: "migration-artifacts".into(),
+        include: vec!["**/*".into()],
+        exclude: vec![],
+        collectors: BTreeMap::from([("filesystem".into(), true)]),
+        safety: TargetSafety {
+            default_mode: HumanMode::ApprovalGated,
+            max_auto_risk: Risk::R2,
+            allow_network: false,
+            allow_destructive: false,
+        },
+        artifact_contract: NamedVersion {
+            name: "full-migration-artifact-contract".into(),
+            version: NamedVersionValue::String("1.0.0".into()),
+        },
+        recipe: NamedVersion {
+            name: "four-system-unify".into(),
+            version: NamedVersionValue::String("1.0.0".into()),
+        },
+        metadata: serde_json::Map::new(),
+    }
+}
+
 fn seed_run(db: &MigrationDb, tag: &str) -> Run {
     let target = db
         .register_target(TargetSpec {
-            target_id: format!("target-{tag}"),
-            target_type: TargetType::Mixed,
-            primary_root: "/tmp".into(),
-            compare_root: None,
-            descriptor: json!({"systems": ["kb", "meta", "handoff", "idd"], "tag": tag}),
-            safety_mode: "fail-closed".into(),
-            max_auto_risk: Risk::R2,
+            descriptor: target_descriptor(format!("target-{tag}"), TargetType::Mixed),
         })
         .expect("register target");
     let contract = db
@@ -72,42 +96,139 @@ fn seed_run(db: &MigrationDb, tag: &str) -> Run {
 #[test]
 fn target_validation_refuses_bad_specs() {
     let db = temp_db("badspec");
+    let mut empty_id = target_descriptor("", TargetType::Codebase);
     let err = db.register_target(TargetSpec {
-        target_id: "".into(),
-        target_type: TargetType::Codebase,
-        primary_root: "/tmp".into(),
-        compare_root: None,
-        descriptor: json!({}),
-        safety_mode: "fail-closed".into(),
-        max_auto_risk: Risk::R1,
+        descriptor: empty_id.clone(),
     });
     assert!(err.is_err(), "empty target_id must refuse");
+    empty_id.target_id = "x".into();
+    empty_id.schema_version = 0;
     let err = db.register_target(TargetSpec {
-        target_id: "x".into(),
-        target_type: TargetType::Codebase,
-        primary_root: "/tmp".into(),
-        compare_root: None,
-        descriptor: json!("not an object"),
-        safety_mode: "fail-closed".into(),
-        max_auto_risk: Risk::R1,
+        descriptor: empty_id,
     });
-    assert!(err.is_err(), "non-object descriptor must refuse");
+    assert!(err.is_err(), "schema_version zero must refuse");
 }
 
 #[test]
 fn duplicate_target_id_conflicts() {
     let db = temp_db("dup");
     let spec = TargetSpec {
-        target_id: "same".into(),
-        target_type: TargetType::Data,
-        primary_root: "/tmp".into(),
-        compare_root: None,
-        descriptor: json!({"a": 1}),
-        safety_mode: "fail-closed".into(),
-        max_auto_risk: Risk::R1,
+        descriptor: target_descriptor("same", TargetType::Data),
     };
     db.register_target(spec.clone()).expect("first insert");
     assert!(db.register_target(spec).is_err(), "UNIQUE(target_id)");
+}
+
+#[test]
+fn target_descriptor_json_and_yaml_normalize_to_same_hash() {
+    let json = br#"{
+        "schema_version": 1,
+        "target_id": "same",
+        "target_type": "codebase",
+        "primary_root": "/tmp/repo",
+        "safety": {
+            "default_mode": "approval-gated",
+            "max_auto_risk": "R2",
+            "allow_network": false,
+            "allow_destructive": false
+        },
+        "artifact_contract": {"name": "contract", "version": 1},
+        "recipe": {"name": "recipe", "version": "1"}
+    }"#;
+    let yaml = br#"
+schema_version: 1
+target_id: same
+target_type: codebase
+primary_root: /tmp/repo
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+artifact_contract:
+  name: contract
+  version: 1
+recipe:
+  name: recipe
+  version: "1"
+"#;
+    let json_descriptor = parse_target_descriptor(json).expect("valid JSON descriptor");
+    let yaml_descriptor = parse_target_descriptor(yaml).expect("valid YAML descriptor");
+    let json_value = serde_json::to_value(json_descriptor).unwrap();
+    let yaml_value = serde_json::to_value(yaml_descriptor).unwrap();
+    assert_eq!(canonical_json(&json_value), canonical_json(&yaml_value));
+    assert_eq!(
+        sha256_hex(canonical_json(&json_value).as_bytes()),
+        sha256_hex(canonical_json(&yaml_value).as_bytes())
+    );
+}
+
+#[test]
+fn target_descriptor_parser_refuses_missing_and_invalid_nested_fields() {
+    let missing_recipe = br#"
+schema_version: 1
+target_id: target
+target_type: codebase
+primary_root: /tmp
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+artifact_contract: {name: contract, version: 1}
+"#;
+    assert!(parse_target_descriptor(missing_recipe).is_err());
+
+    let invalid_safety = br#"
+schema_version: 1
+target_id: target
+target_type: codebase
+primary_root: /tmp
+safety:
+  default_mode: fail-closed
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+artifact_contract: {name: contract, version: 1}
+recipe: {name: recipe, version: 1}
+"#;
+    assert!(parse_target_descriptor(invalid_safety).is_err());
+}
+
+#[test]
+fn target_descriptor_metadata_defaults_to_object_and_rejects_scalar() {
+    let omitted = br#"
+schema_version: 1
+target_id: target
+target_type: codebase
+primary_root: /tmp
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+artifact_contract: {name: contract, version: 1}
+recipe: {name: recipe, version: 1}
+"#;
+    let descriptor = parse_target_descriptor(omitted).expect("metadata is optional");
+    let normalized = serde_json::to_value(descriptor).unwrap();
+    assert_eq!(normalized["metadata"], json!({}));
+
+    let scalar = br#"
+schema_version: 1
+target_id: target
+target_type: codebase
+primary_root: /tmp
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+artifact_contract: {name: contract, version: 1}
+recipe: {name: recipe, version: 1}
+metadata: invalid
+"#;
+    assert!(parse_target_descriptor(scalar).is_err());
 }
 
 #[test]

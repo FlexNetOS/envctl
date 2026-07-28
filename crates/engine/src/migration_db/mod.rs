@@ -27,7 +27,10 @@ mod tests;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
-pub use api::{ApprovalDecision, OperationSpec, RunBundle, RunSpec, TargetSpec, ValidationSpec};
+pub use api::{
+    parse_target_descriptor, ApprovalDecision, OperationSpec, RunBundle, RunSpec, TargetSpec,
+    ValidationSpec,
+};
 pub use model::*;
 pub use replay::{ReplayCheck, ReplayMode, ReplayReport};
 pub use views::{ApprovalRow, ReplayReadinessRow, RunStatusRow, ScorecardRow, TimelineRow};

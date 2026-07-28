@@ -3,7 +3,8 @@
 //! JSON wire shape identical to the DDL's TEXT values.
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 /// Local helper: string-backed enums with exact DDL CHECK values.
 macro_rules! str_enum {
@@ -40,6 +41,75 @@ str_enum!(TargetType {
     Integration => "integration",
     Mixed => "mixed",
 });
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum NamedVersionValue {
+    Integer(i64),
+    String(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NamedVersion {
+    pub name: String,
+    pub version: NamedVersionValue,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TargetSafety {
+    pub default_mode: HumanMode,
+    pub max_auto_risk: Risk,
+    pub allow_network: bool,
+    pub allow_destructive: bool,
+}
+
+fn default_output_root() -> String {
+    "migration-artifacts".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TargetDescriptor {
+    pub schema_version: u64,
+    pub target_id: String,
+    pub target_type: TargetType,
+    pub primary_root: String,
+    #[serde(default)]
+    pub compare_root: Option<String>,
+    #[serde(default = "default_output_root")]
+    pub output_root: String,
+    #[serde(default)]
+    pub include: Vec<String>,
+    #[serde(default)]
+    pub exclude: Vec<String>,
+    #[serde(default)]
+    pub collectors: BTreeMap<String, bool>,
+    pub safety: TargetSafety,
+    pub artifact_contract: NamedVersion,
+    pub recipe: NamedVersion,
+    #[serde(default)]
+    pub metadata: Map<String, Value>,
+}
+
+impl TargetDescriptor {
+    pub fn validate(&self) -> crate::migration_db::Result<()> {
+        if self.schema_version == 0 {
+            return Err(crate::migration_db::MigrationDbError::Validation(
+                "schema_version must be at least 1".into(),
+            ));
+        }
+        if self.target_id.trim().is_empty() {
+            return Err(crate::migration_db::MigrationDbError::Validation(
+                "target_id is empty".into(),
+            ));
+        }
+        if self.primary_root.trim().is_empty() {
+            return Err(crate::migration_db::MigrationDbError::Validation(
+                "primary_root is empty".into(),
+            ));
+        }
+        Ok(())
+    }
+}
 
 str_enum!(RunStatus {
     Created => "created",
@@ -134,6 +204,8 @@ str_enum!(RollbackStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Target {
     pub id: String,
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u64,
     pub target_id: String,
     pub target_type: TargetType,
     pub primary_root: String,
@@ -142,8 +214,16 @@ pub struct Target {
     pub descriptor_hash: String,
     pub safety_mode: String,
     pub max_auto_risk: Risk,
+    #[serde(default)]
+    pub allow_network: bool,
+    #[serde(default)]
+    pub allow_destructive: bool,
     pub created_at_utc: String,
     pub updated_at_utc: String,
+}
+
+fn default_schema_version() -> u64 {
+    1
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

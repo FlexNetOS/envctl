@@ -12,13 +12,24 @@ use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TargetSpec {
-    pub target_id: String,
-    pub target_type: TargetType,
-    pub primary_root: String,
-    pub compare_root: Option<String>,
-    pub descriptor: Value,
-    pub safety_mode: String,
-    pub max_auto_risk: Risk,
+    pub descriptor: TargetDescriptor,
+}
+
+/// Parse a canonical target descriptor from JSON or YAML and apply the
+/// protocol's constraints that serde cannot express (minimum and minLength).
+pub fn parse_target_descriptor(bytes: &[u8]) -> Result<TargetDescriptor> {
+    let descriptor = match serde_json::from_slice::<TargetDescriptor>(bytes) {
+        Ok(descriptor) => descriptor,
+        Err(json_error) => {
+            serde_yaml::from_slice::<TargetDescriptor>(bytes).map_err(|yaml_error| {
+                MigrationDbError::Validation(format!(
+                    "invalid target descriptor (JSON: {json_error}; YAML: {yaml_error})"
+                ))
+            })?
+        }
+    };
+    descriptor.validate()?;
+    Ok(descriptor)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -147,33 +158,35 @@ impl MigrationDb {
 
     /// Parse + validate + register a target descriptor (UNIQUE target_id).
     pub fn register_target(&self, spec: TargetSpec) -> Result<Target> {
-        if spec.target_id.trim().is_empty() {
-            return Err(MigrationDbError::Validation("target_id is empty".into()));
-        }
-        if spec.primary_root.trim().is_empty() {
-            return Err(MigrationDbError::Validation("primary_root is empty".into()));
-        }
-        if !spec.descriptor.is_object() {
-            return Err(MigrationDbError::Validation(
-                "descriptor must be a JSON object".into(),
-            ));
-        }
+        spec.descriptor.validate()?;
+        let descriptor_json = serde_json::to_value(&spec.descriptor)?;
         let id = self.next_id("target")?;
-        self.index_put(store::IDX_TARGET_NATURAL, &spec.target_id, &id, true)
-            .map_err(|_| {
-                MigrationDbError::Conflict(format!("target_id already exists: {}", spec.target_id))
-            })?;
+        self.index_put(
+            store::IDX_TARGET_NATURAL,
+            &spec.descriptor.target_id,
+            &id,
+            true,
+        )
+        .map_err(|_| {
+            MigrationDbError::Conflict(format!(
+                "target_id already exists: {}",
+                spec.descriptor.target_id
+            ))
+        })?;
         let now = now_utc();
         let target = Target {
             id: id.clone(),
-            target_id: spec.target_id,
-            target_type: spec.target_type,
-            primary_root: spec.primary_root,
-            compare_root: spec.compare_root,
-            descriptor_hash: sha256_hex(canonical_json(&spec.descriptor).as_bytes()),
-            descriptor_json: spec.descriptor,
-            safety_mode: spec.safety_mode,
-            max_auto_risk: spec.max_auto_risk,
+            schema_version: spec.descriptor.schema_version,
+            target_id: spec.descriptor.target_id,
+            target_type: spec.descriptor.target_type,
+            primary_root: spec.descriptor.primary_root,
+            compare_root: spec.descriptor.compare_root,
+            descriptor_hash: sha256_hex(canonical_json(&descriptor_json).as_bytes()),
+            descriptor_json,
+            safety_mode: spec.descriptor.safety.default_mode.to_string(),
+            max_auto_risk: spec.descriptor.safety.max_auto_risk,
+            allow_network: spec.descriptor.safety.allow_network,
+            allow_destructive: spec.descriptor.safety.allow_destructive,
             created_at_utc: now.clone(),
             updated_at_utc: now,
         };
