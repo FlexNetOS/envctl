@@ -178,6 +178,8 @@ version = "6.0"
 [dependencies.fastembed]
 version = "5"
 optional = true
+default-features = false
+features = ["hf-hub-rustls-tls", "image-models", "ort-load-dynamic"]
 
 [dependencies.half]
 version = "2.4"
