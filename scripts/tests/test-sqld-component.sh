@@ -196,8 +196,9 @@ for argument in "$@"; do
 done
 [ -n "$source_root" ] || exit 2
 build_workspace="${CARGO_TARGET_DIR%/target}"
+private_cargo_home="$CARGO_HOME"
 expected_cflags="--no-default-config -ffile-prefix-map=$build_workspace=/envctl-build -fdebug-prefix-map=$build_workspace=/envctl-build -ffile-prefix-map=$source_root=/envctl-source -fdebug-prefix-map=$source_root=/envctl-source -ffile-prefix-map=$meta_root=/meta -fdebug-prefix-map=$meta_root=/meta"
-expected_rustflags="--remap-path-prefix=$build_workspace=/envctl-build --remap-path-prefix=$source_root=/envctl-source --remap-path-prefix=$meta_root=/meta -C link-arg=--no-default-config"
+expected_rustflags="--remap-path-prefix=$build_workspace=/envctl-build --remap-path-prefix=$source_root=/envctl-source --remap-path-prefix=$meta_root=/meta --remap-path-prefix=$private_cargo_home=/envctl-cargo-home -C codegen-units=1 -C embed-bitcode=yes -C llvm-args=-rng-seed=1 -C link-arg=--no-default-config"
 [ "$PATH" = "$expected_path" ] || exit 2
 [ "${HOME:-}" = "${CARGO_TARGET_DIR%/target}/home" ] || exit 2
 [ "${TMPDIR:-}" = "${CARGO_TARGET_DIR%/target}/tmp" ] || exit 2
@@ -232,7 +233,7 @@ done
 rustflags_variable="CARGO_TARGET_${target_upper}_RUSTFLAGS"
 rustflags_value="${!rustflags_variable:-}"
 rustflags_prefix="$expected_rustflags -C link-arg=--ld-path="
-rustflags_suffix=" -C codegen-units=1 -C embed-bitcode=yes -C lto=fat -C llvm-args=-rng-seed=1 -C link-arg=-Wl,--build-id=sha1"
+rustflags_suffix=" -C link-arg=-Wl,--build-id=sha1"
 case "$rustflags_value" in "$rustflags_prefix"*"$rustflags_suffix") ;; *) exit 2 ;; esac
 hermetic_lld="${rustflags_value#"$rustflags_prefix"}"
 hermetic_lld="${hermetic_lld%"$rustflags_suffix"}"

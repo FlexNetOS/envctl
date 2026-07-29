@@ -180,11 +180,11 @@ for build_rule in \
   'CFLAGS="$hermetic_cflags" CXXFLAGS="$hermetic_cflags"' \
   'TZ=UTC SOURCE_DATE_EPOCH=1 ZERO_AR_DATE=1' \
   '--remap-path-prefix=$build_workspace=/envctl-build' \
+  '--remap-path-prefix=$private_cargo_home=/envctl-cargo-home' \
   '-ffile-prefix-map=$build_workspace=/envctl-build' \
   'link-arg=--no-default-config' \
   'codegen-units=1' \
   'embed-bitcode=yes' \
-  'lto=fat' \
   'llvm-args=-rng-seed=1' \
   'link-arg=-Wl,--build-id=sha1' \
   'validate_toolchain_resource_tree' \
