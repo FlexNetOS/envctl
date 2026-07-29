@@ -406,10 +406,13 @@ This repository is listed under GitNexus **group(s): envctl-migration**. For cro
 ## Profile-owned active-tool state
 
 **Status (2026-07-21): applied.** The profile frontdoors and the envctl-owned
-Nushell input now set `XDG_DATA_HOME` and `XDG_STATE_HOME` to
-`/home/flexnetos/meta/var/lib`. Disposable cache and Yazelix session state are
+Nushell input now set `XDG_DATA_HOME` to `/home/flexnetos/meta/var/xdg-data` and
+`XDG_STATE_HOME` to `/home/flexnetos/meta/var/xdg-state`. These are TOOL scope only:
+`~/.config/environment.d/99z-session-restore.conf` deliberately keeps the SESSION-scope
+XDG roots on the real home, because the systemd user manager parents gnome-session and
+re-homing it there cost a login keyring on 2026-07-27. Disposable cache and Yazelix session state are
 fixed beneath `/run/user/1001/yazelix`. The ICM frontdoor independently fixes
-its canonical corpus at `/home/flexnetos/meta/var/lib/icm/memories.db`.
+its canonical corpus at `/home/flexnetos/meta/var/xdg-data/icm/memories.db`.
 
 The canonical bootstrap rows are committed only through
 `scripts/profile-env-cutover.nu --apply`, which archives the exact prior table,

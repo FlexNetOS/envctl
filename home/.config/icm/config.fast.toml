@@ -3,7 +3,7 @@
 # One of two ICM embedding profiles on this host:
 #   • CODE profile (DEFAULT) → ~/.config/icm/config.toml
 #       jinaai/jina-embeddings-v2-base-code (768d, code-optimized)
-#       corpus: /home/flexnetos/meta/var/lib/icm/memories.db   (plain `icm ...`)
+#       corpus: /home/flexnetos/meta/var/xdg-data/icm/memories.db   (plain `icm ...`)
 #   • FAST profile (THIS FILE)
 #       Xenova/bge-small-en-v1.5 (384d, English-only, fastest)
 #       corpus: /home/flexnetos/meta/var/lib/icm/memories-fast.db
