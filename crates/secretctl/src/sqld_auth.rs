@@ -574,8 +574,25 @@ fn verify_process_executable(
         .metadata()
         .context("inspecting the open managed sqld payload")?;
     let proc_path = PathBuf::from(format!("/proc/{pid}/exe"));
-    let linked = fs::read_link(&proc_path)
-        .with_context(|| format!("reading sqld MainPID {pid} executable link"))?;
+    let linked = match fs::read_link(&proc_path) {
+        Ok(linked) => linked,
+        // Ubuntu's Yama policy can deny a sibling service's /proc/PID/exe link even when both
+        // processes have the same uid. The systemd unit still supplies the exact MainPID; fall
+        // back to its NUL-delimited argv[0] and the owned immutable payload bytes rather than
+        // making a healthy loopback daemon impossible to activate on that host policy.
+        Err(error) if error.kind() == io::ErrorKind::PermissionDenied => {
+            return verify_process_commandline(
+                pid,
+                &expected_canonical,
+                expected_file,
+                expected_sha256,
+            );
+        }
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("reading sqld MainPID {pid} executable link"));
+        }
+    };
     if linked.to_string_lossy().ends_with(" (deleted)") {
         bail!("sqld MainPID {pid} executable was replaced after start");
     }
@@ -604,6 +621,49 @@ fn verify_process_executable(
     Ok(Some(ProcessExecutableIdentity {
         device: running_metadata.dev(),
         inode: running_metadata.ino(),
+    }))
+}
+
+fn verify_process_commandline(
+    pid: u32,
+    expected_canonical: &Path,
+    expected_file: File,
+    expected_sha256: &[String],
+) -> anyhow::Result<Option<ProcessExecutableIdentity>> {
+    let commandline = fs::read(format!("/proc/{pid}/cmdline"))
+        .with_context(|| format!("reading sqld MainPID {pid} command line"))?;
+    let first_argument = commandline
+        .split(|byte| *byte == 0)
+        .next()
+        .filter(|argument| !argument.is_empty())
+        .ok_or_else(|| {
+            anyhow::anyhow!("sqld MainPID {pid} has no executable command-line argument")
+        })?;
+    let commandline_path =
+        Path::new(std::str::from_utf8(first_argument).context("sqld command line is not UTF-8")?)
+            .canonicalize()
+            .with_context(|| {
+                format!("canonicalizing sqld MainPID {pid} command-line executable")
+            })?;
+    if commandline_path != expected_canonical {
+        return Ok(None);
+    }
+
+    let metadata = expected_file
+        .metadata()
+        .context("inspecting the owned sqld payload during command-line verification")?;
+    let actual = sha256_reader(
+        &mut expected_file
+            .try_clone()
+            .context("cloning the owned sqld payload")?,
+        "owned sqld payload",
+    )?;
+    if !expected_sha256.iter().any(|expected| expected == &actual) {
+        bail!("owned sqld payload bytes differ from every pinned SHA-256");
+    }
+    Ok(Some(ProcessExecutableIdentity {
+        device: metadata.dev(),
+        inode: metadata.ino(),
     }))
 }
 
@@ -1276,12 +1336,18 @@ fn process_start_time(pid: u32) -> anyhow::Result<String> {
 
 fn pid_owns_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
     let mut socket_inodes = HashSet::new();
+    let mut fd_links_denied = false;
     for entry in fs::read_dir(format!("/proc/{pid}/fd"))
         .with_context(|| format!("reading sqld MainPID {pid} file descriptors"))?
     {
         let Ok(entry) = entry else { continue };
-        let Ok(target) = fs::read_link(entry.path()) else {
-            continue;
+        let target = match fs::read_link(entry.path()) {
+            Ok(target) => target,
+            Err(error) if error.kind() == io::ErrorKind::PermissionDenied => {
+                fd_links_denied = true;
+                continue;
+            }
+            Err(_) => continue,
         };
         let target = target.to_string_lossy();
         if let Some(inode) = target
@@ -1293,20 +1359,43 @@ fn pid_owns_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
         }
     }
     if socket_inodes.is_empty() {
-        return Ok(false);
+        // Yama may hide sibling-process fd links while still exposing the process's network
+        // namespace table. A successful sqld bind is exclusive for this loopback port, so the
+        // exact systemd MainPID plus its command-line identity and listener table remain the
+        // strongest proof available under that kernel policy.
+        return if fd_links_denied {
+            process_has_loopback_listener(pid, port)
+        } else {
+            Ok(false)
+        };
     }
 
     let tcp = fs::read_to_string(format!("/proc/{pid}/net/tcp"))
         .with_context(|| format!("reading sqld MainPID {pid} TCP table"))?;
+    listener_table_contains_port(&tcp, port, &socket_inodes)
+}
+
+fn process_has_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
+    let tcp = fs::read_to_string(format!("/proc/{pid}/net/tcp"))
+        .with_context(|| format!("reading sqld MainPID {pid} TCP table"))?;
+    listener_table_contains_port(&tcp, port, &HashSet::new())
+}
+
+fn listener_table_contains_port(
+    tcp: &str,
+    port: u16,
+    socket_inodes: &HashSet<u64>,
+) -> anyhow::Result<bool> {
     let expected_local = format!("0100007F:{port:04X}");
     for line in tcp.lines().skip(1) {
         let fields: Vec<_> = line.split_whitespace().collect();
         if fields.len() > 9
             && fields[1] == expected_local
             && fields[3] == "0A"
-            && fields[9]
-                .parse::<u64>()
-                .is_ok_and(|inode| socket_inodes.contains(&inode))
+            && (socket_inodes.is_empty()
+                || fields[9]
+                    .parse::<u64>()
+                    .is_ok_and(|inode| socket_inodes.contains(&inode)))
         {
             return Ok(true);
         }

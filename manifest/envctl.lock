@@ -489,7 +489,7 @@ requires = ["env-ctl"]
 resolved = ""
 
 [components.sqld]
-content_hash = "c8530caa3abf73a2"
+content_hash = "5b98987abc1ac096"
 requires = [
     "llvm-clang",
     "rustup",

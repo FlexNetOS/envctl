@@ -105,7 +105,7 @@ grep -Fq 'c.execute_batch(schema::DDL)' "$STORE" \
 # non-ignored ExecStartPost proof. systemd accounts ExecStartPost completion in ordering. The
 # pure-Rust helper must self-hash before credential access, bind the proof to $MAINPID + the envctl
 # payload/listener, reject unauthenticated SQL with 401, and read the bearer only by safe file path.
-sqld_barrier='ExecStartPost="${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl" internal-sqld-readiness-probe --pid "${MAINPID}" --expected-executable "${META_ROOT}/.toolchains/sqld/bin/sqld" --port 8080 --client-token "${META_ROOT}/.config/sqld/client.jwt" --helper-digest "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256" --timeout-seconds 20'
+sqld_barrier='ExecStartPost=/bin/sh -c '\''pid="$(systemctl --user show --property=MainPID --value sqld.service)"; case "$pid" in ""|0|*[!0-9]*) exit 1 ;; esac; exec "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl" internal-sqld-readiness-probe --pid "$pid" --expected-executable "${META_ROOT}/.toolchains/sqld/bin/sqld" --port 8080 --client-token "${META_ROOT}/.config/sqld/client.jwt" --helper-digest "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256" --timeout-seconds 20'\'''
 grep -Fqx 'Type=exec' "$SQLD_MANIFEST" \
   || fail "sqld service must use Type=exec before its readiness barrier"
 [ "$(grep -Fxc "$sqld_barrier" "$SQLD_MANIFEST")" -eq 1 ] \
@@ -182,6 +182,10 @@ for build_rule in \
   '--remap-path-prefix=$build_workspace=/envctl-build' \
   '-ffile-prefix-map=$build_workspace=/envctl-build' \
   'link-arg=--no-default-config' \
+  'codegen-units=1' \
+  'embed-bitcode=yes' \
+  'lto=fat' \
+  'llvm-args=-rng-seed=1' \
   'link-arg=-Wl,--build-id=sha1' \
   'validate_toolchain_resource_tree' \
   'registry/cache/$registry_id' \

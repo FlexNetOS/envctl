@@ -232,7 +232,7 @@ done
 rustflags_variable="CARGO_TARGET_${target_upper}_RUSTFLAGS"
 rustflags_value="${!rustflags_variable:-}"
 rustflags_prefix="$expected_rustflags -C link-arg=--ld-path="
-rustflags_suffix=" -C link-arg=-Wl,--build-id=sha1"
+rustflags_suffix=" -C codegen-units=1 -C embed-bitcode=yes -C lto=fat -C llvm-args=-rng-seed=1 -C link-arg=-Wl,--build-id=sha1"
 case "$rustflags_value" in "$rustflags_prefix"*"$rustflags_suffix") ;; *) exit 2 ;; esac
 hermetic_lld="${rustflags_value#"$rustflags_prefix"}"
 hermetic_lld="${hermetic_lld%"$rustflags_suffix"}"
@@ -661,7 +661,7 @@ assert 'ExecStart="${META_ROOT}/usr/bin/sqld" --http-listen-addr 127.0.0.1:8080 
 assert 'Type=exec' in content
 assert 'ExecStartPost=/usr/bin/sha256sum' not in content
 assert '/usr/bin/sha256sum' not in content
-assert 'ExecStartPost="${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl" internal-sqld-readiness-probe --pid "${MAINPID}" --expected-executable "${META_ROOT}/.toolchains/sqld/bin/sqld" --port 8080 --client-token "${META_ROOT}/.config/sqld/client.jwt" --helper-digest "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256" --timeout-seconds 20' in content
+assert """ExecStartPost=/bin/sh -c 'pid=\"$(systemctl --user show --property=MainPID --value sqld.service)\"; case \"$pid\" in \"\"|0|*[!0-9]*) exit 1 ;; esac; exec \"${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl\" internal-sqld-readiness-probe --pid \"$pid\" --expected-executable \"${META_ROOT}/.toolchains/sqld/bin/sqld\" --port 8080 --client-token \"${META_ROOT}/.config/sqld/client.jwt\" --helper-digest \"${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256\" --timeout-seconds 20'""" in content
 assert 'TimeoutStartSec=30' in content
 assert 'LimitCORE=0' in content
 assert 'ReadOnlyPaths="${META_ROOT}/.config/sqld/auth-jwt-key.pem" "${META_ROOT}/.config/sqld/client.jwt"' in content

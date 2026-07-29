@@ -21,7 +21,7 @@ configure_hermetic_build_environment() {
   cargo_linker_var="CARGO_TARGET_${target_upper}_LINKER"
   cargo_rustflags_var="CARGO_TARGET_${target_upper}_RUSTFLAGS"
   hermetic_cflags="--no-default-config -ffile-prefix-map=$build_workspace=/envctl-build -fdebug-prefix-map=$build_workspace=/envctl-build -ffile-prefix-map=$source_root=/envctl-source -fdebug-prefix-map=$source_root=/envctl-source -ffile-prefix-map=$M=/meta -fdebug-prefix-map=$M=/meta"
-  cargo_rustflags="--remap-path-prefix=$build_workspace=/envctl-build --remap-path-prefix=$source_root=/envctl-source --remap-path-prefix=$M=/meta -C link-arg=--no-default-config -C link-arg=--ld-path=$hermetic_lld -C link-arg=-Wl,--build-id=sha1"
+  cargo_rustflags="--remap-path-prefix=$build_workspace=/envctl-build --remap-path-prefix=$source_root=/envctl-source --remap-path-prefix=$M=/meta -C codegen-units=1 -C embed-bitcode=yes -C lto=fat -C llvm-args=-rng-seed=1 -C link-arg=--no-default-config -C link-arg=--ld-path=$hermetic_lld -C link-arg=-Wl,--build-id=sha1"
 }
 
 validate_toolchain_resource_tree() {
