@@ -36,7 +36,7 @@ def fail [message: string] {
 const ANCHORS = [
     {
         name: "ICM_DB"
-        value: "/home/flexnetos/meta/var/lib/icm/memories.db"
+        value: "/home/flexnetos/meta/var/xdg-data/icm/memories.db"
         value_kind: "path"
         owner_table: "env_vars"
         scope: "user"
