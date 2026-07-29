@@ -142,6 +142,11 @@ pub fn materialize(
     }
 
     let mut client = connect(conn)?;
+    // The outbox is tenant-scoped. Establish the same envctl-issued session
+    // binding used by the other production worker verbs before reading or
+    // acknowledging an activation; otherwise RLS would allow the filesystem
+    // swap to happen and reject the durable acknowledgement afterward.
+    crate::gates::bind_session(&mut client)?;
     let pending = read_pending(&mut client)?;
     let mut outcomes = Vec::with_capacity(pending.len());
 
@@ -158,10 +163,12 @@ pub fn materialize(
             client
                 .execute(
                     "UPDATE lifeos_runtime.outbox SET acknowledged_at = clock_timestamp() \
-                     WHERE outbox_id = $1::uuid AND acknowledged_at IS NULL",
-                    &[&activation.outbox_id],
+                     WHERE outbox_id = $1::text::uuid AND acknowledged_at IS NULL",
+                    &[&activation.outbox_id.as_str()],
                 )
-                .map_err(|_| CommitError::new("acknowledging the activation failed"))?;
+                .map_err(|error| {
+                    CommitError::new(format!("acknowledging the activation failed: {error}"))
+                })?;
             (previous, true, true)
         } else {
             (
