@@ -25,6 +25,7 @@ use std::path::Path;
 pub mod activation;
 mod embedding;
 pub mod gates;
+pub mod substrate;
 
 /// Authoritative schema owned by envctl.
 pub const AUTHORITATIVE_SCHEMA: &str = "lifeos_runtime";

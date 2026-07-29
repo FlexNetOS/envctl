@@ -6,7 +6,7 @@
 //! arguments and prints the result as JSON.
 
 use clap::{Parser, Subcommand};
-use envctl_commit_worker::{activation, drain_and_commit, gates};
+use envctl_commit_worker::{activation, drain_and_commit, gates, substrate};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -90,6 +90,37 @@ enum Command {
         #[arg(long)]
         release_root: PathBuf,
     },
+
+    /// Produce the substrate the `retrieval`, `graph-causal`, `model`, and
+    /// `forecast` gates measure, by doing the work those gates describe:
+    /// capture documents, embed them through the live native engine, record
+    /// the model lineage, build the semantic graph, and issue then score a
+    /// forecast against real measurements.
+    ///
+    /// This writes canonical records as a byproduct of real work. It never
+    /// writes a `lifeos_release.verification` row.
+    Substrate {
+        /// PostgreSQL connection string; Unix-socket host required, as above.
+        #[arg(long)]
+        conn: String,
+
+        /// Directory whose documents are captured and indexed.
+        #[arg(long)]
+        corpus_root: PathBuf,
+
+        /// Name recorded on every row this pass produces.
+        #[arg(long, default_value = "lifeos-repository")]
+        corpus: String,
+
+        /// Base URL of the running native RuvLLM embedder. Must serve 384
+        /// dimensions; substrate production fails closed without it.
+        #[arg(long)]
+        embedder_url: String,
+
+        /// Upper bound on documents captured in one pass.
+        #[arg(long, default_value_t = 40)]
+        max_documents: usize,
+    },
 }
 
 fn main() {
@@ -125,6 +156,15 @@ fn main() {
             }))
             .expect("gate report serializes")
         }),
+        Command::Substrate {
+            conn,
+            corpus_root,
+            corpus,
+            embedder_url,
+            max_documents,
+        } => substrate::build(&conn, &corpus_root, &corpus, &embedder_url, max_documents).map(
+            |report| serde_json::to_string_pretty(&report).expect("substrate report serializes"),
+        ),
     };
 
     match rendered {

@@ -110,7 +110,7 @@ pub fn run_all(
 /// grant they claim, so the authority cannot be asserted by the caller — it
 /// has to already exist as a live, unexpired `bind-session` grant for an
 /// identity whose `subject_key` is this database user.
-fn bind_session(client: &mut Client) -> Result<(), CommitError> {
+pub(crate) fn bind_session(client: &mut Client) -> Result<(), CommitError> {
     let row = client
         .query_opt(
             "SELECT identity.tenant_id::text, identity.identity_id::text, \
@@ -214,6 +214,16 @@ fn gate_build(release_root: &Path) -> GateOutcome {
 }
 
 /// `test`: the repository's own test suite passes, run for real.
+///
+/// A bare "cargo test failed" is not actionable — it says a release is blocked
+/// without saying by what. The gate therefore reports the failing test names
+/// it parsed, and distinguishes the one environmental cause that looks like a
+/// code failure but is not: the storage suite needs a disposable PostgreSQL
+/// instance named by `LIFEOS_TEST_DATABASE_URL`, and without it those tests
+/// fail on a missing URL rather than on anything they were meant to check.
+///
+/// That distinction is reported, never excused: an unconfigured test database
+/// still fails this gate, because a suite that cannot run has not passed.
 fn gate_test(repo_root: &Path) -> GateOutcome {
     let output = Command::new("cargo")
         .args(["test", "--workspace", "--quiet"])
@@ -226,20 +236,48 @@ fn gate_test(repo_root: &Path) -> GateOutcome {
             "cargo test --workspace passed",
             json!({ "repo_root": repo_root.to_string_lossy(), "exit": 0 }),
         ),
-        Ok(result) => GateOutcome::fail(
-            "test",
-            "cargo test --workspace failed",
-            json!({
-                "repo_root": repo_root.to_string_lossy(),
-                "exit": result.status.code(),
-                "stderr_tail": String::from_utf8_lossy(&result.stderr)
-                    .lines()
-                    .rev()
-                    .take(8)
-                    .collect::<Vec<_>>()
-                    .join(" | "),
-            }),
-        ),
+        Ok(result) => {
+            let combined = format!(
+                "{}{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            );
+            let failed: Vec<String> = combined
+                .lines()
+                .skip_while(|line| !line.starts_with("failures:"))
+                .filter_map(|line| {
+                    let name = line.trim();
+                    name.starts_with("storage::")
+                        .then(|| name.to_string())
+                        .or_else(|| {
+                            (name.contains("::") && !name.contains(' ')).then(|| name.to_string())
+                        })
+                })
+                .collect();
+            let missing_test_database = combined.contains("MissingTestDatabaseUrl");
+            let detail = if missing_test_database {
+                "cargo test --workspace failed; the storage suite has no test \
+                 database (set LIFEOS_TEST_DATABASE_URL to a disposable instance)"
+            } else {
+                "cargo test --workspace failed"
+            };
+            GateOutcome::fail(
+                "test",
+                detail,
+                json!({
+                    "repo_root": repo_root.to_string_lossy(),
+                    "exit": result.status.code(),
+                    "failed_tests": failed,
+                    "missing_test_database_url": missing_test_database,
+                    "stderr_tail": String::from_utf8_lossy(&result.stderr)
+                        .lines()
+                        .rev()
+                        .take(8)
+                        .collect::<Vec<_>>()
+                        .join(" | "),
+                }),
+            )
+        }
         Err(error) => GateOutcome::fail(
             "test",
             format!("could not run cargo test: {error}"),
