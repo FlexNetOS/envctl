@@ -11,8 +11,9 @@
 //! deterministically through the redb owner's versioned UDS protocol.
 //! Grants deny every non-envctl role at the database, not by convention.
 
-use postgres::{Client, NoTls};
+use postgres::{Client, NoTls, Transaction};
 use serde::Serialize;
+use serde_json::Value;
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake256,
@@ -63,6 +64,28 @@ impl std::error::Error for CommitError {}
 
 fn internal(message: impl std::fmt::Display) -> CommitError {
     CommitError::new(message.to_string())
+}
+
+/// Bind the worker connection to the envctl-issued LifeOS authority when the
+/// canonical database exposes the security boundary. Disposable committer
+/// databases used by the worker's historical integration tests do not have
+/// this function and intentionally continue without the product binding.
+fn bind_lifeos_runtime_context(client: &mut Client) -> Result<(), CommitError> {
+    let (Some(tenant), Some(identity), Some(grant), Some(binding)) = (
+        std::env::var("LIFEOS_RUNTIME_TENANT_ID").ok(),
+        std::env::var("LIFEOS_RUNTIME_IDENTITY_ID").ok(),
+        std::env::var("LIFEOS_RUNTIME_GRANT_ID").ok(),
+        std::env::var("LIFEOS_RUNTIME_BINDING_JSON").ok(),
+    ) else {
+        return Ok(());
+    };
+    client
+        .query_one(
+            "SELECT binding_id FROM lifeos_security.bootstrap_envctl_context($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::bytea)",
+            &[&tenant, &identity, &grant, &binding.into_bytes()],
+        )
+        .map(|_| ())
+        .map_err(|error| CommitError::new(format!("bind envctl LifeOS context: {error}")))
 }
 
 /// One durably committed record with its exact commit identity.
@@ -136,6 +159,24 @@ fn witness_link(previous: &str, seq: i64, blob_sha256: &str, job_json: &str) -> 
     witness
 }
 
+/// Materialize a typed LifeOS source Apply while the envctl transaction is
+/// still open. The SQL procedure owns the exact-byte blob, audit row, and
+/// maintained projection; this worker only dispatches the versioned job
+/// payload and never writes those tables directly.
+fn apply_open_pencil(tx: &mut Transaction<'_>, job_json: &str) -> Result<(), CommitError> {
+    let job: Value = serde_json::from_str(job_json)
+        .map_err(|error| CommitError::new(format!("staged job JSON: {error}")))?;
+    let Some(request) = job.get("open_pencil_apply") else {
+        return Ok(());
+    };
+    tx.query_one(
+        "SELECT lifeos_runtime.apply_open_pencil($1::text::jsonb)",
+        &[&request.to_string()],
+    )
+    .map(|_| ())
+    .map_err(|error| CommitError::new(format!("OpenPencil durable Apply: {error}")))
+}
+
 /// Apply the envctl-exclusive role and grant policy: the authoritative
 /// schema is writable only by [`COMMITTER_ROLE`]; every other role is
 /// denied at the database, not by convention.
@@ -189,6 +230,7 @@ pub fn drain_and_commit(
         return Err(CommitError::new("max_batch must be at least 1"));
     }
     let mut client = connect(conn)?;
+    bind_lifeos_runtime_context(&mut client)?;
     // Converge the committer's read grant on the staging contract; envctl
     // owns its own access, never the staging table itself.
     client
@@ -252,6 +294,7 @@ pub fn drain_and_commit(
             let blob_sha256: String = row.get(2);
             let staged_job_json: String = row.get(3);
             let job_json = embedding::enrich_job(&staged_job_json)?;
+            apply_open_pencil(&mut tx, &job_json)?;
             let witness = witness_link(&previous_witness, seq, &blob_sha256, &job_json);
             let affected = tx
                 .execute(
