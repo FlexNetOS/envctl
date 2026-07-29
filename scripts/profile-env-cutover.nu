@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Commit the strict profile XDG roots into envctl's canonical bootstrap table.
 # Dry-run is the default; --apply archives the exact prior table, publishes one
 # candidate atomically, verifies the two owner rows, and emits a hash receipt.
@@ -10,11 +12,12 @@ def fail [message: string] {
 }
 
 def main [
-    --meta-root: path = "/home/flexnetos/meta"
+    --meta-root: string = ""
     --timestamp: string = ""
     --apply
 ] {
-    let tables_root = ($meta_root | path join "var" "lib" "envctl" "tables")
+    let root = (meta-root $meta_root)
+    let tables_root = ($root | path join "var" "lib" "envctl" "tables")
     let table = ($tables_root | path join "bootstrap_env_vars.csv")
     if not ($table | path exists) {
         fail $"canonical table is missing: ($table)"
@@ -31,8 +34,8 @@ def main [
         fail "YAZELIX_STATE_DIR must remain profile-runtime-owned, not a bootstrap-table row"
     }
 
-    let owned_root = ($meta_root | path join "var" "xdg-data" | into string)
-    let owned_state_root = ($meta_root | path join "var" "xdg-state" | into string)
+    let owned_root = ($root | path join "var" "xdg-data" | into string)
+    let owned_state_root = ($root | path join "var" "xdg-state" | into string)
     let updated = ($rows | each {|row|
         if $row.name == "XDG_DATA_HOME" {
             $row | upsert value $owned_root | upsert notes "Profile-owned Meta data root."
@@ -52,7 +55,7 @@ def main [
     } else {
         $timestamp
     }
-    let archive = ($meta_root | path join "var" "lib" "envctl" "archives" "profile-env-cutover" $observed_at)
+    let archive = ($root | path join "var" "lib" "envctl" "archives" "profile-env-cutover" $observed_at)
     mut receipt = {
         schema: "envctl.profile-env-cutover.v1"
         observed_at: $observed_at

@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Classify secret surfaces without reading or storing secret values.
 # Outputs names, paths, classes, and handling policies only.
 
@@ -132,7 +134,7 @@ def env-var-row [row: record] {
 }
 
 def main [--json] {
-    let tables_root = "/home/flexnetos/meta/var/lib/envctl/tables"
+    let tables_root = (tables-root "")
     let sensitive_files = (
         open $"($tables_root)/env_files.csv"
         | where sensitivity =~ "secret|sensitive"

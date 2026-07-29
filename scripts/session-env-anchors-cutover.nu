@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Commit the durable tool-state anchors into envctl's canonical bootstrap table.
 # Dry-run is the default; --apply archives the exact prior table, publishes one
 # candidate atomically, verifies every committed row, and emits a hash receipt.
@@ -36,7 +38,7 @@ def fail [message: string] {
 const ANCHORS = [
     {
         name: "ICM_DB"
-        value: "/home/flexnetos/meta/var/xdg-data/icm/memories.db"
+        value: $"($root)/var/xdg-data/icm/memories.db"
         value_kind: "path"
         owner_table: "env_vars"
         scope: "user"
@@ -48,7 +50,7 @@ const ANCHORS = [
     }
     {
         name: "CARGO_HOME"
-        value: "/home/flexnetos/meta/var/cache/cargo-home"
+        value: $"($root)/var/cache/cargo-home"
         value_kind: "path"
         owner_table: "rust_toolchains"
         scope: "user"
@@ -60,7 +62,7 @@ const ANCHORS = [
     }
     {
         name: "CARGO_TARGET_DIR"
-        value: "/home/flexnetos/meta/var/cargo-target"
+        value: $"($root)/var/cargo-target"
         value_kind: "path"
         owner_table: "rust_toolchains"
         scope: "user"
@@ -73,11 +75,12 @@ const ANCHORS = [
 ]
 
 def main [
-    --meta-root: path = "/home/flexnetos/meta"
+    --meta-root: string = ""
     --timestamp: string = ""
     --apply
 ] {
-    let tables_root = ($meta_root | path join "var" "lib" "envctl" "tables")
+    let root = (meta-root $meta_root)
+    let tables_root = ($root | path join "var" "lib" "envctl" "tables")
     let table = ($tables_root | path join "bootstrap_env_vars.csv")
     if not ($table | path exists) {
         fail $"canonical table is missing: ($table)"
@@ -118,7 +121,7 @@ def main [
     } else {
         $timestamp
     }
-    let archive = ($meta_root | path join "var" "lib" "envctl" "archives" "session-env-anchors-cutover" $observed_at)
+    let archive = ($root | path join "var" "lib" "envctl" "archives" "session-env-anchors-cutover" $observed_at)
 
     mut receipt = {
         schema: "envctl.session-env-anchors-cutover.v1"

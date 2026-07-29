@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Generate disposable bootstrap.nu and bootstrap.sh from bootstrap_env_vars.csv.
 # Secret refs are intentionally skipped; generated outputs contain public paths
 # and local-state locations only.
@@ -92,12 +94,19 @@ def manifest-row [
 }
 
 def main [
-    --tables-root: string = "/home/flexnetos/meta/var/lib/envctl/tables"
-    --out-dir: string = "/home/flexnetos/meta/artifacts/generated/T036"
+    --tables-root: string = ""
+    --out-dir: string = ""
     --manifest-out: string = ""
     --timestamp: string = "1970-01-01T00:00:00Z"
     --json
 ] {
+    let root = (meta-root "")
+    let tables_root = (if ($tables_root | is-empty) { (tables-root "") } else { $tables_root })
+    let out_dir = (if ($out_dir | is-empty) {
+        $root | path join "artifacts" "generated" "T036"
+    } else {
+        $out_dir
+    })
     let rows = (source-rows $tables_root)
     let checksum = (source-checksum $tables_root)
     mkdir $out_dir

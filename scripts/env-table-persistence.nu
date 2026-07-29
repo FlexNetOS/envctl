@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Build durable envctl table registry and generated-output overwrite guards.
 # This is a read-only scanner over declared envctl tables and generated targets;
 # it does not render or apply runtime config.
@@ -128,7 +130,7 @@ def declared-output-table-row [
 }
 
 def table-registry [] {
-    let tables_root = "/home/flexnetos/meta/var/lib/envctl/tables"
+    let tables_root = (tables-root "")
     let generated_this_task = [envctl_tables generated_file_guards table_persistence_parser]
     let scanned = (
         ls $tables_root
@@ -194,7 +196,7 @@ def generated-target-row [
 }
 
 def generated-file-guards [] {
-    let tables_root = "/home/flexnetos/meta/var/lib/envctl/tables"
+    let tables_root = (tables-root "")
     let env_files = (open $"($tables_root)/env_files.csv")
     let runtime_targets = (
         open $"($tables_root)/bootstrap_generated_files.csv"

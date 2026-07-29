@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Commit the durable Codex state roots into envctl's canonical bootstrap table.
 # Dry-run is the default; --apply archives the exact prior table, publishes one
 # candidate atomically, verifies every owner row, and emits a hash receipt.
@@ -18,7 +20,7 @@
 # crates/runner-cli/src/forge_loop.rs.
 
 # The byte-for-byte contract the yazelix agent frontdoor enforces.
-const FRONTDOOR_CODEX_STATE_HOME = "/home/flexnetos/meta/var/lib/codex"
+def frontdoor-codex-state-home [meta: string] { $"($meta)/var/lib/codex" }
 
 def fail [message: string] {
     print --stderr $"codex env cutover: ($message)"
@@ -26,20 +28,21 @@ def fail [message: string] {
 }
 
 def main [
-    --meta-root: path = "/home/flexnetos/meta"
+    --meta-root: string = ""
     --timestamp: string = ""
     --apply
 ] {
-    let tables_root = ($meta_root | path join "var" "lib" "envctl" "tables")
+    let root = (meta-root $meta_root)
+    let tables_root = ($root | path join "var" "lib" "envctl" "tables")
     let table = ($tables_root | path join "bootstrap_env_vars.csv")
     if not ($table | path exists) {
         fail $"canonical table is missing: ($table)"
     }
 
     let owned = {
-        CODEX_HOME: ($meta_root | path join "var" "lib" "codex" | into string)
-        CODEX_SQLITE_HOME: ($meta_root | path join "var" "lib" "codex" "sqlite" | into string)
-        CODEX_LOG_DIR: ($meta_root | path join "var" "log" "codex" | into string)
+        CODEX_HOME: ($root | path join "var" "lib" "codex" | into string)
+        CODEX_SQLITE_HOME: ($root | path join "var" "lib" "codex" "sqlite" | into string)
+        CODEX_LOG_DIR: ($root | path join "var" "log" "codex" | into string)
     }
     let owned_notes = {
         CODEX_HOME: "Durable Codex state root in the Meta payload; byte-identical to the yazelix agent frontdoor STATE_HOME. Auth files remain untracked."
@@ -50,8 +53,8 @@ def main [
 
     # Refuse unless the committed CODEX_HOME is exactly what the frontdoor compares
     # against. A trailing slash or a symlink alias here is a live outage.
-    if ($owned | get CODEX_HOME) != $FRONTDOOR_CODEX_STATE_HOME {
-        fail $"CODEX_HOME ($owned | get CODEX_HOME) is not byte-identical to the frontdoor owner ($FRONTDOOR_CODEX_STATE_HOME)"
+    if ($owned | get CODEX_HOME) != (frontdoor-codex-state-home $root) {
+        fail $"CODEX_HOME ($owned | get CODEX_HOME) is not byte-identical to the frontdoor owner ((frontdoor-codex-state-home $root))"
     }
 
     let rows = (open $table)
@@ -84,14 +87,14 @@ def main [
     } else {
         $timestamp
     }
-    let archive = ($meta_root | path join "var" "lib" "envctl" "archives" "codex-env-cutover" $observed_at)
+    let archive = ($root | path join "var" "lib" "envctl" "archives" "codex-env-cutover" $observed_at)
     mut receipt = {
         schema: "envctl.codex-env-cutover.v1"
         observed_at: $observed_at
         applied: $apply
         table: ($table | into string)
         archive: ($archive | into string)
-        frontdoor_state_home: $FRONTDOOR_CODEX_STATE_HOME
+        frontdoor_state_home: (frontdoor-codex-state-home $root)
         prior_values: $prior
         committed_values: $owned
         before_sha256: $before_hash

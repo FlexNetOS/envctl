@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Commit every remaining /home/flexnetos/FlexNetOS bootstrap row onto its real
 # owner. Dry-run is the default; --apply archives the exact prior table,
 # publishes one candidate atomically, verifies every owner row, and emits a
@@ -22,38 +24,41 @@
 # Every other row is a straight root swap onto a path that already exists.
 
 const RETIRED_ROOT = "/home/flexnetos/FlexNetOS"
-const META = "/home/flexnetos/meta"
 
 # Paths an active owner elsewhere forbids. Committing one of these would put the
-# table in direct conflict with a live gate.
-const FORBIDDEN_TARGETS = [
-    "/home/flexnetos/meta/.cache/kache"
-    "/home/flexnetos/meta/var/cache/kache"
-]
+# table in direct conflict with a live gate. Derived from the resolved root so
+# this file pins no user path.
+def forbidden-targets [meta: string] {
+    [
+        $"($meta)/.cache/kache"
+        $"($meta)/var/cache/kache"
+    ]
+}
 
-def owned-values [] {
+def owned-values [meta: string] {
     {
-        FLEXNETOS_WORKSPACE: $META
-        FLEXNETOS_SRC: $"($META)/src"
-        ENVCTL_ROOT: $"($META)/src/envctl"
-        FLEXNETOS_RUNNER_ROOT: $"($META)/flexnetos_runner"
-        META_ROOT: $META
-        FLEXNETOS_ETC: $"($META)/etc"
-        FLEXNETOS_RELEASE_ROOT: $"($META)/release"
-        FLEXNETOS_TEST_PREFIX_ROOT: $"($META)/test-prefix"
-        FLEXNETOS_VAR: $"($META)/var"
-        ENVCTL_TABLE_ROOT: $"($META)/var/lib/envctl/tables"
-        FXRUN_STATE_DIR: $"($META)/var/lib/runner"
-        GITKB_HOME: $"($META)/var/lib/gitkb"
-        META_STATE_DIR: $"($META)/var/lib/meta"
-        RUSTUP_HOME: $"($META)/var/lib/rustup"
-        ENVCTL_LOG_DIR: $"($META)/var/log/envctl"
-        RAW_FAILURE_LOG_DIR: $"($META)/var/log/raw"
-        RUNNER_LOG_DIR: $"($META)/var/log/runner"
-        RTK_LOG_DIR: $"($META)/var/log/rtk"
-        RTK_CACHE_DIR: $"($META)/var/cache/rtk"
-        YAZELIX_CACHE_DIR: $"($META)/var/cache/yazelix"
-        KACHE_CACHE_DIR: "/home/flexnetos/.cache/kache"
+        FLEXNETOS_WORKSPACE: $meta
+        FLEXNETOS_SRC: $"($meta)/src"
+        ENVCTL_ROOT: $"($meta)/src/envctl"
+        FLEXNETOS_RUNNER_ROOT: $"($meta)/flexnetos_runner"
+        META_ROOT: $meta
+        FLEXNETOS_ETC: $"($meta)/etc"
+        FLEXNETOS_RELEASE_ROOT: $"($meta)/release"
+        FLEXNETOS_TEST_PREFIX_ROOT: $"($meta)/test-prefix"
+        FLEXNETOS_VAR: $"($meta)/var"
+        ENVCTL_TABLE_ROOT: $"($meta)/var/lib/envctl/tables"
+        FXRUN_STATE_DIR: $"($meta)/var/lib/runner"
+        GITKB_HOME: $"($meta)/var/lib/gitkb"
+        META_STATE_DIR: $"($meta)/var/lib/meta"
+        RUSTUP_HOME: $"($meta)/var/lib/rustup"
+        ENVCTL_LOG_DIR: $"($meta)/var/log/envctl"
+        RAW_FAILURE_LOG_DIR: $"($meta)/var/log/raw"
+        RUNNER_LOG_DIR: $"($meta)/var/log/runner"
+        RTK_LOG_DIR: $"($meta)/var/log/rtk"
+        RTK_CACHE_DIR: $"($meta)/var/cache/rtk"
+        YAZELIX_CACHE_DIR: $"($meta)/var/cache/yazelix"
+        # Kache is rooted outside the payload by yazelix's own enforced owner.
+        KACHE_CACHE_DIR: ($env.HOME | path join ".cache" "kache")
     }
 }
 
@@ -63,17 +68,19 @@ def fail [message: string] {
 }
 
 def main [
-    --meta-root: path = "/home/flexnetos/meta"
+    --meta-root: string = ""
     --timestamp: string = ""
     --apply
 ] {
-    let tables_root = ($meta_root | path join "var" "lib" "envctl" "tables")
+    let root = (meta-root $meta_root)
+    let tables_root = ($root | path join "var" "lib" "envctl" "tables")
     let table = ($tables_root | path join "bootstrap_env_vars.csv")
     if not ($table | path exists) {
         fail $"canonical table is missing: ($table)"
     }
 
-    let owned = (owned-values)
+    let owned = (owned-values $root)
+    let forbidden = (forbidden-targets $root)
     let names = ($owned | columns)
 
     # No committed value may re-enter the retired husk or land on a path another
@@ -83,7 +90,7 @@ def main [
         if ($value | str starts-with $RETIRED_ROOT) {
             fail $"($name) still targets the retired root: ($value)"
         }
-        if $value in $FORBIDDEN_TARGETS {
+        if $value in $forbidden {
             fail $"($name) targets a path an active owner forbids: ($value)"
         }
     }
@@ -122,7 +129,7 @@ def main [
     } else {
         $timestamp
     }
-    let archive = ($meta_root | path join "var" "lib" "envctl" "archives" "retired-root-cutover" $observed_at)
+    let archive = ($root | path join "var" "lib" "envctl" "archives" "retired-root-cutover" $observed_at)
     mut receipt = {
         schema: "envctl.retired-root-cutover.v1"
         observed_at: $observed_at

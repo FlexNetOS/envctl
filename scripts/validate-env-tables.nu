@@ -1,5 +1,7 @@
 #!/usr/bin/env nu
 
+use ./meta-paths.nu *
+
 # Validate envctl table state for the v0.1 bootstrap slice.
 # This is fail-closed with --strict and writes nothing by itself.
 
@@ -213,8 +215,8 @@ def validate-ownership [tables_root: string] {
 }
 
 def validation-rows [
-    tables_root: string = "/home/flexnetos/meta/var/lib/envctl/tables"
-    generated_dir: string = "/home/flexnetos/meta/artifacts/generated/T036"
+    tables_root: string = ""
+    generated_dir: string = ""
 ] {
     let required_rows = (validate-required-tables $tables_root)
     let bootstrap_rows = (validate-bootstrap-env $tables_root)
@@ -228,9 +230,16 @@ def validation-rows [
 def main [
     --json
     --strict
-    --tables-root: string = "/home/flexnetos/meta/var/lib/envctl/tables"
-    --generated-dir: string = "/home/flexnetos/meta/artifacts/generated/T036"
+    --tables-root: string = ""
+    --generated-dir: string = ""
 ] {
+    let root = (meta-root "")
+    let tables_root = (if ($tables_root | is-empty) { (tables-root "") } else { $tables_root })
+    let generated_dir = (if ($generated_dir | is-empty) {
+        $root | path join "artifacts" "generated" "T036"
+    } else {
+        $generated_dir
+    })
     let rows = (validation-rows $tables_root $generated_dir)
     let blocking_errors = ($rows | where status == "error" and blocking == "true")
     if $strict and (($blocking_errors | length) > 0) {
