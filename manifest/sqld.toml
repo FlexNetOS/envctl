@@ -221,7 +221,7 @@ sanitize_cargo_environment() {
 }
 load_hermetic_cargo_helpers() {
   local helper="$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh"
-  local expected_sha256="1230a5b4bad52110c8af5538ff86593b88e34ec4215152b891bc4de7e75d9291"
+  local expected_sha256="a2b2cb9fffa9d1273aada83918350342cf87f32a49fb3099dae88bb1bb95f834"
   [ -f "$helper" ] && [ ! -L "$helper" ] && canonical_is_lexical "$helper" \
     && [ "$(stat -c '%u' "$helper")" = "$uid" ] && [ "$(stat -c '%a' "$helper")" = 755 ] \
     || { echo "FATAL: unsafe sqld hermetic-Cargo helper" >&2; exit 1; }
@@ -844,7 +844,7 @@ sanitize_cargo_environment() {
 }
 load_hermetic_cargo_helpers() {
   local helper="$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh"
-  local expected_sha256="1230a5b4bad52110c8af5538ff86593b88e34ec4215152b891bc4de7e75d9291"
+  local expected_sha256="a2b2cb9fffa9d1273aada83918350342cf87f32a49fb3099dae88bb1bb95f834"
   [ -f "$helper" ] && [ ! -L "$helper" ] && canonical_is_lexical "$helper" \
     && [ "$(stat -c '%u' "$helper")" = "$uid" ] && [ "$(stat -c '%a' "$helper")" = 755 ] \
     || { echo "unsafe sqld hermetic-Cargo helper" >&2; exit 1; }
@@ -1111,7 +1111,7 @@ sanitize_cargo_environment() {
 }
 load_hermetic_cargo_helpers() {
   local helper="$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh"
-  local expected_sha256="1230a5b4bad52110c8af5538ff86593b88e34ec4215152b891bc4de7e75d9291"
+  local expected_sha256="a2b2cb9fffa9d1273aada83918350342cf87f32a49fb3099dae88bb1bb95f834"
   [ -f "$helper" ] && [ ! -L "$helper" ] && canonical_is_lexical "$helper" \
     && [ "$(stat -c '%u' "$helper")" = "$uid" ] && [ "$(stat -c '%a' "$helper")" = 755 ] \
     || { echo "FATAL: unsafe sqld hermetic-Cargo helper" >&2; exit 1; }
