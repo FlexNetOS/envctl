@@ -6,7 +6,7 @@
 //! arguments and prints the result as JSON.
 
 use clap::{Parser, Subcommand};
-use envctl_commit_worker::{activation, drain_and_commit};
+use envctl_commit_worker::{activation, drain_and_commit, gates};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -70,10 +70,33 @@ enum Command {
         #[arg(long)]
         apply: bool,
     },
+
+    /// Run the eleven release gates `lifeos_release.promote` requires and
+    /// report what each one measured (blueprint §17 step 15 precondition).
+    ///
+    /// This only measures. It never writes verification rows, so a gate run
+    /// can never be mistaken for an approval. Exits non-zero if any gate
+    /// fails, so it is usable directly as a release precondition check.
+    Gates {
+        /// PostgreSQL connection string; Unix-socket host required, as above.
+        #[arg(long)]
+        conn: String,
+
+        /// Repository root whose test suite the `test` gate runs.
+        #[arg(long)]
+        repo_root: PathBuf,
+
+        /// The artifact under release, checked by the `build` gate.
+        #[arg(long)]
+        release_root: PathBuf,
+    },
 }
 
 fn main() {
     let cli = Cli::parse();
+    // Gates report per-gate verdicts, so they carry their own exit status: a
+    // clean run that found a failing gate must not look like success.
+    let mut failing_gates = 0usize;
     let rendered = match cli.command {
         Command::Drain {
             conn,
@@ -88,10 +111,29 @@ fn main() {
             apply,
         } => activation::materialize(&conn, &link, &target, apply)
             .map(|outcomes| serde_json::to_string_pretty(&outcomes).expect("outcomes serialize")),
+        Command::Gates {
+            conn,
+            repo_root,
+            release_root,
+        } => gates::run_all(&conn, &repo_root, &release_root).map(|outcomes| {
+            failing_gates = outcomes.iter().filter(|outcome| !outcome.passed).count();
+            serde_json::to_string_pretty(&serde_json::json!({
+                "gates": outcomes,
+                "passed": outcomes.len() - failing_gates,
+                "failed": failing_gates,
+                "promotable": failing_gates == 0,
+            }))
+            .expect("gate report serializes")
+        }),
     };
 
     match rendered {
-        Ok(json) => println!("{json}"),
+        Ok(json) => {
+            println!("{json}");
+            if failing_gates > 0 {
+                std::process::exit(1);
+            }
+        }
         Err(err) => {
             let payload = serde_json::json!({ "error": err.to_string() });
             eprintln!(
