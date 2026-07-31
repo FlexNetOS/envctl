@@ -57,7 +57,7 @@ Yazelix runtime contract.
 
 Phase 0 observed an empty active Codex MCP list; the current generated floor is `exa` only.
 Do not blindly widen MCP scope.
-Use active /run/user/1001/yazelix/profile-runtime/codex/config.toml as runtime authority.
+Use active /home/flexnetos/meta/var/lib/codex/config.toml as runtime authority.
 Use envctl preview and lock checks first.
 Additive merge only.
 No mutating MCP tools without explicit approval.

@@ -9,8 +9,8 @@
 # wild (the linker) is now FULLY WIRED + verified (Epic H TASK-0054): its install
 # writes the meta-root $META_ROOT/.cargo/config.toml linker section and a full
 # `cargo build` was confirmed to link via `clang --ld-path=wild` before it landed.
-# kache (RUSTC_WRAPPER) is wired and verified: absolute wrapper, meta XDG cache,
-# and a meta-owned user systemd unit under $META_ROOT/.config/systemd/user.
+# kache (RUSTC_WRAPPER) is wired and verified through the Yazelix profile:
+# absolute wrapper, one cache root, and no separately installed runtime unit.
 
 # ── gh (GitHub CLI) ── replaces apt `gh` (/usr/bin/gh). Pure tarball, additive.
 [[component]]

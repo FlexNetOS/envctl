@@ -48,6 +48,7 @@ run_lifecycle() {
     HOME="$home" \
     ENVCTL_REAL_HOME="$home" \
     ENVCTL_NIX_STORE_ROOT="$store" \
+    CODEX_HOME="$runtime/codex" \
     XDG_RUNTIME_DIR="$runtime" \
     PATH=/usr/bin:/bin \
     "$LIFECYCLE" "$@"
@@ -59,10 +60,10 @@ run_lifecycle install | grep -Fq 'already satisfies'
 run_lifecycle fix | grep -Fq 'already satisfies'
 run_lifecycle remove | grep -Fq 'nothing removed'
 [ -x "$home/.nix-profile/bin/codex" ] || fail 'remove changed profile Codex'
-[ -f "$runtime/yazelix/profile-runtime/codex/config.toml" ] \
-  || fail 'Codex config did not materialize into volatile runtime'
-[ -f "$runtime/yazelix/profile-runtime/codex/RULES.md" ] \
-  || fail 'Codex rules did not materialize into volatile runtime'
+[ -f "$runtime/codex/config.toml" ] \
+  || fail 'Codex config did not materialize into Yazelix-owned state'
+[ -f "$runtime/codex/RULES.md" ] \
+  || fail 'Codex rules did not materialize into Yazelix-owned state'
 
 foreign="$store/cccccccccccccccccccccccccccccccc-foreign"
 install -d -m 755 "$foreign"
@@ -88,4 +89,4 @@ for phase in ("detect", "install", "verify", "fix", "remove"):
 PY
 
 bash -n "$LIFECYCLE"
-printf '%s\n' 'PASS: Codex is validated only through one profile and volatile runtime'
+printf '%s\n' 'PASS: Codex is validated only through one profile and Yazelix-owned state'

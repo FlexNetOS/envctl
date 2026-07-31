@@ -24,7 +24,7 @@ const TEMPLATE: &str = r#"# envctl agent-env — declarative skills / MCPs / com
 # agent: claude-code
 #
 # Or set a custom destination directory
-# destination: /run/user/1001/yazelix/profile-runtime/claude/skills
+# destination: /home/flexnetos/meta/var/lib/claude/skills
 
 # skills:
 #   - source: https://github.com/example/skill-pack

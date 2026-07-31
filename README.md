@@ -172,16 +172,15 @@ review fixes are listed in `docs/DESIGN-NOTES.md`.
 
 ## Profile-owned active-tool state
 
-**Status (2026-07-21): applied.** The profile frontdoors and the envctl-owned
+**Status (2026-07-31): converged.** The profile frontdoors and the envctl-owned
 Nushell input now set `XDG_DATA_HOME` and `XDG_STATE_HOME` to
 `/home/flexnetos/meta/var/xdg-data` and `/home/flexnetos/meta/var/xdg-state`. These are
-TOOL scope only: `~/.config/environment.d/99z-session-restore.conf` deliberately keeps
-the SESSION-scope XDG roots on the real home, because the systemd user manager parents
-gnome-session and re-homing it there cost a login keyring on 2026-07-27. Disposable
-cache and Yazelix session state are fixed beneath `/run/user/1001/yazelix`. The ICM
+TOOL scope only; envctl does not own or start a parallel local service manager.
+Yazelix owns all stack process state, cache, sockets, PIDs, and logs beneath
+`/home/flexnetos/meta/var/lib/yazelix/runtime`. The ICM
 frontdoor independently fixes its canonical corpus at
 `/home/flexnetos/meta/var/xdg-data/icm/memories.db` by always passing an explicit
-`--db`; `ICM_DB` is inert for the current release.
+`--db` and exporting the same `ICM_DB` for dependent tools.
 
 The canonical bootstrap rows are committed only through
 `scripts/profile-env-cutover.nu --apply`, which archives the exact prior table,

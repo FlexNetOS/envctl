@@ -7,7 +7,7 @@ frontdoor at `/home/flexnetos/.nix-profile`. Envctl validates and projects that
 contract; it does not install a parallel agent runtime or PATH layer.
 
 Mutable Codex and Claude state lives only under
-`/run/user/1001/yazelix/profile-runtime/{codex,claude}`. Reviewed configuration
+`/home/flexnetos/meta/var/lib/{codex,claude}`. Reviewed configuration
 inputs are installed below the profile `share/yazelix/agent_configs` tree and
 materialized by profile-owned commands.
 

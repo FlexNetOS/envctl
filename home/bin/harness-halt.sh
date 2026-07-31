@@ -2,7 +2,7 @@
 # Stop Claude team jobs without treating a home directory as runtime authority.
 set -euo pipefail
 
-runtime_base="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/yazelix/profile-runtime/claude"
+runtime_base="${CLAUDE_CONFIG_DIR:-/home/flexnetos/meta/var/lib/claude}"
 archive_root="$runtime_base/archive/$(date -u +%Y%m%dT%H%M%SZ)/halt-sweep"
 ledger="${HARNESS_VAR:-/home/flexnetos/meta/var}/log/claude-harness/ledger.jsonl"
 timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"

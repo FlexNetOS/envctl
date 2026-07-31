@@ -1051,8 +1051,8 @@ fn has_arg(argv: &[String], names: &[&str]) -> bool {
 
 fn secret_path_violation(lower: &str) -> bool {
     let denied = [
-        "/run/user/1001/yazelix/profile-runtime/codex/auth.json",
-        "/run/user/1001/yazelix/profile-runtime/codex/auth.json",
+        "/home/flexnetos/meta/var/lib/codex/auth.json",
+        "/home/flexnetos/meta/var/lib/codex/auth.json",
         "/.codex/auth.json",
         "/home/flexnetos/.gnupg",
         "~/.gnupg",
@@ -3011,7 +3011,7 @@ pub fn browser_computer_value() -> Result<Value> {
 fn memory_root() -> PathBuf {
     env::var_os("CODEX_HARNESS_MEMORY_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/run/user/1001/yazelix/profile-runtime/codex/memories"))
+        .unwrap_or_else(|| PathBuf::from("/home/flexnetos/meta/var/lib/codex/memories"))
 }
 
 fn collect_memory_files(root: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
@@ -3239,7 +3239,7 @@ danger_full_access = "keep"
     #[test]
     fn redaction_masks_secrets() {
         assert_eq!(
-            redact("cat /run/user/1001/yazelix/profile-runtime/codex/auth.json"),
+            redact("cat /home/flexnetos/meta/var/lib/codex/auth.json"),
             "[REDACTED:SENSITIVE-COMMAND]"
         );
         assert_eq!(redact("OPENAI_API_KEY=abc"), "[REDACTED:SENSITIVE-COMMAND]");

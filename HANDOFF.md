@@ -113,7 +113,7 @@ cargo run -p envctl -- add-repo https://github.com/owner/repo --id thing \
 
 # 8. GUI (native; opens on the Wayland session)
 ENVCTL_MANIFEST_DIR="$PWD/manifest" DISPLAY=:0 WAYLAND_DISPLAY=wayland-0 \
-  XDG_RUNTIME_DIR=/run/user/1000 cargo run -p envctl-gui
+  XDG_RUNTIME_DIR=/home/flexnetos/meta/var/lib/yazelix/runtime/xdg cargo run -p envctl-gui
 ```
 
 ## 9. Agent-env / kasetto absorption (Epic C)

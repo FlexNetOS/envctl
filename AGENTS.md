@@ -77,7 +77,6 @@ bash ci/gates/runner-routing.sh # GitHub Actions hybrid hosted/local runner poli
 bash ci/gates/no-c.sh           # supply-chain: forbids C in the trust boundary (see below)
 bash ci/gates/meta-substrates.sh # meta shared-substrate wiring: loop_lib + meta_plugin_protocol path deps
 bash ci/gates/shape.sh          # code-shape invariants (native-roots, edge module)
-bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
 bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
 bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
 bash ci/gates/agent-env.sh      # agent-env.yaml ↔ agent-env.lock no-drift (TASK-0040)
@@ -226,10 +225,10 @@ Use these locations only:
 
 | Purpose | Active location |
 | --- | --- |
-| Global Codex runtime config | `/run/user/1001/yazelix/profile-runtime/codex/config.toml` |
-| Global Codex operating rules | `/run/user/1001/yazelix/profile-runtime/codex/RULES.md` |
+| Global Codex runtime config | `/home/flexnetos/meta/var/lib/codex/config.toml` |
+| Global Codex operating rules | `/home/flexnetos/meta/var/lib/codex/RULES.md` |
 | Home-level navigation entry | `/home/flexnetos/AGENTS.md` |
-| RTK policy include | `/run/user/1001/yazelix/profile-runtime/codex/AGENTS.rtk.md` and `/home/flexnetos/AGENTS.rtk.md` |
+| RTK policy include | `/home/flexnetos/meta/var/lib/codex/AGENTS.rtk.md` and `/home/flexnetos/AGENTS.rtk.md` |
 | Repo-managed agent inputs | `agent-env.yaml`, `agent-env.lock`, `agent-skills/` |
 | Repo home projection | `profile-runtime/codex/`, `profile-runtime/claude/`, `home/AGENTS.md` |
 | Codex harness source | `home/agent-env/codex-harness/` |
@@ -239,7 +238,7 @@ Do **not** use `/home/flexnetos/lifeos/.codex` or
 fallback. They were retired because `/home/flexnetos/FlexNetOS` is a symlink to
 `/home/flexnetos/lifeos`, so those two paths were the same confusing control
 surface. If either path reappears, archive it and route the change through
-`/run/user/1001/yazelix/profile-runtime/codex` or envctl `agent-env.yaml` as appropriate.
+`/home/flexnetos/meta/var/lib/codex` or envctl `agent-env.yaml` as appropriate.
 
 ## Pointers
 
@@ -405,13 +404,13 @@ This repository is listed under GitNexus **group(s): envctl-migration**. For cro
 
 ## Profile-owned active-tool state
 
-**Status (2026-07-21): applied.** The profile frontdoors and the envctl-owned
+**Status (2026-07-31): converged.** The profile frontdoors and the envctl-owned
 Nushell input now set `XDG_DATA_HOME` to `/home/flexnetos/meta/var/xdg-data` and
 `XDG_STATE_HOME` to `/home/flexnetos/meta/var/xdg-state`. These are TOOL scope only:
-`~/.config/environment.d/99z-session-restore.conf` deliberately keeps the SESSION-scope
-XDG roots on the real home, because the systemd user manager parents gnome-session and
-re-homing it there cost a login keyring on 2026-07-27. Disposable cache and Yazelix session state are
-fixed beneath `/run/user/1001/yazelix`. The ICM frontdoor independently fixes
+Desktop-session XDG roots remain outside the tool scope; envctl does not own or
+start a parallel local service manager. Yazelix owns all stack process state,
+cache, sockets, PIDs, and logs beneath
+`/home/flexnetos/meta/var/lib/yazelix/runtime`. The ICM frontdoor independently fixes
 its canonical corpus at `/home/flexnetos/meta/var/xdg-data/icm/memories.db`.
 
 The canonical bootstrap rows are committed only through

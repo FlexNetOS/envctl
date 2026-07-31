@@ -10,8 +10,8 @@ fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
   || fail "envctl must not own a Claude runtime tree"
 grep -Fq 'share/yazelix/agent_configs/claude' "$lifecycle" \
   || fail "Claude validator does not consume profile-owned configuration inputs"
-grep -Fq 'yazelix/profile-runtime/claude' "$lifecycle" \
-  || fail "Claude validator does not name the volatile materialization"
+grep -Fq '/home/flexnetos/meta/var/lib/claude' "$lifecycle" \
+  || fail "Claude validator does not name its Yazelix-owned state"
 if grep -Eq 'nix (build|profile)|git (checkout|switch|pull)' "$lifecycle"; then
   fail "Claude validator can build or switch its owning profile"
 fi
@@ -21,7 +21,7 @@ trap 'rm -rf -- "$fixture"' EXIT
 real_home="$fixture/home"
 store_root="$fixture/nix/store"
 closure="$store_root/fixture-lifeos-foundation-yzx"
-runtime="$fixture/run/yazelix/profile-runtime/claude"
+runtime="$fixture/state/claude"
 mkdir -p \
   "$closure/bin" \
   "$closure/toolbin" \
@@ -41,6 +41,7 @@ ln -s "$closure" "$real_home/.nix-profile"
 
 ENVCTL_REAL_HOME="$real_home" \
 ENVCTL_NIX_STORE_ROOT="$store_root" \
+CLAUDE_CONFIG_DIR="$runtime" \
 XDG_RUNTIME_DIR="$fixture/run" \
   "$lifecycle" verify
 

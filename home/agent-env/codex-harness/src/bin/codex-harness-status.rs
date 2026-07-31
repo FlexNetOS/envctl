@@ -32,7 +32,7 @@ fn active_model() -> String {
         .ok()
         .filter(|value| !value.trim().is_empty())
         .or_else(|| {
-            fs::read_to_string("/run/user/1001/yazelix/profile-runtime/codex/config.toml")
+            fs::read_to_string("/home/flexnetos/meta/var/lib/codex/config.toml")
                 .ok()
                 .and_then(|text| toml::from_str::<toml::Value>(&text).ok())
                 .and_then(|config| config.get("model")?.as_str().map(str::to_string))
