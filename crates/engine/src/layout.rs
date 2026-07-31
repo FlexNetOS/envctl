@@ -255,12 +255,6 @@ impl MetaLayout {
         self.meta_root.join(".config")
     }
 
-    /// Compatibility resolver for importing and removing historical user units.
-    /// It is not part of the canonical layout registry or exported environment.
-    pub fn systemd_user_dir(&self) -> PathBuf {
-        self.xdg_config_home().join("systemd/user")
-    }
-
     pub fn xdg_data_home(&self) -> PathBuf {
         self.var().join("xdg-data")
     }
@@ -949,8 +943,8 @@ mod tests {
         let tilde_local = ["~", "var/lib/env-ctl"].join("/");
         assert_eq!(l.expand_meta_path(&tilde_local), "/meta/var/lib/env-ctl");
         assert_eq!(
-            l.expand_meta_path("/etc/systemd/system/demo.service"),
-            "/etc/systemd/system/demo.service"
+            l.expand_meta_path("/etc/apt/sources.list.d/demo.list"),
+            "/etc/apt/sources.list.d/demo.list"
         );
     }
 

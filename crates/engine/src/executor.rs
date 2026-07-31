@@ -444,7 +444,6 @@ fn wiring_empty(w: &Wiring) -> bool {
     w.path_entries.is_empty()
         && w.shell_rc.is_empty()
         && w.desktop_entries.is_empty()
-        && w.systemd_user.is_empty()
         && w.apt_repos.is_empty()
         && w.nix_conf_lines.is_empty()
         && w.cdi_specs.is_empty()
@@ -487,13 +486,6 @@ fn wiring_present(comp: &Component) -> bool {
             .unwrap_or(false)
     };
 
-    // A unit at the right filename is still drifted when its rendered body
-    // targets a retired META_ROOT.
-    let systemd_ok = w
-        .systemd_user
-        .iter()
-        .all(crate::wiring::systemd_user_present);
-
     // System-scope footprints: each is present iff its on-disk target exists
     // (mirrors wiring.rs apply targets: SOURCES_D/<list_file>, NIX_CONF line,
     // cdi output file, alternative link).
@@ -514,7 +506,7 @@ fn wiring_present(comp: &Component) -> bool {
         .iter()
         .all(|a| std::path::Path::new(&a.link).exists());
 
-    shell_rc_ok && path_ok && systemd_ok && apt_ok && nix_ok && cdi_ok && alt_ok
+    shell_rc_ok && path_ok && apt_ok && nix_ok && cdi_ok && alt_ok
 }
 
 fn emit_wiring(comp: &Component, sink: &EventSink, rep: &crate::wiring::WiringReport, verb: &str) {

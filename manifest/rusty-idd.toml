@@ -95,6 +95,6 @@ command = "bash"
 args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/usr/bin}\"; t=\"$B/rusty-idd\"; src=\"$M/.toolchains/rusty-idd/bin/rusty-idd\"; if { [ -L \"$t\" ] && [ \"$(readlink -f \"$t\" 2>/dev/null || true)\" = \"$(readlink -f \"$src\" 2>/dev/null || true)\" ]; } || { [ -f \"$t\" ] && grep -Fqx \"exec \\\"$src\\\" \\\"\\$@\\\"\" \"$t\"; }; then rm -f \"$t\"; fi; rm -rf \"$M/.toolchains/rusty-idd\""]
 
 # ---- WIRING: $META_ROOT/usr/bin is already on PATH via other components; declared so reset can reason
-# ---- about it reversibly. No shell_rc / systemd / data_paths — rusty-idd is a plain binary.
+# ---- about it reversibly. No shell_rc or data_paths — rusty-idd is a plain binary.
 [component.wiring]
 path_entries = ["$META_ROOT/usr/bin"]

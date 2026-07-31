@@ -248,7 +248,7 @@ A lapsed edge cert breaks all remote clients; on a CGNAT/dynamic-IP home box ACM
 ### 7.2 Deployment steps
 
 **Profile A (default):**
-1. `envctl install secretd` on THIS box (manifest `SystemdUnit`; user service under `$XDG_RUNTIME_DIR`). Insert and enroll the USB keyslot (daemon refuses to start on-box with no USB keyslot — §5.2).
+1. Insert and enroll the USB keyslot, then start Yazelix. Its packaged stack bootstrap launches `secretd` from the pinned profile and refuses the complete stack when the USB keyslot is unavailable (§5.2).
 2. Store: `store.profile = "embedded"`; run an embedded `sqld` bound to loopback; `secretd` uses the pure-Rust `remote` client to it. (In-process embedded only with a recorded risk acceptance, and then the edge runs as a separate process.)
 3. Edge: provision a PUBLICLY-TRUSTED relay cert (ACME or operator-supplied) into `relay-tls/`. For a home box, default to a **reverse tunnel from a small VPS** terminating public TLS **on-box**.
 4. Register each device locally (USB present): `envctl relay register-remote --client-id phone --source-cidr ...` → records the DPoP `jkt` (and, in hardened mode, mints a ≤7d mTLS client leaf from the remote-clients CA). Hand the device its bearer + (hardened mode) cert **out-of-band**.

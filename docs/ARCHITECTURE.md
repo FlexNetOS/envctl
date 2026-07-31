@@ -63,7 +63,7 @@ envctl/                         # cargo workspace root
 │   │   │   ├── event.rs        # Event, EventSink, Stream, Telemetry
 │   │   │   ├── error.rs        # EngineError (thiserror) + run_phase() best-effort wrapper
 │   │   │   ├── exec.rs         # ProcessHookRunner (spawn + stream), DryRunner, RecordingRunner
-│   │   │   ├── wiring.rs       # apply()/revert() for shell-rc/PATH/desktop/systemd
+│   │   │   ├── wiring.rs       # apply()/revert() for shell-rc/PATH/desktop/system artifacts
 │   │   │   ├── guard.rs        # RunContext + guard evaluation (UUID resolve+re-verify)
 │   │   │   ├── detect/         # probes (host, gpu cascade, tool_versions, wiring_state)
 │   │   │   ├── addrepo.rs      # the 9-stage build-from-source pipeline
@@ -123,7 +123,7 @@ pub struct Component {
     pub fix:     Option<Hook>,
     pub remove:  Option<Hook>,
 
-    pub wiring: Wiring,             // declarative side effects (PATH/rc/desktop/systemd)
+    pub wiring: Wiring,             // declarative reversible artifacts
     pub guards: Vec<Guard>,         // checked before any destructive phase
     pub machine: BTreeMap<String,String>, // machine-specific config (UUIDs, bl-ids) — NOT literals in code
 }
@@ -181,8 +181,11 @@ pub struct Wiring {
     pub path_entries:   Vec<String>,      // dirs PATH-appended only if absent (grep-guarded)
     pub shell_rc:       Vec<ShellRcBlock>,// guarded `# >>> BEGIN <marker> >>> ... <<< END <<<` blocks
     pub desktop_entries:Vec<DesktopEntry>,// ~/.config/autostart/*.desktop (one_shot self-disabling supported)
-    pub systemd_user:   Vec<SystemdUnit>, // systemctl --user units (unused by built-ins; for add-repo)
-    pub alternatives:   Vec<Alternative>, // update-alternatives (ghostty x-terminal-emulator)
+    pub apt_repos:      Vec<AptRepo>,      // guarded package repository artifacts
+    pub nix_conf_lines: Vec<NixConfLine>, // guarded Nix configuration lines
+    pub alternatives:   Vec<Alternative>, // update-alternatives (terminal selection)
+    pub data_paths:     Vec<DataPath>,     // purge-gated canonical data roots
+    pub config_paths:   Vec<DataPath>,     // engine-owned configuration roots
 }
 ```
 
@@ -273,7 +276,8 @@ args = ["-lc", "lspci | grep -qiE 'nvidia'"]
 
 **Schema reference.** Hook `kind ∈ {command, script, shipped_script}`. Guard
 `kind ∈ {uuid_resolves, not_live_device, not_mounted, path_exists, hook_succeeds}`. Wiring kinds:
-`path_entries[]`, `shell_rc[]`, `desktop_entries[]`, `systemd_user[]`, `alternatives[]`. Pins
+`path_entries[]`, `shell_rc[]`, `desktop_entries[]`, `apt_repos[]`, `nix_conf_lines[]`,
+`cdi_specs[]`, `alternatives[]`, `data_paths[]`, `config_paths[]`. Unknown fields are rejected. Pins
 (`cuda-toolkit-13-3`, `nightly-2026-04-03`, `torch cu132`, `llvm/clang-21`, the yazelix Cachix
 public key, the boot-repair UUIDs/bl-ids) are manifest values, not hard-coded constants.
 

@@ -6,8 +6,8 @@
 //!   2. process hardening (FS-S4): `RLIMIT_CORE=0` + `RLIMIT_MEMLOCK` raised + in-process
 //!      `mlockall(MCL_CURRENT|MCL_FUTURE)` so secret material (DEK / vault plaintext / PEMs, all
 //!      allocated post-`Lock.Unlock`) can never reach swap. (See the NOTE below on the best-effort
-//!      vs. `require_mlock` strict behavior; systemd `LimitMEMLOCK`/`LimitCORE` are the
-//!      defense-in-depth backstop.)
+//!      vs. `require_mlock` strict behavior; the Yazelix launch contract and in-process limits are
+//!      the defense-in-depth backstop.)
 //!   3. `Paths::resolve()` + create runtime/data/state dirs `0700`;
 //!   4. `Engine::open(paths)`; first-run bootstrap leaves vault init out-of-band (no `Vault.Init`
 //!      RPC; the vault stays Locked until an explicit `Lock.Unlock`);
@@ -23,8 +23,8 @@
 //!
 //! It is **best-effort by default**: `mlockall` commonly fails `EPERM` (no `CAP_IPC_LOCK`) or
 //! `ENOMEM`; on failure the daemon logs a metadata-only WARN (errno/strerror — never secret bytes,
-//! of which there are none pre-unlock anyway) and CONTINUES, relying on `RLIMIT_CORE=0` + the
-//! systemd unit's `LimitMEMLOCK=infinity` / `LimitCORE=0`. An operator can opt into a hardened mode
+//! of which there are none pre-unlock anyway) and CONTINUES, relying on the Yazelix-owned process
+//! limits. An operator can opt into a hardened mode
 //! via `[security].require_mlock = true` (or `SECRETD_REQUIRE_MLOCK=1`): when set, a failed
 //! `mlockall` is FATAL and `serve` refuses to start (fail-closed). `--self-check` keeps `mlockall`
 //! best-effort regardless of `require_mlock` (it is a non-serving pre-flight).
@@ -40,7 +40,7 @@ use rustix::process::{setrlimit, Resource, Rlimit};
 
 /// secretd — the env-ctl control-plane secrets daemon (gRPC over a Unix-domain socket).
 ///
-/// With no flags it serves the control plane (the systemd `ExecStart` path). The one option is the
+/// With no flags it serves the Yazelix-owned control plane. The one option is the
 /// non-serving health probe used by the envctl manifest `verify` hook.
 #[derive(Parser)]
 #[command(
@@ -101,7 +101,7 @@ fn self_check() -> anyhow::Result<()> {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     // 2. Process hardening (FS-S4) is best-effort here exactly as in `serve` — a `setrlimit` or
-    // `mlockall` failure is logged, not fatal (systemd's LimitCORE/LimitMEMLOCK are authoritative),
+    // `mlockall` failure is logged, not fatal unless strict mode is selected,
     // so it never fails the self-check on its own. `require_mlock` strict mode is DELIBERATELY NOT
     // honored here: `--self-check` is a non-serving pre-flight, so a missing CAP_IPC_LOCK must not
     // fail the manifest `verify` predicate. The mlock outcome is therefore discarded.
@@ -375,23 +375,7 @@ async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
         }
     };
 
-    // READY=1 (FS — Type=notify): the UDS is bound, 0600, and the service stack is about to serve, so
-    // the daemon is now reachable by the owner. Telling systemd we are ready closes the crash loop:
-    // without this, `Type=notify` waits the full `TimeoutStartSec` (~90s), kills the "still starting"
-    // daemon, and `Restart=on-failure` storms. A no-op when `$NOTIFY_SOCKET` is unset (tests / a
-    // non-systemd run), so it is always safe to call. Best-effort: a notify failure must not abort a
-    // healthy daemon, so we log and serve regardless.
-    if let Err(e) = sd_notify::notify(false, &[sd_notify::NotifyState::Ready]) {
-        tracing::warn!(error = %e, "sd_notify READY failed (continuing to serve)");
-    }
-
     let result = server::serve_with_state(engine, owner_uid, listener, state, grpc_shutdown).await;
-
-    // STOPPING=1 on graceful shutdown so systemd does not race the teardown against a restart. No-op
-    // without `$NOTIFY_SOCKET`; best-effort.
-    if let Err(e) = sd_notify::notify(false, &[sd_notify::NotifyState::Stopping]) {
-        tracing::warn!(error = %e, "sd_notify STOPPING failed");
-    }
 
     // Wait for the relay proxy task to wind down under the shared shutdown before exiting.
     if let Some(handle) = proxy_handle {
@@ -573,10 +557,10 @@ impl MlockOutcome {
 /// plaintext / PEMs) — all allocated AFTER startup, once `Lock.Unlock` runs — can never reach swap
 /// (FS-S4). `MCL_FUTURE` is load-bearing: it covers those post-unlock allocations.
 ///
-/// Best-effort throughout: a `setrlimit` failure is logged, not fatal (the systemd unit's
-/// `LimitCORE`/`LimitMEMLOCK` are the authoritative defense-in-depth). `mlockall` is likewise
+/// Best-effort throughout: a `setrlimit` failure is logged, not fatal unless strict mode is
+/// selected. `mlockall` is likewise
 /// attempted best-effort and NEVER panics — it commonly fails `EPERM` (no `CAP_IPC_LOCK`) or
-/// `ENOMEM`; on failure the daemon CONTINUES (relying on `RLIMIT_CORE=0` + systemd `LimitMEMLOCK`),
+/// `ENOMEM`; on failure the daemon reports the missing Yazelix launch capability,
 /// emitting a metadata-only WARN. The returned [`MlockOutcome`] lets `serve` enforce the operator's
 /// `require_mlock` strict mode (fail-closed) AFTER config load; the syscall here stays best-effort.
 fn harden_process() -> MlockOutcome {
@@ -587,7 +571,7 @@ fn harden_process() -> MlockOutcome {
             maximum: Some(0),
         },
     ) {
-        tracing::warn!(error = %e, "could not set RLIMIT_CORE=0 (relying on systemd LimitCORE)");
+        tracing::warn!(error = %e, "could not set RLIMIT_CORE=0 in the Yazelix-owned process");
     }
     if let Err(e) = setrlimit(
         Resource::Memlock,
@@ -596,7 +580,7 @@ fn harden_process() -> MlockOutcome {
             maximum: None,
         },
     ) {
-        tracing::warn!(error = %e, "could not raise RLIMIT_MEMLOCK (relying on systemd LimitMEMLOCK)");
+        tracing::warn!(error = %e, "could not raise RLIMIT_MEMLOCK in the Yazelix-owned process");
     }
     mlock_all_pages()
 }
@@ -619,7 +603,7 @@ fn mlock_all_pages() -> MlockOutcome {
             errno,
             error = %err,
             "mlockall(MCL_CURRENT|MCL_FUTURE) failed; secret material may be swappable. \
-             Relying on RLIMIT_CORE=0 + systemd LimitMEMLOCK. Grant CAP_IPC_LOCK (or set \
+             Yazelix must grant CAP_IPC_LOCK or a sufficient process limit. Grant CAP_IPC_LOCK (or set \
              [security].require_mlock to refuse startup) to enforce the in-process lock."
         );
         MlockOutcome::Failed { errno }

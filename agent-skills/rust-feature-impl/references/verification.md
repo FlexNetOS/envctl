@@ -60,8 +60,7 @@ bash ci/gates/shape.sh    # code-shape: no native-roots/accept-invalid TLS; edge
   (`danger_accept_invalid_certs`, `rustls-tls-native-roots`, `use_native_tls`, …) and enforces
   edge-module isolation once the Phase-8 edge lands.
 - **`enable.sh`** asserts `crates/secretd/src/main.rs` is no longer the `todo!()` scaffold and
-  that an enabled systemd unit has a matching `secretd --self-check` surface in both manifest and
-  source.
+  that `secretd --self-check` remains available to the Yazelix stack readiness contract.
 
 ## 2. Cargo checks
 
