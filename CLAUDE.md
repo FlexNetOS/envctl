@@ -92,8 +92,6 @@ integration tests (`#[tokio::test]` for the async daemon path). The exact MSRV l
 ```bash
 bash ci/gates/no-c.sh           # supply-chain: forbids C in the trust boundary (see below)
 bash ci/gates/shape.sh          # code-shape invariants (native-roots, edge module)
-bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
-bash ci/gates/systemd-user-ownership.sh # sole META_ROOT unit owners + verified real-XDG bridges
 bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
 bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
 bash ci/gates/toolchain-contract.sh # exact Rust 1.89.0 MSRV lane + latest-nightly dev default
@@ -411,7 +409,7 @@ rtk gain --history      # View command history with savings
 rtk discover            # Analyze Claude Code sessions for missed RTK usage
 rtk proxy <cmd>         # Run command without filtering (for debugging)
 rtk init                # Add RTK instructions to CLAUDE.md
-rtk init --global       # Add RTK to /run/user/1001/yazelix/profile-runtime/claude/CLAUDE.md
+rtk init --global       # Add RTK to /home/flexnetos/meta/var/lib/claude/CLAUDE.md
 ```
 
 ## Token Savings Overview
@@ -481,13 +479,13 @@ This repository is listed under GitNexus **group(s): envctl-migration**. For cro
 
 ## Profile-owned active-tool state
 
-**Status (2026-07-21): applied.** The profile frontdoors and the envctl-owned
+**Status (2026-07-31): converged.** The profile frontdoors and the envctl-owned
 Nushell input now set `XDG_DATA_HOME` to `/home/flexnetos/meta/var/xdg-data` and
 `XDG_STATE_HOME` to `/home/flexnetos/meta/var/xdg-state`. These are TOOL scope only:
-`~/.config/environment.d/99z-session-restore.conf` deliberately keeps the SESSION-scope
-XDG roots on the real home, because the systemd user manager parents gnome-session and
-re-homing it there cost a login keyring on 2026-07-27. Disposable cache and Yazelix session state are
-fixed beneath `/run/user/1001/yazelix`. The ICM frontdoor independently fixes
+Desktop-session XDG roots remain outside the tool scope; envctl does not own or
+start a parallel local service manager. Yazelix owns all stack process state,
+cache, sockets, PIDs, and logs beneath
+`/home/flexnetos/meta/var/lib/yazelix/runtime`. The ICM frontdoor independently fixes
 its canonical corpus at `/home/flexnetos/meta/var/xdg-data/icm/memories.db`.
 
 The canonical bootstrap rows are committed only through

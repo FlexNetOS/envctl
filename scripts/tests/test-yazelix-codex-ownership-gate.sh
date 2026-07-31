@@ -19,9 +19,9 @@ for lifecycle in "$YAZELIX" "$CODEX" "$CLAUDE"; do
   fi
 done
 
-grep -Fq 'profile-runtime/codex' "$CODEX" \
-  || fail 'Codex volatile runtime is not explicit'
-grep -Fq 'profile-runtime/claude' "$CLAUDE" \
-  || fail 'Claude volatile runtime is not explicit'
+grep -Fq '/home/flexnetos/meta/var/lib/codex' "$CODEX" \
+  || fail 'Codex Yazelix-owned state is not explicit'
+grep -Fq '/home/flexnetos/meta/var/lib/claude' "$CLAUDE" \
+  || fail 'Claude Yazelix-owned state is not explicit'
 
 printf '%s\n' 'PASS: envctl cannot perform the Yazelix source-repository cutover'

@@ -28,13 +28,13 @@ The prompt is the specification. This skill is the compact execution controller.
 /home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/
 ```
 
-Project projections are `.codex/skills/agent-env-codex/` and `.claude/skills/agent-env-codex/`. The active materialization is `${CODEX_HOME:-/run/user/1001/yazelix/profile-runtime/codex}/skills/agent-env-codex/`. All must remain byte-identical to the durable source.
+Project projections are `.codex/skills/agent-env-codex/` and `.claude/skills/agent-env-codex/`. The active materialization is `${CODEX_HOME:-/home/flexnetos/meta/var/lib/codex}/skills/agent-env-codex/`. All must remain byte-identical to the durable source.
 
 Read `references/coverage-map.md` to navigate every controller and Phase 0-11 contract, `references/ownership-map.md` before editing, `references/runbook-cli-contract.md` when changing initialization, routing, automation, shell behavior, or hardware-aware validation, `references/yazelix-cli-plugin-policy.md` before any Yazelix/toolchain/plugin/add-on work, and `references/github-execution-policy.md` before any branch, commit, worktree, PR, CI, merge, or cleanup operation. Read `references/github-org-and-ccboard.md` before GitHub organization administration or ccboard/Codex/Claude integration. Read `references/bunx-and-github-ssh.md` before executing a JavaScript package or claiming personal/organization GitHub SSH access. For shell behavior, treat `~yazelix/nushell/config` and `~yazelix/nushell/scripts` as the configured owner surfaces; use Nu scripts when possible; Bash is already configured inside that Nushell/Yazelix runtime, so do not add separate bash wrappers, shell launchers, or parallel shell control paths. The coverage map never replaces the complete snapshot.
 
 ## Execute the rebuild or edit
 
-1. **Re-anchor.** Read the active `AGENTS.md` chain and `/run/user/1001/yazelix/profile-runtime/codex/RULES.md`. Fetch through RTK/Meta, verify the SSH remote, and work from a clean current Meta-managed envctl worktree based on current `origin/develop` or the repository's protected trunk.
+1. **Re-anchor.** Read the active `AGENTS.md` chain and `/home/flexnetos/meta/var/lib/codex/RULES.md`. Fetch through RTK/Meta, verify the SSH remote, and work from a clean current Meta-managed envctl worktree based on current `origin/develop` or the repository's protected trunk.
 2. **Archive.** Archive every existing target before modifying or replacing it. Never treat git history alone as the requested archive.
 3. **Load the whole specification.** Read `references/source-prompt.md` completely, then verify it against both repo prompt entrypoints. Read every file under `docs/runbook`, the relevant Yazelix docs, and the current `home/agent-env/codex-harness` tree. Build a compact source ledger.
 4. **Map the requested change across the whole harness.** Check Rust code, binaries, agents, teams, policies, rules, model catalog, prompt review, tests, agent-env inputs, repo projections, and profile/runtime frontdoors. Do not patch only the first visible file.

@@ -1,6 +1,7 @@
 //! Envctl-namespaced paths. In managed shells, config lives under
 //! `$META_ROOT/.config/env-ctl`, durable data/state under
-//! `$META_ROOT/var/lib/env-ctl`, and runtime sockets under `$XDG_RUNTIME_DIR`.
+//! `$META_ROOT/var/xdg-{data,state}/env-ctl`, and runtime sockets beneath the
+//! Yazelix-owned `$XDG_RUNTIME_DIR`.
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -26,13 +27,13 @@ impl Paths {
                 .unwrap_or(default)
         };
         let config = base("XDG_CONFIG_HOME", fallback_root.join(".config")).join("env-ctl");
-        let data = base("XDG_DATA_HOME", fallback_root.join("var/lib")).join("env-ctl");
-        let state = base("XDG_STATE_HOME", fallback_root.join("var/lib")).join("env-ctl");
-        let runtime = match std::env::var_os("XDG_RUNTIME_DIR") {
-            Some(r) if !r.is_empty() => PathBuf::from(r).join("env-ctl"),
-            None => state.clone(),
-            Some(_) => state.clone(),
-        };
+        let data = base("XDG_DATA_HOME", fallback_root.join("var/xdg-data")).join("env-ctl");
+        let state = base("XDG_STATE_HOME", fallback_root.join("var/xdg-state")).join("env-ctl");
+        let runtime = base(
+            "XDG_RUNTIME_DIR",
+            fallback_root.join("var/lib/yazelix/runtime/xdg"),
+        )
+        .join("env-ctl");
         Ok(Paths {
             config,
             data,
@@ -155,15 +156,15 @@ mod tests {
         );
         assert_eq!(
             p.data,
-            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl")
+            PathBuf::from("/home/real-user/Desktop/meta/var/xdg-data/env-ctl")
         );
         assert_eq!(
             p.state,
-            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl")
+            PathBuf::from("/home/real-user/Desktop/meta/var/xdg-state/env-ctl")
         );
         assert_eq!(
             p.runtime,
-            PathBuf::from("/home/real-user/Desktop/meta/var/lib/env-ctl")
+            PathBuf::from("/home/real-user/Desktop/meta/var/lib/yazelix/runtime/xdg/env-ctl")
         );
 
         restore_path_env(old);
@@ -178,13 +179,13 @@ mod tests {
         std::env::set_var("XDG_CONFIG_HOME", "/custom/config");
         std::env::set_var("XDG_DATA_HOME", "/custom/data");
         std::env::set_var("XDG_STATE_HOME", "/custom/state");
-        std::env::set_var("XDG_RUNTIME_DIR", "/run/user/1000");
+        std::env::set_var("XDG_RUNTIME_DIR", "/sandbox/yazelix/xdg");
 
         let p = Paths::resolve().expect("paths resolve from explicit XDG roots");
         assert_eq!(p.config, PathBuf::from("/custom/config/env-ctl"));
         assert_eq!(p.data, PathBuf::from("/custom/data/env-ctl"));
         assert_eq!(p.state, PathBuf::from("/custom/state/env-ctl"));
-        assert_eq!(p.runtime, PathBuf::from("/run/user/1000/env-ctl"));
+        assert_eq!(p.runtime, PathBuf::from("/sandbox/yazelix/xdg/env-ctl"));
 
         restore_path_env(old);
     }

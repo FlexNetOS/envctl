@@ -12,8 +12,8 @@
 - Synced skills are replaced from owning sources; do not hand-edit generated copies.
 - Claude configuration authority is the profile input at
   `/home/flexnetos/.nix-profile/share/yazelix/agent_configs/claude/settings.json.src`.
-  The profile-owned materializer projects it into the volatile
-  `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/claude/settings.json` runtime. Envctl
+  The profile-owned materializer projects it into the Yazelix-owned
+  `/home/flexnetos/meta/var/lib/claude/settings.json` state. Envctl
   validates both surfaces with `scripts/tests/test-agent-env-hooks.sh`; it owns neither.
 - Settings changes belong in the canonical `FlexNetOS/yazelix` source input and must
   pass that repository's materialization contract before a merged profile cutover.

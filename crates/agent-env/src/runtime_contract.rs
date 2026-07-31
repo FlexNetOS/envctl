@@ -19,6 +19,7 @@ use crate::{err, Result};
 const FOUNDATION_ELEMENT: &str = "lifeos_foundation_yzx";
 const FOUNDATION_PRIORITY: u64 = 5;
 const PROFILE_RELATIVE: &str = ".nix-profile";
+#[cfg(test)]
 const FRONTDOOR_NAME: &str = ".nix-profile";
 const HOST_NU_CONFIG_RELATIVE: &str = ".config/nushell/config.nu";
 const YAZELIX_NU_HOOK_RELATIVE: &str = ".config/yazelix/shell_nu.nu";
@@ -55,7 +56,6 @@ fn validate_yazelix_nushell_at(home: &Path, store_root: &Path) -> Result<()> {
             profile.display()
         )));
     }
-    reject_parallel_profile_frontdoors(home, &selector_text)?;
     let generation_target = resolve_profile_generation(
         profile.parent().expect("profile has parent"),
         &selector,
@@ -75,30 +75,8 @@ fn validate_yazelix_nushell_at(home: &Path, store_root: &Path) -> Result<()> {
     }
 
     validate_foundation_manifest(&profile_root, store_root)?;
-    validate_packaged_nushell(&profile_root)?;
+    validate_packaged_nushell(&profile_root, store_root)?;
     validate_editable_nushell_inputs(home)?;
-    Ok(())
-}
-
-fn reject_parallel_profile_frontdoors(home: &Path, selected: &str) -> Result<()> {
-    let entries = fs::read_dir(home).map_err(|source| {
-        err(format!(
-            "cannot inspect home for retired Nix profile frontdoors at {}: {source}",
-            home.display()
-        ))
-    })?;
-    for entry in entries {
-        let entry = entry.map_err(|source| err(format!("cannot read home entry: {source}")))?;
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        if name.starts_with(".nix-profile-") && name.ends_with("-link") && name != selected {
-            return Err(err(format!(
-                "parallel Nix profile generation remains at {}; only {} may select one generation",
-                entry.path().display(),
-                home.join(FRONTDOOR_NAME).display()
-            )));
-        }
-    }
     Ok(())
 }
 
@@ -249,7 +227,7 @@ fn validate_foundation_manifest(profile_root: &Path, store_root: &Path) -> Resul
     Ok(())
 }
 
-fn validate_packaged_nushell(profile_root: &Path) -> Result<()> {
+fn validate_packaged_nushell(profile_root: &Path, store_root: &Path) -> Result<()> {
     for relative in ["toolbin/nu", "bin/rtk", "toolbin/rtk", RTK_MODULE_RELATIVE] {
         require_regular_file(&profile_root.join(relative), "Yazelix profile runtime")?;
     }
@@ -273,7 +251,7 @@ fn validate_packaged_nushell(profile_root: &Path) -> Result<()> {
     let runtime_config = profile_root.join(PROFILE_NU_CONFIG_RELATIVE);
     require_regular_file(&runtime_config, "Yazelix packaged Nu config")?;
     let runtime_config_text = read_utf8(&runtime_config, "Yazelix packaged Nu config")?;
-    if !contains_active_line(&runtime_config_text, "use rtk_wrappers.nu *") {
+    if !imports_packaged_rtk_module(&runtime_config_text, store_root) {
         return Err(err(format!(
             "Yazelix packaged Nu config must import its native RTK module: {}",
             runtime_config.display()
@@ -294,6 +272,28 @@ fn validate_packaged_nushell(profile_root: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn imports_packaged_rtk_module(text: &str, store_root: &Path) -> bool {
+    text.lines()
+        .map(str::trim)
+        .filter(|line| !line.starts_with('#'))
+        .any(|line| {
+            if line == "use rtk_wrappers.nu *" {
+                return true;
+            }
+            let Some(path) = line
+                .strip_prefix("use \"")
+                .and_then(|value| value.strip_suffix("\" *"))
+            else {
+                return false;
+            };
+            let path = Path::new(path);
+            path.starts_with(store_root)
+                && path.file_name().is_some_and(|name| {
+                    name.to_string_lossy().ends_with("-rtk_wrappers.nu")
+                })
+        })
 }
 
 fn validate_editable_nushell_inputs(home: &Path) -> Result<()> {
@@ -445,17 +445,14 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn yazelix_contract_rejects_parallel_profile_generation() {
+    fn yazelix_contract_accepts_inactive_rollback_generation() {
         let (root, home, store) = fixture();
         symlink(
             store.join("fixture-profile"),
             home.join(".nix-profile-2-link"),
         )
         .unwrap();
-        let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
-        assert!(error
-            .to_string()
-            .contains("parallel Nix profile generation"));
+        validate_yazelix_nushell_at(&home, &store).unwrap();
         fs::remove_dir_all(root).unwrap();
     }
 

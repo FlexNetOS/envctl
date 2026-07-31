@@ -47,16 +47,19 @@ if ("HOME" in $env) and ("PATH" in $env) and (($env.PATH | describe) =~ "list") 
 
     $env.PATH = ($profile_bins | append $inherited | append $system_baseline | uniq)
 
-    let meta_root = ([$env.HOME "meta"] | path join)
-    let profile_data = ([$meta_root "var" "lib"] | path join)
-    let runtime_root = (($env.XDG_RUNTIME_DIR? | default "/run/user/1001") | path join "yazelix")
+    let meta_root = "/home/flexnetos/meta"
+    let profile_data = ($meta_root | path join "var" "xdg-data")
+    let profile_state = ($meta_root | path join "var" "xdg-state")
+    let runtime_root = ($meta_root | path join "var" "lib" "yazelix" "runtime")
+    let xdg_runtime = ($runtime_root | path join "xdg")
     let profile_cache = ($runtime_root | path join "volatile" "cache")
-    let yazelix_state = ($runtime_root | path join "profile-runtime" "yazelix")
-    for directory in [$profile_data $profile_cache $yazelix_state] {
+    let yazelix_state = ($runtime_root | path join "state")
+    for directory in [$profile_data $profile_state $xdg_runtime $profile_cache $yazelix_state] {
         mkdir $directory
     }
     $env.XDG_DATA_HOME = $profile_data
-    $env.XDG_STATE_HOME = $profile_data
+    $env.XDG_STATE_HOME = $profile_state
+    $env.XDG_RUNTIME_DIR = $xdg_runtime
     $env.XDG_CACHE_HOME = $profile_cache
     $env.YAZELIX_STATE_DIR = $yazelix_state
 }

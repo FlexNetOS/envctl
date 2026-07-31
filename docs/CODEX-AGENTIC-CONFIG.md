@@ -59,7 +59,7 @@ Sources were restricted to current OpenAI Codex documentation fetched on 2026-06
 
 ## Operational notes
 
-- Keep credentials, provider redirects, and private auth in `/run/user/1001/yazelix/profile-runtime/codex/config.toml`; project config
+- Keep credentials, provider redirects, and private auth in `/home/flexnetos/meta/var/lib/codex/config.toml`; project config
   should define repo-local behavior only.
 - Background app-server / remote-control host setup is outside this repo-local config. Use the Codex
   app/remote-connection setup on the host when continuous app/mobile control is desired.

@@ -10,7 +10,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const ACTIVE_CATALOG: &str = "/run/user/1001/yazelix/profile-runtime/codex/model-catalog.json";
+const ACTIVE_CATALOG: &str = "/home/flexnetos/meta/var/lib/codex/model-catalog.json";
 
 const REQUIRED_CATALOG_MODELS: &[&str] = &[
     "tencent/hy3:free",

@@ -701,11 +701,11 @@ fn main() -> Result<()> {
         row(
             "profiles",
             "CODEX_HOME envctl profile files",
-            "/run/user/1001/yazelix/profile-runtime/codex/envctl-*.config.toml".to_string(),
+            "/home/flexnetos/meta/var/lib/codex/envctl-*.config.toml".to_string(),
             "codex -p <profile> debug prompt-input",
             pass_fail(
-                exists("/run/user/1001/yazelix/profile-runtime/codex/envctl-openrouter-gpt.config.toml")
-                    && exists("/run/user/1001/yazelix/profile-runtime/codex/envctl-browser-computer.config.toml"),
+                exists("/home/flexnetos/meta/var/lib/codex/envctl-openrouter-gpt.config.toml")
+                    && exists("/home/flexnetos/meta/var/lib/codex/envctl-browser-computer.config.toml"),
             ),
         ),
         row(
@@ -728,7 +728,7 @@ fn main() -> Result<()> {
         row(
             "OpenRouter compatibility",
             "OpenRouter Responses OpenAPI proof plus shim/catalog/probe default tencent/hy3:free; authenticated generation is account/env gated",
-            "/run/user/1001/yazelix/profile-runtime/codex/envctl-openrouter-gpt.config.toml".to_string(),
+            "/home/flexnetos/meta/var/lib/codex/envctl-openrouter-gpt.config.toml".to_string(),
             "codex-harness-openrouter-shim probe",
             openrouter_result,
         ),
@@ -752,17 +752,17 @@ fn main() -> Result<()> {
         row(
             "browser use",
             "feature flag and browser/computer gate",
-            "/run/user/1001/yazelix/profile-runtime/codex/envctl-browser.config.toml".to_string(),
+            "/home/flexnetos/meta/var/lib/codex/envctl-browser.config.toml".to_string(),
             "codex-harness-browser-computer verify",
-            pass_fail(exists("/run/user/1001/yazelix/profile-runtime/codex/envctl-browser.config.toml")),
+            pass_fail(exists("/home/flexnetos/meta/var/lib/codex/envctl-browser.config.toml")),
         ),
         row(
             "computer use",
             "feature flag and one-agent policy",
-            "/run/user/1001/yazelix/profile-runtime/codex/envctl-computer-use.config.toml".to_string(),
+            "/home/flexnetos/meta/var/lib/codex/envctl-computer-use.config.toml".to_string(),
             "codex-harness-browser-computer verify",
             pass_fail(exists(
-                "/run/user/1001/yazelix/profile-runtime/codex/envctl-computer-use.config.toml",
+                "/home/flexnetos/meta/var/lib/codex/envctl-computer-use.config.toml",
             )),
         ),
         row(
@@ -775,9 +775,9 @@ fn main() -> Result<()> {
         row(
             "statusline/timers",
             "native status config plus harness overlay",
-            "/run/user/1001/yazelix/profile-runtime/codex/config.toml".to_string(),
+            "/home/flexnetos/meta/var/lib/codex/config.toml".to_string(),
             "codex-harness-status",
-            pass_fail(exists("/run/user/1001/yazelix/profile-runtime/codex/config.toml")),
+            pass_fail(exists("/home/flexnetos/meta/var/lib/codex/config.toml")),
         ),
         row(
             "bad-behavior counter",
@@ -813,9 +813,9 @@ fn main() -> Result<()> {
         row(
             "MCP",
             "active Codex MCP inventory",
-            "/run/user/1001/yazelix/profile-runtime/codex/config.toml".to_string(),
+            "/home/flexnetos/meta/var/lib/codex/config.toml".to_string(),
             "codex mcp list",
-            pass_fail(exists("/run/user/1001/yazelix/profile-runtime/codex/config.toml")),
+            pass_fail(exists("/home/flexnetos/meta/var/lib/codex/config.toml")),
         ),
         row(
             "skills",

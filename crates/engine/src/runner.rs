@@ -505,14 +505,9 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
         "XDG_CACHE_HOME".to_string(),
         layout.xdg_cache_home().display().to_string(),
     ));
-    // User-systemd is host session IPC, not an install destination. Derive its canonical address
-    // from the invoking uid instead of inheriting caller-selected bus/runtime paths; components
-    // that manage user units continue to reach this user's manager after env_clear.
-    let host_runtime = format!("/run/user/{}", rustix::process::geteuid().as_raw());
-    env.push(("XDG_RUNTIME_DIR".to_string(), host_runtime.clone()));
     env.push((
-        "DBUS_SESSION_BUS_ADDRESS".to_string(),
-        format!("unix:path={host_runtime}/bus"),
+        "XDG_RUNTIME_DIR".to_string(),
+        layout.xdg_runtime_dir().display().to_string(),
     ));
 
     let profile_root = std::path::PathBuf::from(&real_home).join(".nix-profile");
@@ -810,11 +805,21 @@ mod tests {
             env_value(&env, "XDG_CONFIG_HOME"),
             "/workspace/meta/.config"
         );
-        assert_eq!(env_value(&env, "XDG_DATA_HOME"), "/workspace/meta/var/lib");
-        assert_eq!(env_value(&env, "XDG_STATE_HOME"), "/workspace/meta/var/lib");
+        assert_eq!(
+            env_value(&env, "XDG_DATA_HOME"),
+            "/workspace/meta/var/xdg-data"
+        );
+        assert_eq!(
+            env_value(&env, "XDG_STATE_HOME"),
+            "/workspace/meta/var/xdg-state"
+        );
         assert_eq!(
             env_value(&env, "XDG_CACHE_HOME"),
-            "/workspace/meta/var/cache"
+            "/workspace/meta/var/lib/yazelix/runtime/cache"
+        );
+        assert_eq!(
+            env_value(&env, "XDG_RUNTIME_DIR"),
+            "/workspace/meta/var/lib/yazelix/runtime/xdg"
         );
         assert!(!entries.contains(&"/usr/bin"));
         assert!(!entries.contains(&"/home/alice/.cargo/bin"));
@@ -1222,13 +1227,23 @@ mod tests {
         assert_eq!(env_value(&env, "META_ROOT"), "/trusted/meta");
         assert!(!env.iter().any(|(key, _)| key == "CARGO_HOME"));
         assert!(!env.iter().any(|(key, _)| key == "RUSTUP_HOME"));
-        assert_eq!(env_value(&env, "XDG_CACHE_HOME"), "/trusted/meta/var/cache");
-        let expected_runtime = format!("/run/user/{}", rustix::process::geteuid().as_raw());
-        assert_eq!(env_value(&env, "XDG_RUNTIME_DIR"), expected_runtime);
         assert_eq!(
-            env_value(&env, "DBUS_SESSION_BUS_ADDRESS"),
-            format!("unix:path={expected_runtime}/bus")
+            env_value(&env, "XDG_DATA_HOME"),
+            "/trusted/meta/var/xdg-data"
         );
+        assert_eq!(
+            env_value(&env, "XDG_STATE_HOME"),
+            "/trusted/meta/var/xdg-state"
+        );
+        assert_eq!(
+            env_value(&env, "XDG_CACHE_HOME"),
+            "/trusted/meta/var/lib/yazelix/runtime/cache"
+        );
+        assert_eq!(
+            env_value(&env, "XDG_RUNTIME_DIR"),
+            "/trusted/meta/var/lib/yazelix/runtime/xdg"
+        );
+        assert!(!env.iter().any(|(key, _)| key == "DBUS_SESSION_BUS_ADDRESS"));
         assert_eq!(
             env_value(&env, "PATH"),
             "/trusted/home/.nix-profile/toolbin:/trusted/home/.nix-profile/bin"

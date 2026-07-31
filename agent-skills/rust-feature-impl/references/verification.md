@@ -44,12 +44,11 @@ FAIL, fail-closed — never read an empty/errored result as "clean."
 
 ---
 
-## 1. The three CI gates
+## 1. The core CI gates
 
 ```bash
 bash ci/gates/no-c.sh     # supply chain: no C in the trust boundary; one ring-only rustls
 bash ci/gates/shape.sh    # code-shape: no native-roots/accept-invalid TLS; edge isolation
-bash ci/gates/enable.sh   # secretd systemd-unit enable invariant
 ```
 
 - **`no-c.sh`** parses the resolved `cargo metadata` graph and fails CLOSED if any of

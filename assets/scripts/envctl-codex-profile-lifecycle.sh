@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Validate the profile-owned Codex runtime and its volatile configuration.
+# Validate the profile-owned Codex binary and Yazelix-owned durable state.
 # This script never installs, wraps, copies, or switches Codex.
 set -euo pipefail
 export PATH=/usr/bin:/bin
@@ -13,7 +13,8 @@ phase="${1:-verify}"
 real_home="${ENVCTL_REAL_HOME:-${HOME:-}}"
 [ -n "$real_home" ] || die "ENVCTL_REAL_HOME or HOME is required"
 profile="$real_home/.nix-profile"
-runtime_root="${XDG_RUNTIME_DIR:-/run/user/$(/usr/bin/id -u)}/yazelix/profile-runtime/codex"
+runtime_root="${CODEX_HOME:-/home/flexnetos/meta/var/lib/codex}"
+xdg_runtime="${XDG_RUNTIME_DIR:-/home/flexnetos/meta/var/lib/yazelix/runtime/xdg}"
 store_root="${ENVCTL_NIX_STORE_ROOT:-/nix/store}"
 
 validate_codex() {
@@ -33,7 +34,7 @@ validate_codex() {
   done
 
   HOME="$real_home" CODEX_HOME="$runtime_root" \
-    XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(/usr/bin/id -u)}" \
+    XDG_RUNTIME_DIR="$xdg_runtime" \
     PATH="$profile/toolbin:$profile/bin" \
     /usr/bin/timeout --kill-after=2s 20s "$bin" --version >/dev/null
 
@@ -47,7 +48,7 @@ case "$phase" in
     ;;
   install|fix)
     validate_codex || die "Codex installation belongs to merged FlexNetOS/yazelix origin/main"
-    printf 'codex-profile: profile runtime already satisfies the envctl contract\n'
+    printf 'codex-profile: Yazelix-owned state already satisfies the envctl contract\n'
     ;;
   remove)
     printf 'codex-profile: nothing removed; envctl does not own profile Codex\n'

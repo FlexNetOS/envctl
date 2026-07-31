@@ -234,7 +234,7 @@ path_entries = ["~/.cargo/bin"]
 file = "~/.bashrc"
 marker = "env-ctl"     # engine writes "BEGIN env-ctl (added by envctl)" / "END env-ctl" guard lines
 content = '''
-export SECRETCTL_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/env-ctl/control.sock"
+export SECRETCTL_SOCK="${XDG_RUNTIME_DIR:?Yazelix must set XDG_RUNTIME_DIR}/env-ctl/control.sock"
 '''
 
 [[component.wiring.systemd_user]]

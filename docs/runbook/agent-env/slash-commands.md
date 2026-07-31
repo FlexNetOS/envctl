@@ -58,7 +58,7 @@ envctl rewrites each command into the format expected by the destination agent:
 
 | Agent | Global directory | Project directory | Format |
 | --- | --- | --- | --- |
-| claude-code | `/run/user/1001/yazelix/profile-runtime/claude/commands/` | `.claude/commands/` | Markdown + frontmatter |
+| claude-code | `/home/flexnetos/meta/var/lib/claude/commands/` | `.claude/commands/` | Markdown + frontmatter |
 | cursor | — | `.cursor/commands/` | Markdown (body only) |
 | windsurf | `~/.codeium/windsurf/global_workflows/` | `.windsurf/workflows/` | Markdown + frontmatter |
 | cline | — | `.clinerules/workflows/` | Markdown (body only) |
@@ -70,7 +70,7 @@ envctl rewrites each command into the format expected by the destination agent:
 | augment | `~/.augment/commands/` | `.augment/commands/` | Markdown + frontmatter |
 | junie | — | `.junie/commands/` | Markdown + frontmatter |
 | openhands | — | `.openhands/microagents/` | Markdown + frontmatter |
-| codex | `/run/user/1001/yazelix/profile-runtime/codex/prompts/` | — | Markdown + frontmatter |
+| codex | `/home/flexnetos/meta/var/lib/codex/prompts/` | — | Markdown + frontmatter |
 | gemini-cli | `~/.gemini/commands/` | `.gemini/commands/` | TOML |
 
 Agents not listed (antigravity, aider, warp, replit, openclaw, trae, kiro-cli, goose) are
