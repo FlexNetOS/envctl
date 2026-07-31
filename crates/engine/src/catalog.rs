@@ -4263,8 +4263,6 @@ fn infer_file_kind(manifest_dir: &Path, path: &Path, rel: &str) -> &'static str 
         "envctl_home_nushell_config"
     } else if rel.starts_with("home/.config/rtk/") {
         "envctl_home_rtk_config"
-    } else if rel.starts_with("home/.config/systemd/user/") {
-        "envctl_home_systemd_user_unit"
     } else if rel.starts_with("home/.config/yazelix/") {
         "envctl_home_yazelix_config"
     } else if rel == "settings_default.jsonc" {
@@ -4364,7 +4362,6 @@ fn setting_scope(file_kind: &str) -> &'static str {
         "envctl_home_kasetto_config" => "agent_env",
         "envctl_home_nushell_config" | "envctl_home_nushell_path" => "shell",
         "envctl_home_rtk_config" => "tooling",
-        "envctl_home_systemd_user_unit" => "systemd",
         "envctl_home_yazelix_config" => "yazelix",
         "secretd_config" | "secrets_env_schema" | "secrets_proto" => "secrets",
         "yazelix_settings_default"
@@ -4391,7 +4388,6 @@ fn setting_precedence(file_kind: &str) -> u32 {
         "envctl_home_kasetto_config" => 83,
         "envctl_home_nushell_config" => 83,
         "envctl_home_rtk_config" => 84,
-        "envctl_home_systemd_user_unit" => 81,
         "envctl_home_yazelix_config" => 88,
         "envctl_home_nushell_path" => 82,
         "secretd_config" => 55,
@@ -4437,7 +4433,6 @@ fn envctl_home_owner_component(rel: &str) -> Option<&'static str> {
         || rel.starts_with("home/.config/ghostty/")
         || rel.starts_with("home/.config/kasetto/")
         || rel.starts_with("home/.config/nushell/")
-        || rel.starts_with("home/.config/systemd/user/")
         || rel.starts_with("home/.config/yazelix/")
     {
         Some("home-config-links")
@@ -4465,8 +4460,6 @@ fn envctl_home_frontdoor_artifact(rel: &str) -> &'static str {
         "envctl_managed_runtime_layout"
     } else if rel == "home/.config/nushell/profile-path.nu" {
         "envctl_managed_shell_overlay"
-    } else if rel.starts_with("home/.config/systemd/user/") {
-        "envctl_managed_systemd_user_unit"
     } else if rel == "home/.gitconfig" {
         "envctl_managed_git_config"
     } else {
@@ -5363,10 +5356,6 @@ name = "nix-portable"
                 && row.path_kind == "envctl_home_rtk_frontdoor"
                 && row.owner_component.as_deref() == Some("rtk-config-links")
                 && row.artifact_kind == "envctl_managed_runtime_config"
-        }));
-        assert!(!snapshot.paths.iter().any(|row| {
-            row.owner_component.as_deref() == Some("home-config-links")
-                && row.artifact_kind == "envctl_managed_systemd_user_unit"
         }));
     }
 

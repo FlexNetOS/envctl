@@ -444,7 +444,7 @@ enum Cmd {
         /// refactor=ai: extra instruction appended to the goal prompt.
         #[arg(long)]
         ai_instruction: Option<String>,
-        /// Treat as a daemon (reserved for systemd --user wiring).
+        /// Mark as a long-running process that must be composed by Yazelix.
         #[arg(long)]
         daemon: bool,
         #[arg(long)]
@@ -4558,7 +4558,7 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run_replay(cmd: ReplayModeCmd, json: bool) -> anyhow::Result<()> {
+fn run_replay(cmd: ReplayModeCmd, _json: bool) -> anyhow::Result<()> {
     let db = MigrationDb::open(&MigrationDb::default_path())?;
     let (request, verify_files) = match cmd {
         ReplayModeCmd::DryRun {
@@ -4604,11 +4604,7 @@ fn run_replay(cmd: ReplayModeCmd, json: bool) -> anyhow::Result<()> {
     };
 
     let result = db.replay_request(request, verify_files)?;
-    if json {
-        println!("{}", serde_json::to_string_pretty(&result)?);
-    } else {
-        println!("{}", serde_json::to_string_pretty(&result)?);
-    }
+    println!("{}", serde_json::to_string_pretty(&result)?);
     if !matches!(result.status, ReplayResultStatus::Pass) {
         std::process::exit(1);
     }

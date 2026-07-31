@@ -76,6 +76,6 @@ command = "bash"
 args = ["-lc", "export CARGO_HOME=\"$META_ROOT/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall grit || true"]
 
 # ---- WIRING: $META_ROOT/.toolchains/cargo/bin is already on PATH via other components; declared so reset can
-# ---- reason about it reversibly. No shell_rc / systemd / data_paths — grit is a plain binary.
+# ---- reason about it reversibly. No shell_rc or data_paths — grit is a plain binary.
 [component.wiring]
 path_entries = ["$META_ROOT/.toolchains/cargo/bin"]

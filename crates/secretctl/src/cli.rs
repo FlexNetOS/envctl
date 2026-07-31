@@ -31,12 +31,12 @@ pub enum Cmd {
         #[arg(long = "client-token")]
         client_token: std::path::PathBuf,
     },
-    /// Internal bounded readiness barrier for the envctl-owned sqld user service.
-    /// It binds the listener to systemd's MainPID, proves auth is enforced, and then proves the
-    /// managed bearer can execute SQL. The bearer is read only from a 0600 file.
+    /// Internal bounded readiness barrier for Yazelix-owned sqld.
+    /// It binds the listener to the exact supervisor-recorded process identity, proves auth is
+    /// enforced, and then proves the managed bearer can execute SQL.
     #[command(name = "internal-sqld-readiness-probe", hide = true)]
     InternalSqldReadinessProbe {
-        /// systemd's MainPID for sqld.service.
+        /// Exact sqld process ID recorded by the Yazelix supervisor.
         #[arg(long)]
         pid: u32,
         /// Canonical envctl-managed sqld payload expected at /proc/PID/exe.

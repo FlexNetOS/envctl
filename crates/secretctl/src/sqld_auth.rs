@@ -68,10 +68,9 @@ pub(crate) fn bootstrap(public_key: &Path, client_token: &Path) -> anyhow::Resul
     Ok(())
 }
 
-/// Block until systemd's exact sqld MainPID owns the loopback listener and enforces the managed
-/// JWT pair. This is the `ExecStartPost=` barrier for `sqld.service`; systemd includes its successful
-/// completion in `Before=`/`After=` ordering, so dependent secretd cannot start against a stale or
-/// foreign listener.
+/// Block until Yazelix's exact recorded sqld process owns the loopback listener and enforces the
+/// managed JWT pair. The supervisor must complete this proof before starting dependent services,
+/// so secretd cannot start against a stale or foreign listener.
 ///
 /// The bearer is accepted only through `client_token`, whose ownership/mode are checked before it is
 /// read. It is never placed in argv, the environment, or an error/log message.
@@ -98,7 +97,7 @@ pub(crate) fn readiness_probe(request: ReadinessProbeRequest<'_>) -> anyhow::Res
         timeout,
     } = request;
     if pid == 0 {
-        bail!("sqld readiness probe requires a nonzero MainPID");
+        bail!("sqld readiness probe requires a nonzero supervisor-recorded PID");
     }
     if port == 0 {
         bail!("sqld readiness probe requires a nonzero loopback port");
@@ -119,22 +118,22 @@ pub(crate) fn readiness_probe(request: ReadinessProbeRequest<'_>) -> anyhow::Res
     verify_self_digest(helper_digest)?;
 
     let start_time = process_start_time(pid)
-        .with_context(|| format!("capturing sqld MainPID {pid} identity"))?;
+        .with_context(|| format!("capturing sqld process {pid} identity"))?;
     let deadline = Instant::now()
         .checked_add(timeout)
         .ok_or_else(|| anyhow::anyhow!("sqld readiness timeout overflow"))?;
-    // Type=exec may start ExecStartPost while the managed shell frontdoor is completing its final
-    // exec. Do not touch the bearer or network until /proc/MainPID/exe is the exact managed inode
+    // The launcher may record its child before the managed frontdoor completes its final exec. Do
+    // not touch the bearer or network until /proc/PID/exe is the exact managed inode
     // and the bytes read from that open proc handle match a pinned release digest.
     let executable_identity = loop {
         if process_start_time(pid).ok().as_deref() != Some(start_time.as_str()) {
-            bail!("sqld MainPID {pid} exited or changed identity before payload validation");
+            bail!("sqld process {pid} exited or changed identity before payload validation");
         }
         match verify_process_executable(pid, expected_executable, expected_sha256, expected_mode)? {
             Some(identity) => break identity,
             None if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(100)),
             None => bail!(
-                "sqld readiness timed out before MainPID {pid} exec'd the pinned managed payload"
+                "sqld readiness timed out before process {pid} exec'd the pinned managed payload"
             ),
         }
     };
@@ -142,7 +141,7 @@ pub(crate) fn readiness_probe(request: ReadinessProbeRequest<'_>) -> anyhow::Res
     let address = SocketAddrV4::new(Ipv4Addr::LOCALHOST, port);
     loop {
         if process_start_time(pid).ok().as_deref() != Some(start_time.as_str()) {
-            bail!("sqld MainPID {pid} exited or changed identity before readiness");
+            bail!("sqld process {pid} exited or changed identity before readiness");
         }
         let current_identity =
             verify_process_executable(pid, expected_executable, expected_sha256, expected_mode)?;
@@ -151,7 +150,7 @@ pub(crate) fn readiness_probe(request: ReadinessProbeRequest<'_>) -> anyhow::Res
                 Ok(true) => match authenticate_once(address, token.as_str()) {
                     Ok(()) => {
                         // Close the response/identity race: success belongs to the same process and
-                        // listening socket that systemd named when ExecStartPost began.
+                        // listening socket that the Yazelix supervisor recorded at launch.
                         let still_same = process_start_time(pid).ok().as_deref()
                             == Some(start_time.as_str())
                             && verify_process_executable(
@@ -167,16 +166,16 @@ pub(crate) fn readiness_probe(request: ReadinessProbeRequest<'_>) -> anyhow::Res
                         if still_same {
                             return Ok(());
                         }
-                        bail!("sqld MainPID/listener identity changed during the auth proof");
+                        bail!("sqld process/listener identity changed during the auth proof");
                     }
                     Err(AuthAttemptError::NotReady(message)) => message,
                     Err(AuthAttemptError::Refused(error)) => return Err(error),
                 },
-                Ok(false) => format!("sqld MainPID {pid} does not own 127.0.0.1:{port}"),
+                Ok(false) => format!("sqld process {pid} does not own 127.0.0.1:{port}"),
                 Err(error) => error.to_string(),
             }
         } else {
-            format!("sqld MainPID {pid} executable identity changed after validation")
+            format!("sqld process {pid} executable identity changed after validation")
         };
 
         if Instant::now() >= deadline {
@@ -577,7 +576,7 @@ fn verify_process_executable(
     let linked = match fs::read_link(&proc_path) {
         Ok(linked) => linked,
         // Ubuntu's Yama policy can deny a sibling service's /proc/PID/exe link even when both
-        // processes have the same uid. The systemd unit still supplies the exact MainPID; fall
+        // processes have the same uid. Yazelix still supplies the exact recorded PID; fall
         // back to its NUL-delimited argv[0] and the owned immutable payload bytes rather than
         // making a healthy loopback daemon impossible to activate on that host policy.
         Err(error) if error.kind() == io::ErrorKind::PermissionDenied => {
@@ -590,29 +589,29 @@ fn verify_process_executable(
         }
         Err(error) => {
             return Err(error)
-                .with_context(|| format!("reading sqld MainPID {pid} executable link"));
+                .with_context(|| format!("reading sqld process {pid} executable link"));
         }
     };
     if linked.to_string_lossy().ends_with(" (deleted)") {
-        bail!("sqld MainPID {pid} executable was replaced after start");
+        bail!("sqld process {pid} executable was replaced after start");
     }
     let linked_canonical = linked
         .canonicalize()
-        .with_context(|| format!("canonicalizing sqld MainPID {pid} executable"))?;
+        .with_context(|| format!("canonicalizing sqld process {pid} executable"))?;
     if linked_canonical != expected_canonical {
         return Ok(None);
     }
 
     let mut running = File::open(&proc_path)
-        .with_context(|| format!("opening sqld MainPID {pid} executable handle"))?;
+        .with_context(|| format!("opening sqld process {pid} executable handle"))?;
     let running_metadata = running
         .metadata()
-        .with_context(|| format!("inspecting sqld MainPID {pid} executable handle"))?;
+        .with_context(|| format!("inspecting sqld process {pid} executable handle"))?;
     if !running_metadata.is_file()
         || running_metadata.dev() != expected_metadata.dev()
         || running_metadata.ino() != expected_metadata.ino()
     {
-        bail!("sqld MainPID {pid} executable inode differs from the managed payload path");
+        bail!("sqld process {pid} executable inode differs from the managed payload path");
     }
     let actual = sha256_reader(&mut running, "running sqld payload")?;
     if !expected_sha256.iter().any(|expected| expected == &actual) {
@@ -631,19 +630,19 @@ fn verify_process_commandline(
     expected_sha256: &[String],
 ) -> anyhow::Result<Option<ProcessExecutableIdentity>> {
     let commandline = fs::read(format!("/proc/{pid}/cmdline"))
-        .with_context(|| format!("reading sqld MainPID {pid} command line"))?;
+        .with_context(|| format!("reading sqld process {pid} command line"))?;
     let first_argument = commandline
         .split(|byte| *byte == 0)
         .next()
         .filter(|argument| !argument.is_empty())
         .ok_or_else(|| {
-            anyhow::anyhow!("sqld MainPID {pid} has no executable command-line argument")
+            anyhow::anyhow!("sqld process {pid} has no executable command-line argument")
         })?;
     let commandline_path =
         Path::new(std::str::from_utf8(first_argument).context("sqld command line is not UTF-8")?)
             .canonicalize()
             .with_context(|| {
-                format!("canonicalizing sqld MainPID {pid} command-line executable")
+                format!("canonicalizing sqld process {pid} command-line executable")
             })?;
     if commandline_path != expected_canonical {
         return Ok(None);
@@ -1338,7 +1337,7 @@ fn pid_owns_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
     let mut socket_inodes = HashSet::new();
     let mut fd_links_denied = false;
     for entry in fs::read_dir(format!("/proc/{pid}/fd"))
-        .with_context(|| format!("reading sqld MainPID {pid} file descriptors"))?
+        .with_context(|| format!("reading sqld process {pid} file descriptors"))?
     {
         let Ok(entry) = entry else { continue };
         let target = match fs::read_link(entry.path()) {
@@ -1361,7 +1360,7 @@ fn pid_owns_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
     if socket_inodes.is_empty() {
         // Yama may hide sibling-process fd links while still exposing the process's network
         // namespace table. A successful sqld bind is exclusive for this loopback port, so the
-        // exact systemd MainPID plus its command-line identity and listener table remain the
+        // exact Yazelix-recorded PID plus its command-line identity and listener table remain the
         // strongest proof available under that kernel policy.
         return if fd_links_denied {
             process_has_loopback_listener(pid, port)
@@ -1371,13 +1370,13 @@ fn pid_owns_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
     }
 
     let tcp = fs::read_to_string(format!("/proc/{pid}/net/tcp"))
-        .with_context(|| format!("reading sqld MainPID {pid} TCP table"))?;
+        .with_context(|| format!("reading sqld process {pid} TCP table"))?;
     listener_table_contains_port(&tcp, port, &socket_inodes)
 }
 
 fn process_has_loopback_listener(pid: u32, port: u16) -> anyhow::Result<bool> {
     let tcp = fs::read_to_string(format!("/proc/{pid}/net/tcp"))
-        .with_context(|| format!("reading sqld MainPID {pid} TCP table"))?;
+        .with_context(|| format!("reading sqld process {pid} TCP table"))?;
     listener_table_contains_port(&tcp, port, &HashSet::new())
 }
 
@@ -2386,7 +2385,7 @@ mod tests {
             timeout: Duration::from_millis(1),
         })
         .unwrap_err();
-        assert!(error.to_string().contains("timed out before MainPID"));
+        assert!(error.to_string().contains("timed out before process"));
         assert!(!missing_token.exists());
         fs::remove_dir_all(dir).unwrap();
     }

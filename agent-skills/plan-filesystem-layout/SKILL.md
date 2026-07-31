@@ -49,9 +49,9 @@ Write `findings/filesystem-layout-<T>.md` with:
   accepted surface; otherwise mark `DRIFT`.
 - **No mixed semantics.** Do not mix cache/state/config/log/runtime/generated files in source/doc/test
   directories unless the repo already documents that surface and the verifier confirms it.
-- **No unmanaged global writes.** `/usr/local`, `$HOME`, `~/.config`, user-bin trees, `/etc`, `/var`, and
-  systemd surfaces are PROPOSE/OWNER-WALL unless envctl owns the component and has an apply/preview,
-  lock, rollback, and parity story.
+- **No unmanaged global writes.** `/usr/local`, `$HOME`, `~/.config`, user-bin trees, `/etc`, and `/var`
+  are `DRIFT` unless they are explicit Meta payload projections. Service-manager ownership is always
+  `DRIFT`: Yazelix is the sole runtime and its absolute profile/payload paths are mandatory.
 - **Compatibility is not ownership.** A legacy path can be `LEGACY-COMPAT`, but the plan must name the
   canonical target path and migration/removal gate.
 - **Read-only planning.** The planning loop maps and specifies tests/gates; Feature Forge implements

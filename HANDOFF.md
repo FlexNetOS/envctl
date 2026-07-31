@@ -155,5 +155,5 @@ cargo run -p envctl -- agent list
   see `.handoff/loop/rust-port/parity-ledger.md` for the 102/115 parity-verified
   absorption record).
 - From `docs/KASETTO-FEATURES.md`: universal `--json` on every verb (already true
-  for agent verbs); a GUI graph tab; shell-completions install; systemd `--user`
-  daemon units; live add-repo build streaming into the GUI.
+  for agent verbs); a GUI graph tab; shell-completions install; live add-repo build
+  streaming into the GUI. Runtime daemons remain exclusively Yazelix-owned.

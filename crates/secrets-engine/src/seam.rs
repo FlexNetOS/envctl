@@ -154,7 +154,7 @@ pub trait UsbProbe: Send + Sync {
 /// pure-Rust HTTPS call** (ring-only `rustls`, already in the resolved graph) to the Seed over the
 /// USB link-local interface, validating the Seed's TLS against the **pinned Cognitum CA** — no
 /// `ssh`, no `known_hosts`, no agent, no `$HOME` access, so the daemon's Seed path works unchanged
-/// under the `env-ctl.service` systemd sandbox AND the no-C trust-boundary gate stays green. Any
+/// under the Yazelix-owned process boundary AND the no-C trust-boundary gate stays green. Any
 /// failure → `None` (fail-closed).
 pub struct RealUsbProbe;
 
@@ -174,7 +174,7 @@ impl UsbProbe for RealUsbProbe {
 /// none of it. See `PLAN-cognitum-seed-envctl-vault-factor.md` (meta root) for the design + spike
 /// evidence.
 ///
-/// # Transport (systemd-sandbox-safe)
+/// # Transport (Yazelix-runtime-safe)
 /// The Seed is reached by a **direct, blocking, pure-Rust HTTPS client** (`rustls`, ring-only —
 /// already in the resolved graph, so the no-C gate stays green). The server's TLS is validated
 /// against the **pinned Cognitum CA only** (loaded from `ENVCTL_SEED_CA`; frozen-roots discipline

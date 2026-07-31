@@ -514,6 +514,7 @@ pub struct ComponentState {
 /// reset, reconciled by auto-fix. Mirrors the wizard's guarded ~/.bashrc blocks,
 /// .desktop autostarts, and PATH edits.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Wiring {
     #[serde(default)]
     pub path_entries: Vec<String>,
@@ -521,8 +522,6 @@ pub struct Wiring {
     pub shell_rc: Vec<ShellRcBlock>,
     #[serde(default)]
     pub desktop_entries: Vec<DesktopEntry>,
-    #[serde(default)]
-    pub systemd_user: Vec<SystemdUnit>,
     // ---- Phase 3: system-scope (sudo + timestamped backup before clobber).
     // Struct order = apply() order; revert() walks the reverse-safe order. ----
     #[serde(default)]
@@ -606,14 +605,6 @@ pub struct DesktopEntry {
     pub content: String,
     #[serde(default)]
     pub one_shot: bool,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SystemdUnit {
-    pub name: String,
-    pub content: String,
-    #[serde(default)]
-    pub enable: bool,
 }
 
 /// What to run: one phase across a set of targets (empty = the whole roster).
@@ -886,5 +877,28 @@ impl AiAgent {
             AiAgent::Gemini => vec!["-p".into(), prompt.into()],
             AiAgent::Kimi => vec!["-p".into(), prompt.into()],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Wiring;
+
+    #[test]
+    fn wiring_rejects_retired_systemd_control_plane() {
+        let error = toml::from_str::<Wiring>(
+            r#"
+                [[systemd_user]]
+                name = "secretd.service"
+                content = "retired"
+                enable = true
+            "#,
+        )
+        .expect_err("systemd_user must not remain a manifest loophole");
+
+        assert!(
+            error.to_string().contains("unknown field `systemd_user`"),
+            "unexpected error: {error}"
+        );
     }
 }

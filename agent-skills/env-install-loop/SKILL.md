@@ -78,8 +78,8 @@ hallucinated "upgrade available" wastes a cycle. This is read-only and safe.
   runtime vs build, pinned nightly vs MSRV).
 - **Hook hygiene:** side-effects / non-idempotency / weakened guards in install/verify (e.g. a
   `verify` that mutates state) → `fix:`.
-- **Wiring reach:** env/PATH present where it must be — interactive **and** the non-interactive
-  shells that scripts/systemd use.
+- **Wiring reach:** env/PATH present where it must be — interactive shells, Yazelix-owned
+  non-interactive processes, agents, desktop launchers, and the runner.
 
 **Append to a dedicated backlog section, classified by owner so routing is automatic:**
 ```

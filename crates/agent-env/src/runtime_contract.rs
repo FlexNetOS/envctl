@@ -290,9 +290,9 @@ fn imports_packaged_rtk_module(text: &str, store_root: &Path) -> bool {
             };
             let path = Path::new(path);
             path.starts_with(store_root)
-                && path.file_name().is_some_and(|name| {
-                    name.to_string_lossy().ends_with("-rtk_wrappers.nu")
-                })
+                && path
+                    .file_name()
+                    .is_some_and(|name| name.to_string_lossy().ends_with("-rtk_wrappers.nu"))
         })
 }
 
