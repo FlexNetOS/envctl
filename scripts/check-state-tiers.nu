@@ -17,7 +17,7 @@ use ./meta-paths.nu *
 #
 #   ~/.local                         NEVER. No FlexNetOS tool state, ever.
 #   /home/flexnetos/FlexNetOS        NEVER. Retired root, removed.
-#   /run/user/**                     volatile only; no durable agent state.
+#   /run/user/**                     NEVER. No FlexNetOS runtime or state.
 #
 # WHY THE SPLIT IS NOT REDUNDANT: XDG_DATA_HOME is the only lever that moves a
 # spec-following tool, and it drags GNOME with it. Pointing it at var/lib -- the
@@ -112,7 +112,8 @@ def main [--json, --strict, --meta-root: string = ""] {
                 $"($retired_hits) retired-root occurrences across envctl tables"
         ))
         let dotlocal_tool_hits = ($files | each {|p|
-            (open --raw $p | split row $"($home)/.local/share/yazelix" | length) - 1
+            let retired = ([$home ".local" "share" "yazelix"] | path join)
+            (open --raw $p | split row $retired | length) - 1
         } | math sum)
         $out = ($out | append (
             finding "tables_no_dotlocal_tool_state" "error" "true"

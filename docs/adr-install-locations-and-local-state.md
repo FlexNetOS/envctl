@@ -36,7 +36,7 @@ $ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/var/lib/nix/profile
 
 Envctl must not replace the real-home state tree. It may archive known per-tool user-bin shadows
 after the replacement frontdoor exists in the Yazelix profile or a META_ROOT-owned prefix. No
-component may install into any real-home/user-home/systemd-home local-bin spelling, or any
+component may install into any real-home or user-home local-bin spelling, or any
 leading-tilde local path. Managed hooks run with `HOME=$META_ROOT`; hook bodies that truly need
 the real user home must use `ENVCTL_REAL_HOME` and must document why.
 
@@ -178,6 +178,6 @@ Three session surfaces consume this — because each reads a different startup f
   block evals it *before* `yzx enter` so re-exec'd zellij/nushell panes inherit the full PATH.
 - **nushell/yazelix** — the version-controlled profile normalizer `home/.config/nushell/profile-path.nu`,
   sourced (relative, `$HOME`-independent) from `config.nu` and `yazelix/shell_nu.nu`.
-- **graphical/desktop login** — the `meta-session-env` component renders `systemd` user
-  `environment.d/10-meta.conf` from `envctl env`, so `.desktop` launchers + GUI sessions (which
-  never read `~/.bashrc`) resolve `$META_ROOT/usr/bin`.
+- **graphical/desktop launch** — Yazelix-owned desktop entries execute the pinned profile
+  frontdoor directly, so GUI launchers resolve the same absolute profile and Meta payload paths
+  without a competing login-session environment writer.

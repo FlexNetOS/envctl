@@ -12,17 +12,15 @@ use ./meta-paths.nu *
 # Why these rows (2026-07-27 session-env incident):
 #   ICM_DB           ICM resolves its database only from --db / ICM_DB / the XDG
 #                    default -- the [store].path config key is parsed but ignored.
-#                    icm-web.service runs under the systemd user-manager env with
-#                    no --db flag, so without an explicit anchor a restored
-#                    XDG_DATA_HOME silently serves a stale ~/.local/share copy
+#                    Yazelix launches ICM from the profile environment with no
+#                    --db flag, so without an explicit anchor a restored
+#                    XDG_DATA_HOME silently serves a stale retired user-local copy
 #                    (5.6M, 2026-07-21) instead of the live table (36M).
 #   CARGO_HOME       The prior value named a workspace-local candidate path that
 #   CARGO_TARGET_DIR does not exist on this host, while the operative environment
-#                    pointed both at a host-login tmpfs -- XDG_RUNTIME_DIR, whose
-#                    budget is shared with the wayland socket, dconf, dbus and
-#                    gnome-keyring. A single workspace build reached 30G there and
-#                    drove the tmpfs to 84%. Build artifacts are durable, not
-#                    volatile, and the authoritative table must say so.
+#                    pointed both at a volatile login-session root. A single
+#                    workspace build reached 30G there. Build artifacts are durable,
+#                    not volatile, and the authoritative table must say so.
 #
 # This script deliberately does NOT touch XDG_DATA_HOME / XDG_STATE_HOME /
 # XDG_CACHE_HOME. Those rows already name the real user roots, and redirecting

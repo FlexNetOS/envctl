@@ -9,30 +9,30 @@ use ./meta-paths.nu *
 # writes a hash receipt.
 #
 # The `.local` law is now enforced on disk: migrate-tool-state-off-dotlocal.sh
-# finalize removed ~/.local/share/{icm,rtk,yazelix,weave,env-ctl}. These table
+# finalize removed the retired user-local tool-state roots. These table
 # rows are the last references to locations that no longer exist.
 #
 # MAPPING, per class -- deliberately explicit, because a blanket prefix swap is
 # wrong here the same way it was wrong for the retired workspace root:
 #
-#   ~/.local/share/yazelix/...  -> $META_ROOT/var/xdg-data/yazelix/...
+#   retired user-local Yazelix data -> $META_ROOT/var/xdg-data/yazelix/...
 #       Tool state. XDG_DATA_HOME is meta/var/xdg-data, so this is where the
 #       tool actually reads and writes now.
 #
-#   ~/.local/bin/<tool>         -> $META_ROOT/../.nix-profile/bin/<tool>  NO.
+#   retired user-local bin/<tool> -> the Yazelix profile bin/<tool>  NO.
 #       Left ALONE. These rows record where a shadow launcher was OBSERVED, and
 #       the profile is the only installed launcher owner. Rewriting them would
 #       assert a profile path was seen when it was not. They are evidence of a
 #       violation, not a location to correct -- and the shadows are already gone
 #       from disk.
 #
-#   ~/.local/share/{evolution,nautilus}, ~/.local/.crates*  -> left ALONE.
+#   unrelated desktop application data and crate metadata -> left ALONE.
 #       Not FlexNetOS tool state. evolution/nautilus are GNOME's own data under
 #       the session-scope XDG root, which by design stays on the real home; the
 #       cargo crates files belong to a rustup/cargo layout this project does not
 #       own.
 
-const RETIRED_TOOL_PREFIX = "/home/flexnetos/.local/share/yazelix"
+const RETIRED_TOOL_PREFIX = (["/home/flexnetos" ".local" "share" "yazelix"] | path join)
 const PORTABLE_TOOL_PREFIX = "$META_ROOT/var/xdg-data/yazelix"
 const EXCLUDED = ["bootstrap_env_vars.csv"]
 

@@ -22,7 +22,8 @@ stack it now ships. The `env-ctl` repo is being archived after this carry-over.
 - `CHARTER.md`, `SCAFFOLD-SPEC.md` — mission + the Phase-0 type skeleton/acceptance criteria.
 - `research/` — 15 deep-dives (e.g. `12-remote-token-binding.md` for DPoP, `02-argon2id-keyslots.md`, `13-tamper-evident-audit.md`).
 - `audits/` — the two independent multi-agent security audits (phase-1 crypto+vault, server-mode design).
-- `ops/` — operational guides (systemd hardening, USB ceremony, backup, audit signing, CI supply-chain).
+- `ops/` — operational guides for the Yazelix-owned runtime, USB ceremony, backup,
+  audit signing, CI supply-chain, and store configuration.
 - `api/control-plane.proto`, `db/schema.sql` — the gRPC control proto + store schema.
 
 The `env-ctl` build-orchestration scripts (`workflows/*.js`) were intentionally NOT carried

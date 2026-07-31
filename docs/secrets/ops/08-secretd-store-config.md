@@ -43,7 +43,7 @@ Override the file location with `SECRETD_CONFIG=/path/to/secretd.toml`. A missin
 ### 1.3 Auth-token hygiene
 
 The token is a credential, so it is **never** taken from the TOML file. Provide it via
-`SECRETD_LIBSQL_AUTH_TOKEN` (e.g. a systemd `LoadCredential`/`Environment=`) or, preferably, via
+`SECRETD_LIBSQL_AUTH_TOKEN` through the Yazelix-owned profile environment or, preferably, via
 `SECRETD_LIBSQL_AUTH_TOKEN_FILE` pointing at a **`0600`** file — a group/other-readable token file is
 **refused** (fail-closed). The **config-layer** token copy is held in a zeroizing buffer and never
 logged (the config's `Debug` redacts it); note the downstream libSQL client takes a plain `String`
@@ -57,20 +57,15 @@ but the envctl-managed production units and real-server test runner always requi
 managed components rather than starting an open-auth server by hand:
 
 ```sh
-envctl install sqld --apply
-envctl install env-ctl --apply
+yzx launch
 ```
 
-The `sqld` component generates a current-user-owned `0600` Ed25519 public-key/client-JWT pair and
-starts the pinned server with `--auth-jwt-key-file`. Before dependents may start, systemd verifies
-the Rust helper's component-owned SHA-256 record; a bounded `ExecStartPost` then proves the exact
-MainPID/executable owns the listener, unauthenticated SQL returns `401`, and the file-fed bearer can
-execute `SELECT 1`. The `env-ctl.service` unit has strict
-`Requires=`, `BindsTo=`, and `After=` relationships on `sqld.service`; it also pins the service
-backend, loopback URL, and token file. Because `env-ctl.service` is `Type=notify`, it cannot become
-active until `secretd` has authenticated to that sqld and idempotently provisioned the schema. A
-missing, open-auth, unreachable, or JWT-incompatible server therefore fails closed instead of
-reporting a false-ready daemon. No manual migration step is needed.
+The Yazelix stack bootstrap starts the pinned server with `--auth-jwt-key-file`, records the exact
+process identity, and requires authenticated readiness before dependents start. It then launches
+`secretd`, opens the USB-bound vault, and starts downstream tools only after the vault proves both
+unlocked state and USB possession. A missing, open-auth, unreachable, JWT-incompatible, or
+wrong-owner server therefore fails closed instead of reporting a false-ready process. No manual
+migration step is needed.
 
 ## 3. Transport: loopback-only, or a loopback TLS terminator for a remote DB
 

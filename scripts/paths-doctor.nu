@@ -193,7 +193,7 @@ def main [
         print "  ~/.local             NEVER holds FlexNetOS state"
         print "  ~/.<agent>           NEVER — the profile frontdoor owns the agent home"
         print "  /home/flexnetos/FlexNetOS   retired, must not exist"
-        print "  /run/user/**         volatile only; no agent state, no cargo"
+        print "  /run/user/**         NEVER holds FlexNetOS runtime, state, or cargo"
         print ""
         print "  Toolchain is fenix, not rustup. Build inputs come from a nix"
         print "  derivation's buildInputs, never the user profile."
