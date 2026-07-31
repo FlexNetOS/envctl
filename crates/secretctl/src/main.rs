@@ -1124,10 +1124,10 @@ mod tests {
         let old = clear_socket_path_env();
         std::env::set_var("HOME", "/home/real-user");
         std::env::set_var("META_ROOT", "/home/real-user/Desktop/meta");
-        std::env::set_var("XDG_RUNTIME_DIR", "/run/user/1000");
+        std::env::set_var("XDG_RUNTIME_DIR", "/sandbox/yazelix/xdg");
         assert_eq!(
             socket_path(&None).expect("socket path"),
-            PathBuf::from("/run/user/1000/env-ctl/secretd.sock")
+            PathBuf::from("/sandbox/yazelix/xdg/env-ctl/secretd.sock")
         );
 
         std::env::remove_var("XDG_RUNTIME_DIR");

@@ -23,8 +23,8 @@ Use this map before rebuilding or editing the Codex harness.
 | `/home/flexnetos/meta/src/yazelix/configs/zellij/layouts/flexnetos_agent_workspace.kdl` and `packaging/runtime_release_contracts.nix` | Source owner for installed ccboard pane/runtime packaging | Change only when package/layout delivery changes; rebuild profile and use generated runtime as proof. |
 | `agent-skills/`, `agent-env.yaml`, `agent-env.lock` | envctl-managed agent inputs and lock | Edit inputs, preview sync, apply only when requested, check lock. |
 | `profile-runtime/codex/` | Repo projection | Treat as owner-produced projection according to agent-env/runbook rules. |
-| `/run/user/1001/yazelix/profile-runtime/codex/skills/agent-env-codex/` | Active skill materialization | Must match `agent-skills/agent-env-codex/`; runtime activation is not the durable owner. |
-| `/run/user/1001/yazelix/profile-runtime/codex/` | Active Codex runtime | Runtime proof/activation; do not use as substitute for durable repo owners. |
+| `/home/flexnetos/meta/var/lib/codex/skills/agent-env-codex/` | Active skill materialization | Must match `agent-skills/agent-env-codex/`; runtime activation is not the durable owner. |
+| `/home/flexnetos/meta/var/lib/codex/` | Active Codex runtime | Runtime proof/activation; do not use as substitute for durable repo owners. |
 | `/home/flexnetos/.config/yazelix/` | Editable Yazelix inputs | Edit owning inputs. |
 | `/home/flexnetos/var/lib/yazelix/` | Generated Yazelix runtime | Never hand-edit; proof only. |
 | `/home/flexnetos/.nix-profile/bin/yzx` | Active runtime frontdoor | Use for installed behavior proof. |

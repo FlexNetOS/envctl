@@ -2,11 +2,11 @@
 
 Generated from `envctl catalog render`; manual edits are not authoritative.
 
-- snapshot SHA-256: `c3b6317394878147c86e987c84b201a022902cc4e46f350aa6ab610323e70a4c`
+- snapshot SHA-256: `cd5a260942e115518a799f6a4f67a461f96199b6420a3047b8779d2841a1863b`
 - repository: `git@github.com:FlexNetOS/envctl.git`
 - manifest directory: `manifest/`
 - CodeDB file imports: `0`
-- catalog config files: `392`
+- catalog config files: `383`
 - environment-variable rows: `104`
 
 ## CodeDB file imports
@@ -375,9 +375,6 @@ Generated from `envctl catalog render`; manual edits are not authoritative.
 - `manifest/apt-base.toml` — `manifest` / `ok` / `ok`
 - `manifest/base.toml` — `manifest` / `ok` / `ok`
 - `manifest/boot-repair.toml` — `manifest` / `ok` / `ok`
-- `manifest/cognitum-seed-autounlock.toml` — `manifest` / `ok` / `ok`
-- `manifest/cognitum-seed-net.toml` — `manifest` / `ok` / `ok`
-- `manifest/cognitum-seed-trust.toml` — `manifest` / `ok` / `ok`
 - `manifest/components.d/cache-agent-env.toml` — `manifest` / `ok` / `ok`
 - `manifest/components.d/cache-jna.toml` — `manifest` / `ok` / `ok`
 - `manifest/components.d/cache-starship.toml` — `manifest` / `ok` / `ok`
@@ -390,23 +387,17 @@ Generated from `envctl catalog render`; manual edits are not authoritative.
 - `manifest/components.d/just.toml` — `manifest` / `ok` / `ok`
 - `manifest/components.d/meta-core-clis.toml` — `manifest` / `ok` / `ok`
 - `manifest/components.d/meta-env-plugin.toml` — `manifest` / `ok` / `ok`
-- `manifest/components.d/meta-session-env.toml` — `manifest` / `ok` / `ok`
 - `manifest/components.d/portability-links.toml` — `manifest` / `ok` / `ok`
-- `manifest/components.d/postgres-ruvector.toml` — `manifest` / `ok` / `ok`
-- `manifest/components.d/secretd.toml` — `manifest` / `ok` / `ok`
 - `manifest/dashboard.toml` — `manifest` / `ok` / `ok`
 - `manifest/desktop-app.toml` — `manifest` / `ok` / `ok`
 - `manifest/dev-tools.toml` — `manifest` / `ok` / `ok`
-- `manifest/env-ctl.toml` — `manifest` / `ok` / `ok`
 - `manifest/envctl.lock` — `envctl_lock` / `ok` / `ok`
 - `manifest/gpu.toml` — `manifest` / `ok` / `ok`
 - `manifest/grit.toml` — `manifest` / `ok` / `ok`
 - `manifest/n8n-mcp.toml` — `manifest` / `ok` / `ok`
 - `manifest/nix-yazelix.toml` — `manifest` / `ok` / `ok`
-- `manifest/odysseus.toml` — `manifest` / `ok` / `ok`
 - `manifest/prompt_hub.toml` — `manifest` / `ok` / `ok`
 - `manifest/rusty-idd.toml` — `manifest` / `ok` / `ok`
-- `manifest/sqld.toml` — `manifest` / `ok` / `ok`
 - `mcp_hub/registry.json` — `hub_registry` / `ok` / `ok`
 
 ## Environment-variable names
@@ -441,7 +432,6 @@ Generated from `envctl catalog render`; manual edits are not authoritative.
 - `ENVCTL_SEED_TOKEN_FILE` — `secrets_env_schema` (`crates/secrets-engine/src/seam.rs`)
 - `ENVCTL_SHARE_DIR` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_STATE_DIR` — `layout` (`crates/engine/src/layout.rs`)
-- `ENVCTL_SYSTEMD_USER_DIR` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_TMP_DIR` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_USR` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_USR_BIN` — `layout` (`crates/engine/src/layout.rs`)
@@ -468,6 +458,7 @@ Generated from `envctl catalog render`; manual edits are not authoritative.
 - `ENVCTL_XDG_CACHE_HOME` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_XDG_CONFIG_HOME` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_XDG_DATA_HOME` — `layout` (`crates/engine/src/layout.rs`)
+- `ENVCTL_XDG_RUNTIME_DIR` — `layout` (`crates/engine/src/layout.rs`)
 - `ENVCTL_XDG_STATE_HOME` — `layout` (`crates/engine/src/layout.rs`)
 - `ENV_BACKEND` — `secrets_env_schema` (`crates/secretd/src/config.rs`)
 - `ENV_CONFIG` — `secrets_env_schema` (`crates/secretd/src/config.rs`)

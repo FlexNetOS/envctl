@@ -9,7 +9,7 @@ FULL="$ROOT/.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.pr
 SNAPSHOT="$SKILL_ROOT/references/source-prompt.md"
 HARNESS="$ROOT/home/agent-env/codex-harness/Cargo.toml"
 SUBSTRATE_PROMPT="$ROOT/.codex/prompts/prompt:substrate-init.inherit.md"
-VALIDATOR=/run/user/1001/yazelix/profile-runtime/codex/skills/.system/skill-creator/scripts/quick_validate.py
+VALIDATOR=/home/flexnetos/meta/var/lib/codex/skills/.system/skill-creator/scripts/quick_validate.py
 
 for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SUBSTRATE_PROMPT" \
   "$SKILL_ROOT/SKILL.md" \

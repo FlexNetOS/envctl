@@ -6,7 +6,7 @@
 #   * Law-1: the live wrapper is ARCHIVED (never deleted) before it is replaced.
 #   * Idempotent: re-running with the fix already in place is a no-op archive
 #     (nothing is being replaced, so nothing new is archived) + identical copy.
-#   * Targets var/lib/ruvector/ and the volatile Claude archive ONLY—never an executable frontdoor, so it
+#   * Targets var/lib/ruvector/ and the Claude archive ONLY—never an executable frontdoor, so it
 #     stays clear of the meta-local-policy gate (which flags usr/bin frontdoor
 #     writes).
 #
@@ -16,11 +16,11 @@
 set -euo pipefail
 
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RUV="${RUVECTOR_DIR:-/home/flexnetos/lifeos/var/lib/ruvector}"
+RUV="${RUVECTOR_DIR:-/home/flexnetos/meta/var/lib/ruvector}"
 LIVE="$RUV/swarm-immune.mjs"
 CANON="$SELF_DIR/runtime/swarm-immune.mjs"
 TESTS_DST="$RUV/tests"
-ARCHIVE_ROOT="${HARNESS_ARCHIVE_ROOT:-${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/yazelix/profile-runtime/claude/archive}"
+ARCHIVE_ROOT="${HARNESS_ARCHIVE_ROOT:-${CLAUDE_CONFIG_DIR:-/home/flexnetos/meta/var/lib/claude}/archive}"
 
 [ -f "$CANON" ] || { echo "install: canonical wrapper missing: $CANON" >&2; exit 1; }
 

@@ -23,7 +23,7 @@ New-session navigation:
 - Update agent config through envctl `agent-env.yaml`, `agent-env.lock`, and
   `agent-skills/`; preview with `envctl agent sync --json --color never` and
   only use `--apply` after review.
-- Keep `/run/user/1001/yazelix/profile-runtime/codex/config.toml` as the active runtime config.
+- Keep `/home/flexnetos/meta/var/lib/codex/config.toml` as the active runtime config.
 - Do not use retired mirrors `/home/flexnetos/lifeos/.codex` or
   `/home/flexnetos/FlexNetOS/.codex`.
 - Toolchains resolve through the Nix/Yazelix foundation: nightly cargo/rustc

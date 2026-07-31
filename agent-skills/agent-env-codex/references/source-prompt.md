@@ -138,7 +138,7 @@ Required runbook facts to carry into the skill:
 ```text
 source_path | authority | finding
 /home/flexnetos/meta/AGENTS.md:1-13 | authoritative | meta is the real FlexNetOS/meta checkout; /home/flexnetos/lifeos is retired
-/run/user/1001/yazelix/profile-runtime/codex/RULES.md:24-40 | materialized profile policy | envctl sessions use fresh worktrees; active Codex config is /run/user/1001/yazelix/profile-runtime/codex/config.toml; retired mirrors are not active
+/home/flexnetos/meta/var/lib/codex/RULES.md:24-40 | materialized profile policy | envctl sessions use fresh worktrees; active Codex config is /home/flexnetos/meta/var/lib/codex/config.toml; retired mirrors are not active
 /home/flexnetos/meta/src/envctl/AGENTS.md:122-183 | authoritative | agent-env owns skills/MCP/commands; Yazelix ownership model is mandatory for Codex/toolchains
 /home/flexnetos/meta/src/envctl/docs/runbook/README.md:102-113 | authoritative | envctl agent sync/add/list/lock/doctor commands and agent-env lock model
 /home/flexnetos/meta/src/envctl/docs/runbook/README.md:115-160 | authoritative | Codex harness full-access contract, active host runtime, decision/receipt split, validation commands
@@ -176,7 +176,7 @@ Codex state as drift to repair through owners, not as a parallel authority.
 
 ```text
 editable input:     /home/flexnetos/.config/yazelix/
-generated proof:    /run/user/1001/yazelix/profile-runtime/yazelix/
+generated proof:    /home/flexnetos/meta/var/lib/yazelix/runtime/state/
 active frontdoor:   /home/flexnetos/.nix-profile/bin/yzx
 profile toolbin:    /home/flexnetos/.nix-profile/{bin,toolbin}/...
 stale shadows:      retired user-bin and user-launcher entries (archive only)
@@ -192,7 +192,7 @@ Rules:
   `YAZELIX_RUNTIME_DIR` resolves shipped runtime assets. Do not substitute
   `YAZELIX_DIR` as canonical ownership.
 - Do not hand-edit generated runtime under
-  `/run/user/1001/yazelix/profile-runtime/yazelix`; edit owner inputs and regenerate or
+  `/home/flexnetos/meta/var/lib/yazelix/runtime/state`; edit owner inputs and regenerate or
   relaunch through `yzx`.
 - `~/.config/yazelix/settings.jsonc` and managed override sidecars are editable
   input. Generated Yazi/Zellij/Helix/terminal configs, shell initializers, logs,
@@ -491,7 +491,7 @@ agent-skills/agent-env-codex/          durable repo source for the one skill
   scripts/check-yazelix-contract.py     69-command durable/live Yazelix validator
   scripts/validate.sh                   deterministic no-gap/no-downgrade validator
 project projections: .codex/skills/agent-env-codex/ and .claude/skills/agent-env-codex/
-active materialization: ${CODEX_HOME:-/run/user/1001/yazelix/profile-runtime/codex}/skills/agent-env-codex/
+active materialization: ${CODEX_HOME:-/home/flexnetos/meta/var/lib/codex}/skills/agent-env-codex/
 ```
 
 This is one skill. Init, sync, status, full, restricted, toggle, model routing,
@@ -545,7 +545,7 @@ ACTIVE MODE
 
 - Use full local filesystem execution. Do not switch to a limited mode. Do not ask
   for permission changes. Do not describe broad operator-granted access as a blocker.
-- Active Codex runtime config is `/run/user/1001/yazelix/profile-runtime/codex/config.toml`.
+- Active Codex runtime config is `/home/flexnetos/meta/var/lib/codex/config.toml`.
   The active emergency profile is:
   - `approval_policy = "never"`
   - `sandbox_mode = "danger-full-access"`
@@ -607,7 +607,7 @@ REQUIRED BOOTSTRAP FIXES FOR THIS INCIDENT
 The first repair pass must make these concrete local changes when they are
 missing or wrong:
 
-- `/run/user/1001/yazelix/profile-runtime/codex/config.toml` uses full-access execution and does not
+- `/home/flexnetos/meta/var/lib/codex/config.toml` uses full-access execution and does not
   default to a limited permission profile.
 - The approved Claude lifecycle contract contains only `rtk hook claude` and
   PATH-resolved `icm hook` commands. Retired copied scripts, hook JSON, archives,

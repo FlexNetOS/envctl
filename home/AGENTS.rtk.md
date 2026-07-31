@@ -3,7 +3,7 @@
 The canonical installed policy source is
 `/home/flexnetos/.nix-profile/share/yazelix/agent_configs/codex/RULES.md.src`;
 the profile materializes it at
-`/run/user/1001/yazelix/profile-runtime/codex/RULES.md`.
+`/home/flexnetos/meta/var/lib/codex/RULES.md`.
 
 Every Codex shell command must use the exact profile frontdoor
 `/home/flexnetos/.nix-profile/bin/rtk`. For gate and root-cause commands, retain

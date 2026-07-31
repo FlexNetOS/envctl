@@ -251,9 +251,9 @@ completeness).
 | Amp | `amp` | `~/.config/agents/skills/` |
 | Antigravity | `antigravity` | `~/.gemini/antigravity/skills/` |
 | Augment | `augment` | `~/.augment/skills/` |
-| Claude Code | `claude-code` | `/run/user/1001/yazelix/profile-runtime/claude/skills/` |
+| Claude Code | `claude-code` | `/home/flexnetos/meta/var/lib/claude/skills/` |
 | Cline | `cline` | `~/.agents/skills/` |
-| Codex | `codex` | `/run/user/1001/yazelix/profile-runtime/codex/skills/` |
+| Codex | `codex` | `/home/flexnetos/meta/var/lib/codex/skills/` |
 | Continue | `continue` | `~/.continue/skills/` |
 | Cursor | `cursor` | `~/.cursor/skills/` |
 | Gemini CLI | `gemini-cli` | `~/.gemini/skills/` |
@@ -341,7 +341,7 @@ packs are *merged* (not overwritten) into each agent's settings file.
   - `McpServers` (standard `{"mcpServers": {...}}` JSON — Claude, Cursor, Gemini, etc.).
   - `VsCodeServers` (`{"servers": {...}}`, injects `type: stdio|http` — Copilot).
   - `OpenCode` (`{"mcp": {...}}` with `type: local|remote`, `command` as array, `environment`).
-  - `CodexToml` (`/run/user/1001/yazelix/profile-runtime/codex/config.toml` `[mcp_servers]`, stdio vs remote, `http_headers`).
+  - `CodexToml` (`/home/flexnetos/meta/var/lib/codex/config.toml` `[mcp_servers]`, stdio vs remote, `http_headers`).
   - **Additive, non-destructive:** `merge_into_json_key` only inserts keys not already present
     (`if !dst_map.contains_key(...)`), so user-authored servers and secrets are never
     overwritten (test: real `AIRFLOW_PASSWORD` is preserved over a placeholder from the pack).
