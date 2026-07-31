@@ -15,17 +15,18 @@ clean checkout exactly matches `origin/main`.
 | Codex frontdoor | `/home/flexnetos/.nix-profile/bin/codex` |
 | Claude frontdoor | `/home/flexnetos/.nix-profile/bin/claude` |
 | RTK frontdoor | `/home/flexnetos/.nix-profile/bin/rtk` |
-| Volatile Codex materialization | `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/codex` |
-| Volatile Claude materialization | `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/claude` |
+| Codex state and active config | `/home/flexnetos/meta/var/lib/codex` |
+| Claude state and active config | `/home/flexnetos/meta/var/lib/claude` |
+| Yazelix XDG runtime | `/home/flexnetos/meta/var/lib/yazelix/runtime/xdg` |
 
-Raw Nix store targets and volatile runtime files are proof, never editable or
+Raw Nix store targets and generated runtime files are proof, never editable or
 parallel ownership surfaces. Change the owning Yazelix source/config input and
 rebuild through the profile owner.
 
 ## Cutover boundary
 
 Envctl validates profile identity, store identity, config-input presence, and
-volatile materialization. It must not run `nix build`, mutate a profile
+Yazelix-owned materialization. It must not run `nix build`, mutate a profile
 generation, switch the selector, or install an agent CLI. Its install/fix
 compatibility phases are read-only validation.
 

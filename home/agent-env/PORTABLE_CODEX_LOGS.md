@@ -19,7 +19,7 @@ state bundle and writes them to an app-owned log root:
 ```
 
 The portable launcher must set or translate runtime paths so log writes never
-fall back to `/run/user/1001/yazelix/profile-runtime/codex`:
+fall back to `/home/flexnetos/meta/var/lib/codex`:
 
 ```text
 CODEX_HOME=<portable-root>/data/codex-home
@@ -47,7 +47,7 @@ surface, the app wrapper owns the copy/sync boundary:
 
 ## Current live log-like surfaces
 
-These live `/run/user/1001/yazelix/profile-runtime/codex` paths are treated as logs or log-adjacent transcript
+These live `/home/flexnetos/meta/var/lib/codex` paths are treated as logs or log-adjacent transcript
 state and are not copied into `private-codex-state/data`:
 
 ```text

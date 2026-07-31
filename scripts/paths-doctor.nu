@@ -26,7 +26,7 @@ const DESKTOP_IN_FHS = [
     "user-session-migration" "keyrings" "recently-used.xbel"
     "gnome-session@ubuntu.state"
 ]
-const VOLATILE_ROOT = "/run/user/1001/yazelix"
+const VOLATILE_ROOT = "/home/flexnetos/meta/var/lib/yazelix/runtime"
 
 def finding [id: string, status: string, detail: string, fixable: bool] {
     {check: $id, status: $status, detail: $detail, fixable: $fixable}

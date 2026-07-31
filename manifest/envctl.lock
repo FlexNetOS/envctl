@@ -75,21 +75,6 @@ content_hash = "369e793a6a2ca8c6"
 requires = ["codex-cli"]
 resolved = ""
 
-[components.cognitum-seed-autounlock]
-content_hash = "622a7f226c09ef48"
-requires = []
-resolved = ""
-
-[components.cognitum-seed-net]
-content_hash = "44902f8973b5a766"
-requires = []
-resolved = ""
-
-[components.cognitum-seed-trust]
-content_hash = "3a6d31b9c4257dec"
-requires = []
-resolved = ""
-
 [components.cuda-oxide]
 content_hash = "9c02a9daa741d5cf"
 requires = [
@@ -126,14 +111,6 @@ resolved = ""
 [components.devin-cli]
 content_hash = "5054c00500ebcaa8"
 requires = ["yazelix"]
-resolved = ""
-
-[components.env-ctl]
-content_hash = "69713a86a34ad9d1"
-requires = [
-    "rustup",
-    "sqld",
-]
 resolved = ""
 
 [components.envctl-cli]
@@ -258,7 +235,7 @@ requires = ["home-local-single-link"]
 resolved = ""
 
 [components.home-config-links]
-content_hash = "3a951eb1a1176792"
+content_hash = "3700fa3209e9c4f0"
 requires = []
 resolved = ""
 
@@ -340,11 +317,6 @@ content_hash = "2250dc8b95eb782d"
 requires = ["rustup"]
 resolved = ""
 
-[components.meta-session-env]
-content_hash = "7af550d889631894"
-requires = []
-resolved = ""
-
 [components.meta-tool-links]
 content_hash = "b1c06d54b31adb25"
 requires = ["home-local-single-link"]
@@ -424,11 +396,6 @@ content_hash = "0e821cc497e5502d"
 requires = ["nvidia-cuda-repo"]
 resolved = ""
 
-[components.odysseus]
-content_hash = "bd1abaa839b2e09a"
-requires = []
-resolved = ""
-
 [components.ollama]
 content_hash = "0a7ce11e1d5a3ee3"
 requires = []
@@ -437,11 +404,6 @@ resolved = ""
 [components.podman]
 content_hash = "b0f5e5797c7e541f"
 requires = []
-resolved = ""
-
-[components.postgres-ruvector]
-content_hash = "53fec62c2a27ff9d"
-requires = ["yazelix"]
 resolved = ""
 
 [components.prompt_hub]
@@ -481,19 +443,6 @@ resolved = ""
 [components.rusty-idd]
 content_hash = "47e3384c8864d33d"
 requires = ["rustup"]
-resolved = ""
-
-[components.secretd]
-content_hash = "f2da291de3ffa925"
-requires = ["env-ctl"]
-resolved = ""
-
-[components.sqld]
-content_hash = "5b98987abc1ac096"
-requires = [
-    "llvm-clang",
-    "rustup",
-]
 resolved = ""
 
 [components.usrlocal-script-links]

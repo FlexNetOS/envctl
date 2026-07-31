@@ -8,10 +8,10 @@ configuration.
 
 - `/home/flexnetos/.nix-profile` is the sole installed-runtime and PATH owner.
 - `/home/flexnetos/.config/yazelix/` contains editable Yazelix inputs.
-- `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/codex` is the volatile Codex
-  materialization.
-- `${XDG_RUNTIME_DIR}/yazelix/profile-runtime/claude` is the volatile Claude
-  materialization.
+- `/home/flexnetos/meta/var/lib/codex` is the Codex state and active-config root.
+- `/home/flexnetos/meta/var/lib/claude` is the Claude state and active-config root.
+- `/home/flexnetos/meta/var/lib/yazelix/runtime/xdg` is the sole FlexNetOS XDG
+  runtime root.
 - Agent configuration sources ship in the canonical `FlexNetOS/yazelix`
   profile package. Envctl validates those sources and materializations; it does
   not create a home projection or switch the installed profile.

@@ -18,7 +18,7 @@ use ./meta-paths.nu *
 #                    (5.6M, 2026-07-21) instead of the live table (36M).
 #   CARGO_HOME       The prior value named a workspace-local candidate path that
 #   CARGO_TARGET_DIR does not exist on this host, while the operative environment
-#                    pointed both at /run/user/1001 -- XDG_RUNTIME_DIR, whose tmpfs
+#                    pointed both at a host-login tmpfs -- XDG_RUNTIME_DIR, whose
 #                    budget is shared with the wayland socket, dconf, dbus and
 #                    gnome-keyring. A single workspace build reached 30G there and
 #                    drove the tmpfs to 84%. Build artifacts are durable, not

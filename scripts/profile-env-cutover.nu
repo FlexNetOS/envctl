@@ -64,7 +64,7 @@ def main [
         archive: ($archive | into string)
         xdg_data_home: $owned_root
         xdg_state_home: $owned_state_root
-        yazelix_state_owner: "/run/user/1001/yazelix/profile-runtime/yazelix"
+        yazelix_state_owner: "/home/flexnetos/meta/var/lib/yazelix/runtime/state"
         before_sha256: $before_hash
         after_sha256: $after_hash
         verified: false

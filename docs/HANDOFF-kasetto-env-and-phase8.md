@@ -109,6 +109,6 @@ choke point the Profile-B operator-box gate will plug into). The listener is the
 ## Spec / reference pointers
 - Phase-8 spec: `docs/secrets/SERVER-MODE.md` (also covers FS-S16..S25, OI-SM-1..6).
 - Engine gate (F14): `crates/secrets-engine/src/broker/gate.rs`.
-- Cross-effort plan: `/run/user/1001/yazelix/profile-runtime/claude/plans/elegant-growing-turtle.md` (has a Progress section).
+- Cross-effort plan: `/home/flexnetos/meta/var/lib/claude/plans/elegant-growing-turtle.md` (has a Progress section).
 - kasetto adoptions catalog: `docs/KASETTO-FEATURES.md` (other lower-risk envctl enhancements:
   universal `--json`, `--locked`/`--update`, multi-host source resolver).

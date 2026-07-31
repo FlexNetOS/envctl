@@ -58,7 +58,7 @@ exec "$AUDIT" --profile-shadow-guard-only --require-yazelix-profile \
 [[component]]
 id = "home-config-links"
 name = "META_ROOT config links"
-description = "Links META_ROOT-scoped config files from $META_ROOT/src/envctl/home into the META_ROOT home view. Hooks run with HOME=$META_ROOT; this never writes real-home config paths. Systemd user units are deliberately excluded: their component manifest wiring owns canonical content under $META_ROOT/.config/systemd/user, and the wiring engine owns the sole verified real-XDG discovery bridge."
+description = "Links META_ROOT-scoped config files from $META_ROOT/src/envctl/home into the META_ROOT home view. Hooks run with HOME=$META_ROOT; this never writes real-home config paths. Historical user-unit files are excluded because Yazelix is the sole runtime owner."
 [component.detect]
 kind = "command"
 command = "bash"

@@ -48,7 +48,7 @@ Yazelix already owns the installed ccboard pane at `configs/zellij/layouts/flexn
 Claude's current path is the compatibility model:
 
 ```text
-/run/user/1001/yazelix/profile-runtime/claude settings/projects JSONL
+/home/flexnetos/meta/var/lib/claude settings/projects JSONL
         |
         +-> ccboard DataStore + FileWatcher + live process/hook monitor
         |
@@ -60,7 +60,7 @@ Claude's current path is the compatibility model:
 
 Codex is partially wired, not absent:
 
-- `ccboard-core/src/parsers/codex.rs` scans `/run/user/1001/yazelix/profile-runtime/codex/sessions/YYYY/MM/DD/*.jsonl`.
+- `ccboard-core/src/parsers/codex.rs` scans `/home/flexnetos/meta/var/lib/codex/sessions/YYYY/MM/DD/*.jsonl`.
 - `DataStore::scan_third_party_sessions` inserts Codex metadata at startup.
 - `SourceTool::Codex` and the TUI source badge already distinguish Codex sessions.
 

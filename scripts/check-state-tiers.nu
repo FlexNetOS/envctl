@@ -123,7 +123,7 @@ def main [--json, --strict, --meta-root: string = ""] {
 
     # 7. no durable agent state on the volatile runtime
     for a in $AGENT_HOMES {
-        let p = ("/run/user/1001/yazelix/profile-runtime" | path join $a)
+        let p = ("/home/flexnetos/meta/var/lib/yazelix/runtime/profile-runtime" | path join $a)
         $out = ($out | append (
             finding $"no_tmpfs_agent_state_($a)" "error" "true"
                 (if ($p | path exists) { "error" } else { "pass" })

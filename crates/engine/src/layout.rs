@@ -235,7 +235,12 @@ impl MetaLayout {
     }
 
     pub fn run(&self) -> PathBuf {
-        self.meta_root.join("run")
+        self.meta_root.join("var/lib/yazelix/runtime/envctl")
+    }
+
+    /// Yazelix-owned XDG runtime root exported to every managed process.
+    pub fn xdg_runtime_dir(&self) -> PathBuf {
+        self.meta_root.join("var/lib/yazelix/runtime/xdg")
     }
 
     pub fn tmp_root(&self) -> PathBuf {
@@ -250,24 +255,22 @@ impl MetaLayout {
         self.meta_root.join(".config")
     }
 
-    /// The one active systemd-user unit directory owned by envctl.
-    ///
-    /// It is deliberately derived from the meta XDG config root, never from
-    /// the invoking user's `HOME` or ambient `XDG_CONFIG_HOME`.
+    /// Compatibility resolver for importing and removing historical user units.
+    /// It is not part of the canonical layout registry or exported environment.
     pub fn systemd_user_dir(&self) -> PathBuf {
         self.xdg_config_home().join("systemd/user")
     }
 
     pub fn xdg_data_home(&self) -> PathBuf {
-        self.var_lib()
+        self.var().join("xdg-data")
     }
 
     pub fn xdg_state_home(&self) -> PathBuf {
-        self.var_lib()
+        self.var().join("xdg-state")
     }
 
     pub fn xdg_cache_home(&self) -> PathBuf {
-        self.var_cache()
+        self.meta_root.join("var/lib/yazelix/runtime/cache")
     }
 
     pub fn local_bin(&self) -> PathBuf {
@@ -566,12 +569,6 @@ impl MetaLayout {
                 purpose: "meta-home XDG config root",
             },
             LayoutEntry {
-                key: "systemd_user_dir",
-                path: self.systemd_user_dir(),
-                kind: LayoutKind::Canonical,
-                purpose: "authoritative envctl-owned systemd user unit directory",
-            },
-            LayoutEntry {
                 key: "xdg_data_home",
                 path: self.xdg_data_home(),
                 kind: LayoutKind::Canonical,
@@ -588,6 +585,12 @@ impl MetaLayout {
                 path: self.xdg_cache_home(),
                 kind: LayoutKind::Canonical,
                 purpose: "meta-home XDG cache root",
+            },
+            LayoutEntry {
+                key: "xdg_runtime_dir",
+                path: self.xdg_runtime_dir(),
+                kind: LayoutKind::Canonical,
+                purpose: "Yazelix-owned XDG runtime root",
             },
             LayoutEntry {
                 key: "envctl_share",
@@ -716,10 +719,10 @@ impl MetaLayout {
             ("ENVCTL_OPT_DIR", self.opt()),
             ("ENVCTL_REPO_STORE", self.repo_store()),
             ("ENVCTL_XDG_CONFIG_HOME", self.xdg_config_home()),
-            ("ENVCTL_SYSTEMD_USER_DIR", self.systemd_user_dir()),
             ("ENVCTL_XDG_DATA_HOME", self.xdg_data_home()),
             ("ENVCTL_XDG_STATE_HOME", self.xdg_state_home()),
             ("ENVCTL_XDG_CACHE_HOME", self.xdg_cache_home()),
+            ("ENVCTL_XDG_RUNTIME_DIR", self.xdg_runtime_dir()),
         ]
     }
 }
@@ -763,10 +766,17 @@ mod tests {
         assert_eq!(l.tmp(), Path::new("/m/var/tmp"));
         assert_eq!(l.opt(), Path::new("/m/opt"));
         assert_eq!(l.xdg_config_home(), Path::new("/m/.config"));
-        assert_eq!(l.systemd_user_dir(), Path::new("/m/.config/systemd/user"));
-        assert_eq!(l.xdg_data_home(), Path::new("/m/var/lib"));
-        assert_eq!(l.xdg_state_home(), Path::new("/m/var/lib"));
-        assert_eq!(l.xdg_cache_home(), Path::new("/m/var/cache"));
+        assert_eq!(l.run(), Path::new("/m/var/lib/yazelix/runtime/envctl"));
+        assert_eq!(
+            l.xdg_runtime_dir(),
+            Path::new("/m/var/lib/yazelix/runtime/xdg")
+        );
+        assert_eq!(l.xdg_data_home(), Path::new("/m/var/xdg-data"));
+        assert_eq!(l.xdg_state_home(), Path::new("/m/var/xdg-state"));
+        assert_eq!(
+            l.xdg_cache_home(),
+            Path::new("/m/var/lib/yazelix/runtime/cache")
+        );
         assert_eq!(l.repo_store(), Path::new("/m/var/lib/envctl/repos"));
         assert_eq!(l.ollama_models(), Path::new("/m/var/lib/ollama/models"));
         assert_eq!(l.envctl_lib(), Path::new("/m/usr/lib/envctl"));
@@ -855,8 +865,7 @@ mod tests {
         assert!(exports
             .iter()
             .any(|(k, v)| *k == "ENVCTL_XDG_CONFIG_HOME" && v == Path::new("/meta/.config")));
-        assert!(exports.iter().any(|(k, v)| *k == "ENVCTL_SYSTEMD_USER_DIR"
-            && v == Path::new("/meta/.config/systemd/user")));
+        assert!(!exports.iter().any(|(k, _)| *k == "ENVCTL_SYSTEMD_USER_DIR"));
     }
 
     #[test]

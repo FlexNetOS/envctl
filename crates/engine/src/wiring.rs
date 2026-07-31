@@ -62,10 +62,18 @@ pub fn apply(w: &Wiring) -> WiringReport {
             rep.fail("desktop_entry", e);
         }
     }
+    // The legacy implementation remains private so reset/import tests can prove
+    // recoverable retirement, but no shipping apply path may create or enable a
+    // local unit. Yazelix is the sole FlexNetOS runtime owner.
+    let _legacy_import_only: fn(&SystemdUnit) -> std::io::Result<()> = apply_systemd;
     for u in &w.systemd_user {
-        if let Err(e) = apply_systemd(u) {
-            rep.fail("systemd_user", e);
-        }
+        rep.fail(
+            "systemd_user",
+            format!(
+                "local unit {} is forbidden; add the process to the Yazelix stack bootstrap",
+                u.name
+            ),
+        );
     }
     // keyring-before-list; one debounced `apt-get update` after the loop.
     let mut apt_dirty = false;
@@ -1716,6 +1724,18 @@ exit 0
                 .into(),
             enable,
         }
+    }
+
+    #[test]
+    fn shipping_apply_rejects_local_systemd_ownership() {
+        let wiring = Wiring {
+            systemd_user: vec![demo_systemd_unit(true)],
+            ..Wiring::default()
+        };
+        let report = apply(&wiring);
+        assert_eq!(report.failures.len(), 1);
+        assert_eq!(report.failures[0].0, "systemd_user");
+        assert!(report.failures[0].1.contains("Yazelix stack bootstrap"));
     }
 
     #[cfg(unix)]
